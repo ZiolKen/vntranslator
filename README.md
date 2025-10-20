@@ -7,6 +7,5 @@
 A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages.
 
 - https://vntranslator.vercel.app
-- https://ziolken.vercel.app/vntranslator
 
 Game Translator
