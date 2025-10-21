@@ -16,6 +16,7 @@
   <!-- Modal for Lingva Warning -->
   <div id="libreWarningModal" class="modal">
     <div class="modal-content">
+      <span class="close-modal">&times;</span>
       <h3>Important Notice About Lingva Translate</h3>
       <p>You have selected Lingva for translation. Please be aware that:</p>
       <ul>
@@ -120,6 +121,18 @@
   </div>
 
 <style>
+  .close-modal {
+      color: #94a3b8;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+  }
+  
+  .close-modal:hover {
+      color: #f8fafc;
+  }
+    
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
