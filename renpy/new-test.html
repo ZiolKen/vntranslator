@@ -13,6 +13,26 @@
 </head>
  
 <body>
+  <!-- Modal for Lingva Warning -->
+  <div id="libreWarningModal" class="modal">
+    <div class="modal-content">
+      <h3>Important Notice About Lingva Translate</h3>
+      <p>You have selected Lingva for translation. Please be aware that:</p>
+      <ul>
+        <li>Lingva is a free service that may not perfectly preserve Ren'Py code structure.</li>
+        <li>We recommend using it only for testing purposes or when you're willing to manually review the results.</li>
+      </ul>
+      <p>
+        For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.
+      </p>
+      <div class="modal-footer">
+        <button id="confirmLibre" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">
+          I Understand
+        </button>
+      </div>
+    </div>
+  </div>
+  
   <div class="main-title">
     <h1 id="main-title"
       class="h1">
@@ -96,26 +116,6 @@
 
   <div style="text-align: center; margin: 40px 0 20px;">
   <a href="../index.html" class="back-btn">⬅️ Back to Main Menu</a>
-  </div>
-  
-  <!-- Modal for Lingva Warning -->
-  <div id="libreWarningModal" class="modal">
-    <div class="modal-content">
-      <h3>Important Notice About Lingva Translate</h3>
-      <p>You have selected Lingva for translation. Please be aware that:</p>
-      <ul>
-        <li>Lingva is a free service that may not perfectly preserve Ren'Py code structure.</li>
-        <li>We recommend using it only for testing purposes or when you're willing to manually review the results.</li>
-      </ul>
-      <p>
-        For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.
-      </p>
-      <div class="modal-footer">
-        <button id="confirmLibre" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">
-          I Understand
-        </button>
-      </div>
-    </div>
   </div>
 
 <style>
