@@ -307,30 +307,6 @@
         strong {
             color: var(--neon-yellow);
         }
-
-        .back-btn {
-            display: inline-block;
-            width: auto;
-            padding: 12px 24px;
-            border: 1px solid var(--neon-cyan);
-            border-radius: 9999px;
-            font-size: 1rem;
-            font-weight: 700;
-            font-family: 'Turret Road', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            background: transparent;
-            color: var(--neon-cyan);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-        }
- 
-        .back-btn:hover {
-            background-color: var(--neon-cyan);
-            color: var(--bg-primary);
-            box-shadow: 0 0 20px var(--neon-cyan);
-        }
 </style>
 
 </head>
@@ -364,7 +340,7 @@
 
 <div class="section" style="margin-bottom: 25px;">
   <h2>Conversion Log</h2>
-  <textarea id="output" placeholder="[SYSTEM_BOOT] :: Awaiting input..." readonly>[SYSTEM_BOOT] :: Awaiting input...</textarea>
+  <textarea id="output" class="log-container" placeholder="[SYSTEM_BOOT] :: Awaiting input..." readonly>[SYSTEM_BOOT] :: Awaiting input...</textarea>
 </div>
 
 <div class="section" style="margin-bottom: 25px;">
@@ -406,7 +382,7 @@ document.getElementById('ksFile').addEventListener('change', function(e){
 
   function processNextFile(){
     if(index >= files.length){
-      output.value += "\n ✅ All Files Converted!";
+      output.value += "\n✅ All Files Converted!";
       return;
     }
 
@@ -453,7 +429,7 @@ document.getElementById('ksFile').addEventListener('change', function(e){
       document.body.appendChild(a);
       setTimeout(()=>{ a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }, 80);
 
-      output.value += " ✅ Converted: " + file.name + " → " + a.download + "\n";
+      output.value += "✅ Converted: " + file.name + " → " + a.download + "\n";
       index++;
       processNextFile();
     };
