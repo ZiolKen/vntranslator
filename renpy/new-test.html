@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="ie=edge" http-equiv="X-UA-Compatible">
+  <title>Ren'Py RPY Translator</title>
+  <link rel="stylesheet" href="renpy.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+ 
+<body>
+  <!-- Modal for Lingva Warning -->
+  <div id="libreWarningModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h3>Important Notice About Lingva Translate</h3>
+      <p>
+        Lingva is a free service that may not perfectly preserve Ren'Py code structure. 
+        We recommend using it only for testing purposes or when you're willing to manually review the results.
+      </p>
+      <p>
+        For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.
+      </p>
+      <div>
+        <button id="confirmLibre">
+          I Understand
+        </button>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="main-title">
+    <h1 id="main-title"
+      class="main-title-animate h1">
+      🛠️ Ren'Py RPY Translator
+    </h1>
+    <div class="card">
+      <h4>Translation Settings</h4>
+
+      <div class="form-group">
+        <label>Translation Model</label>
+        <select id="modelSelect">
+          <option value="deepseek">DeepSeek (Paid API - Preserves Formatting)</option>
+          <option value="libre">Lingva Translate (Free - Basic Translation)</option>
+        </select>
+      </div>
+      <div class="form-group" id="apiKeyContainer">
+        <label>DeepSeek API Key</label>
+        <input id="apiKey" type="password" placeholder="Enter your API Key">
+      </div>
+      <div class="form-group">
+        <label>Target Language</label>
+        <select id="langTarget">
+          <option value="Bahasa Indonesia">Indonesian</option>
+          <option value="English">English</option>
+          <option value="Malay">Malay</option>
+          <option value="Vietnamese">Vietnamese</option>
+          <option value="Filipino">Filipino</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Upload .rpy File</label>
+        <input id="fileInput" type="file" accept=".rpy">
+      </div>
+      <div class="progress-container">
+        <label>Progress</label>
+        <progress id="progressBar" value="0" max="1000"></progress>
+        <div id="progressText">0/0</div>
+      </div>
+    </div>
+      <div class="card">
+        <h5>Translation Control</h5>
+        <div class="button-group">
+        <button id="translateBtn">
+          <span id="translateLabel">▶️ Start Translating</span>
+        </button>
+        <button id="downloadFinal">⬇️ Download Result</button>
+        <button id="downloadProgress">⬇️ Download Log</button>
+        <button id="previewBtn" disabled>👁 Preview/Edit Manual</button>
+        </div>
+      </div>
+    <div class="card">
+      <h2>Translation Log</h2>
+      <div id="logBox" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</div>
+    </div>
+    <div>
+      <div id="controlBtns" style="display:none;">
+        <button id="stopBtn">⏸ Stop Translation</button>
+        <button id="resumeBtn" disabled>🔄 Resume Translation</button>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom: 25px;">
+    <h6>Support & Resources</h6>
+      <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
+        <div style="grid-column: 1 / -1;">
+          <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">GET HELP:</p>
+            <a href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">❓</span>How to get a DeepSeek API Key?</a>
+            <a href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">📂</span>How to get <span class="font-mono text-sky-200">.rpy</span> file from game?</a>
+        </div>
+  </div>
+</div>
+  <div class="card">
+    <h6>Important</h6>
+      <p>DeepSeek requires an API key but provides higher quality translations that preserve Ren'Py formatting. Lingva is free but may require manual adjustments.</p>
+  </div>
+
+  <div class="footer-note">
+    ⚠️ By using this tool, you agree to accept all kinds of risks.
+  </div>
+
+  <div style="text-align: center; margin: 40px 0 20px;">
+  <a href="../index.html" class="back-btn">⬅️ Back to Main Menu</a>
+  </div>
+
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+</body>
+
+</html>
