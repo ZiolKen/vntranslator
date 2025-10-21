@@ -1,0 +1,357 @@
+<!DOCTYPE html>  
+<html lang="en">  
+
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>Tool Convert KS To JSON</title>  
+<link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<div class="main-title">
+<h1 id="main-title" class="h1">🛠 Tool Convert KS To JSON</h1>
+
+<div class="section">  
+  <h2>KS → JSON</h2>
+  <div class="form-group">
+  <input type="file" id="ksFile" accept=".ks" multiple/>
+  </div>
+</div>  
+  
+<div class="section">  
+  <h2>JSON → KS</h2>
+  <div class="form-group">
+  <input type="file" id="jsonFile" accept=".json"/>  
+  <input type="file" id="ksOriginFile" accept=".ks"/>  
+  <button id="mergeBtn" class="btn">Create new KS from JSON</button>
+  </div>  
+</div>  
+  
+<textarea class="log-container" id="output" placeholder="[SYSTEM_BOOT] :: Awaiting input..." readonly></textarea>  
+  
+<footer class="footer-note">⚠️ By using this tool, you agree to accept all kinds of risks.</footer>
+
+<div style="text-align: center; margin: 40px 0 20px;">
+  <a href="index.html" class="back-btn">⬅️ Back to Main Menu</a>
+</div>
+</div>
+  
+<script>
+const output = document.getElementById('output');  
+
+document.getElementById('ksFile').addEventListener('change', function(e){  
+  const files = Array.from(e.target.files);  
+  if(!files.length) return;  
+
+  output.value = "Processing" + files.length + " File(s)...\n\n";
+
+  let index = 0;
+
+  function processNextFile(){
+    if(index >= files.length){
+      output.value += "\n✅ Convert All Files Completed!";
+      return;
+    }
+
+    const file = files[index];
+    const reader = new FileReader();
+
+    reader.onload = function(ev){
+      const lines = ev.target.result.split(/\r?\n/);
+      const data = [];
+      let inIscript = false;
+
+      lines.forEach((line, idx)=>{
+        let textValue = "";
+        const t = line.trim();
+
+        if(t.startsWith("[iscript]")) { inIscript = true; return; }
+        if(t.startsWith("[endscript]")) { inIscript = false; return; }
+        if(inIscript) return;
+
+        const match = t.match(/text=(["'])(.*?)\1/);
+        if(match){
+          textValue = match[2];
+        }
+
+        else if(t !== "" && !t.startsWith("[") && !t.startsWith("*") && !t.startsWith(";") && !t.startsWith("@")){
+          textValue = line;
+        }
+
+        if(textValue){
+          data.push({
+            id:(data.length+1).toString().padStart(4,'0'),
+            original:textValue,
+            translated:"",
+            lineIndex:idx
+          });
+        }
+      });
+
+      const jsonStr = JSON.stringify({texts:data}, null, 2);
+      const blob = new Blob(["\ufeff"+jsonStr], {type:'application/json;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name.replace(/\.ks$/i,'.json');
+      document.body.appendChild(a);
+      setTimeout(()=>{ a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }, 50);
+
+      output.value += "✅ Converted: " + file.name + " → " + a.download + "\n";
+      index++;
+      processNextFile();
+    };
+
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  processNextFile();
+});
+
+// ==================== JSON → KS ====================
+document.getElementById('mergeBtn').addEventListener('click', function(){  
+  const jsonFile = document.getElementById('jsonFile').files[0];  
+  const ksFile = document.getElementById('ksOriginFile').files[0];  
+  if(!jsonFile || !ksFile){ alert("Select both original JSON and KS!"); return; }  
+  
+  const readerJSON = new FileReader();  
+  readerJSON.onload = function(e){  
+    let jsonData;  
+    try{ jsonData = JSON.parse(e.target.result); }  
+    catch(err){ alert("Invalid JSON!"); return; }  
+  
+    const readerKS = new FileReader();  
+    readerKS.onload = function(ev2){  
+      const lines = ev2.target.result.split(/\r?\n/);  
+      const finalLines = lines.map((line, idx)=>{  
+        let updatedLine = line;  
+        jsonData.texts.forEach(item=>{  
+          if(item.lineIndex===idx){  
+            if(line.includes("text=")){  
+              updatedLine = line.replace(/text=(["'])(.*?)\1/, `text="${item.translated || item.original}"`);  
+            } else if(line.trim() !== "" && !line.trim().startsWith("[") && !line.trim().startsWith("*")){  
+              updatedLine = item.translated || item.original;  
+            }  
+          }  
+        });  
+        return updatedLine;  
+      });  
+  
+      const ksContent = finalLines.join("\n");  
+      output.value = ksContent;  
+  
+      const blob = new Blob([ksContent], {type:'text/plain'});  
+      const url = URL.createObjectURL(blob);  
+      const a = document.createElement('a');  
+      a.href = url;  
+      a.download = ksFile.name.replace(/\.ks$/i,'_new.ks');  
+      a.click();  
+      URL.revokeObjectURL(url);  
+    };  
+    readerKS.readAsText(ksFile,'UTF-8');  
+  };  
+  readerJSON.readAsText(jsonFile,'UTF-8');  
+});  
+</script>
+
+<style>
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(255, 0, 255, 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+
+  h1, h2 {
+    font-family: 'Turret Road', sans-serif;
+    text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-magenta);
+    letter-spacing: 2px;
+    animation: zflicker 3s infinite alternate;
+  }
+
+    h2::before {
+            content: '>';
+            font-weight: bold;
+            animation: blink 1s step-end infinite;
+    }
+
+        @keyframes zflicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+  .back-btn {
+      display: inline-block;
+      width: auto;
+      padding: 12px 24px;
+      border: 1px solid var(--neon-cyan);
+      border-radius: 9999px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Turret Road', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      background: transparent;
+      color: var(--neon-cyan);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+  }
+
+  .back-btn:hover {
+      background-color: var(--neon-cyan);
+      color: var(--bg-primary);
+      box-shadow: 0 0 20px var(--neon-cyan);
+  }
+
+        .card:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4), inset 0 0 15px rgba(255, 0, 255, 0.2);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--neon-cyan);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+select, input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: rgba(2, 0, 26, 0.8);
+            color: var(--text-primary);
+            font-family: 'Roboto Mono', monospace;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.1);
+        }
+
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--neon-cyan);
+            outline: none;
+            box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 8px rgba(0, 255, 255, 0.3);
+        }
+        
+        input[type="file"] {
+            padding: 10px;
+        }
+        
+        input[type="file"]::file-selector-button {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+             background: var(--neon-cyan);
+             color: var(--bg-primary);
+             box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .main-title {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+
+button, .btn {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Turret Road', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+            overflow: hidden;
+            background: transparent;
+            color: var(--neon-cyan);
+        }
+        
+        button:disabled, .btn:disabled {
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            text-shadow: none;
+            box-shadow: none;
+        }
+        
+        button:hover:not(:disabled) {
+            background-color: var(--neon-cyan);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .footer-note { text-align: center; font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6; margin-top: 30px; letter-spacing: 1px; }
+
+        .log-container {
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            background-color: rgba(2, 0, 26, 0.7);
+            font-size: 0.9rem;
+        }
+        .log-container::-webkit-scrollbar { width: 8px; }
+        .log-container::-webkit-scrollbar-track { background: transparent; }
+        .log-container::-webkit-scrollbar-thumb { background-color: var(--neon-cyan); border-radius: 4px; }
+
+        .log-entry {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            animation: fadeIn 0.5s ease;
+        }
+        .log-success { color: var(--neon-green); }
+        .log-error { color: var(--neon-red); }
+        .log-warning { color: var(--neon-yellow); }
+        .log-info { color: var(--neon-cyan); }
+        .translation-log {
+            border-left: 2px solid var(--neon-magenta);
+            padding-left: 10px;
+            margin: 8px 0;
+        }
+
+</style>
+
+</body>
+
+</html>
