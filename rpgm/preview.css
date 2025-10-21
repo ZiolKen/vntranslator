@@ -28,7 +28,9 @@
             margin: 0 auto;
         }
  
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             color: var(--primary);
             margin-bottom: 15px;
         }
@@ -58,104 +60,112 @@
         }
  
         .code-alert {
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid #3A3A3A;
-    border-radius: 6px;
-    padding: 18px;
-    margin: 20px 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid #3A3A3A;
+            border-radius: 6px;
+            padding: 18px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
  
-.code-alert-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #3A3A3A;
-}
+        .code-alert-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #3A3A3A;
+        }
  
-.code-alert-icon {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-}
+        .code-alert-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
  
-.code-alert-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #E2B341;
-    margin: 0;
-}
+        .code-alert-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #E2B341;
+            margin: 0;
+        }
  
-.code-alert-subtitle {
-    font-size: 0.95rem;
-    color: #BBB;
-    margin-bottom: 18px;
-    line-height: 1.5;
-}
+        .code-alert-subtitle {
+            font-size: 0.95rem;
+            color: #BBB;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
  
-.code-alert-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-}
+        .code-alert-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
  
-.code-alert-rule {
-    display: flex;
-    gap: 12px;
-    background: rgba(40, 40, 40, 0.6);
-    padding: 14px;
-    border-radius: 4px;
-    border-left: 3px solid #3A3A3A;
-}
+        .code-alert-rule {
+            display: flex;
+            gap: 12px;
+            background: rgba(40, 40, 40, 0.6);
+            padding: 14px;
+            border-radius: 4px;
+            border-left: 3px solid #3A3A3A;
+        }
  
-.code-alert-rule:nth-child(1) { border-left-color: #5D9E5A; }
-.code-alert-rule:nth-child(2) { border-left-color: #D35D5D; }
-.code-alert-rule:nth-child(3) { border-left-color: #E2B341; }
+        .code-alert-rule:nth-child(1) {
+            border-left-color: #5D9E5A;
+        }
  
-.rule-icon {
-    font-size: 1.2rem;
-    font-weight: bold;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
+        .code-alert-rule:nth-child(2) {
+            border-left-color: #D35D5D;
+        }
  
-.code-alert-rule strong {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 0.95rem;
-}
+        .code-alert-rule:nth-child(3) {
+            border-left-color: #E2B341;
+        }
  
-.code-alert-rule p {
-    font-size: 0.85rem;
-    color: #999;
-    margin: 0;
-    line-height: 1.5;
-}
+        .rule-icon {
+            font-size: 1.2rem;
+            font-weight: bold;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
  
-.code-alert-footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: #E2B341;
-    padding-top: 12px;
-    border-top: 1px solid #3A3A3A;
-}
+        .code-alert-rule strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
  
-code {
-    background: rgba(0,0,0,0.3);
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: monospace;
-    color: #E2B341;
-}
+        .code-alert-rule p {
+            font-size: 0.85rem;
+            color: #999;
+            margin: 0;
+            line-height: 1.5;
+        }
+ 
+        .code-alert-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #E2B341;
+            padding-top: 12px;
+            border-top: 1px solid #3A3A3A;
+        }
+ 
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #E2B341;
+        }
  
         .text-item {
             margin-bottom: 20px;
@@ -248,33 +258,33 @@ code {
         }
  
         .toast {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 6px;
-        color: white;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 1000;
-        transform: translateY(100px);
-        opacity: 0;
-        transition: all 0.3s ease;
-        max-width: 300px;
-    }
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 300px;
+        }
  
-    .toast.show {
-        transform: translateY(0);
-        opacity: 1;
-    }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
  
-    .toast.success {
-        background-color: var(--success);
-    }
+        .toast.success {
+            background-color: var(--success);
+        }
  
-    .toast.error {
-        background-color: var(--error);
-    }
+        .toast.error {
+            background-color: var(--error);
+        }
  
         .btn-primary {
             background-color: var(--primary);
@@ -341,7 +351,8 @@ code {
             flex-wrap: wrap;
         }
  
-        select, input {
+        select,
+        input {
             padding: 8px;
             border-radius: 4px;
             border: 1px solid var(--border);
