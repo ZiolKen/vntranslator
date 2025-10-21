@@ -14,7 +14,7 @@
  
 <body>
   <!-- Modal for Lingva Warning -->
-  <div id="libreWarningModal" class="modal">
+  <div id="libreWarningModal" class="modal hidden">
     <div class="modal-content">
       <span class="close-modal">&times;</span>
       <h3>Important Notice About Lingva Translate</h3>
@@ -77,12 +77,12 @@
         <h5>Translation Control</h5>
         <div class="button-group">
         <button id="translateBtn">
-          <span id="translateLabel">▶️ Start Translating</span>
-          <span id="spinner" class="spinner hidden"></span>
+          <span id="translateLabel"><span>▶️</span> Start Translating</span>
+          <span id="spinner" class="hidden"></span>
         </button>
-        <button id="downloadFinal">⬇️ Download Result</button>
-        <button id="downloadProgress">⬇️ Download Log</button>
-        <button id="previewBtn" disabled>👁 Preview/Edit Manual</button>
+        <button id="downloadFinal"><span>⬇️</span> Download Result</button>
+        <button id="downloadProgress"><span>⬇️</span> Download Log</button>
+        <button id="previewBtn" disabled><span>👁</span> Preview/Edit Manual</button>
         </div>
       </div>
     <div class="card">
@@ -91,8 +91,8 @@
     </div>
     <div>
       <div id="controlBtns" style="display:none;">
-        <button id="stopBtn">⏸ Stop Translation</button>
-        <button id="resumeBtn" disabled>🔄 Resume Translation</button>
+        <button id="stopBtn"><span>⏸</span> Stop Translation</button>
+        <button id="resumeBtn" disabled><span>🔄</span> Resume Translation</button>
       </div>
     </div>
   </div>
