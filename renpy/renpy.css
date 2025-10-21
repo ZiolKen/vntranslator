@@ -81,15 +81,6 @@
             gap: 25px;
         }
 
-    .main-title-animate {
-      opacity: 0;
-      transform: translateY(1.7rem);
-      transition: all 1.1s cubic-bezier(.45,1.13,.67,1.02);
-    }
-    .main-title-animate.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
     .modal {
       display: none;
       position: fixed;
