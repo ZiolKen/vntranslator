@@ -100,7 +100,6 @@
         }
  
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -118,7 +117,6 @@
         }
  
         .modal:not(.hidden) {
-            display: flex;
             opacity: 1;
             visibility: visible;
         }
@@ -183,7 +181,6 @@
  
         h1,
         h2,
-        h3,
         h4,
         h5,
         h6 {
@@ -194,7 +191,6 @@
         }
  
         h2::before,
-        h3::before,
         h4::before,
         h5::before,
         h6::before {
