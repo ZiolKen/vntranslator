@@ -156,6 +156,45 @@ document.getElementById('mergeBtn').addEventListener('click', function(){
 </script>
 
 <style>
+        :root {
+          --neon-cyan: #00ffff;
+          --neon-magenta: #ff00ff;
+          --neon-green: #39ff14;
+          --neon-red: #ff1b1b;
+          --neon-yellow: #f1f759;
+          --bg-primary: #02001a;
+          --bg-secondary: rgba(14, 2, 54, 0.4);
+          --text-primary: #e0e0e0;
+          --text-secondary: #a3a1b9;
+          --border-color: rgba(0, 255, 255, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-cyan) var(--bg-primary);
+        }
+
+        body {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary);
+            font-family: 'Roboto Mono', monospace;
+            line-height: 1.7;
+            padding: 15px;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at top, rgba(0, 255, 255, 0.15), transparent 60%),
+                radial-gradient(ellipse at bottom, rgba(255, 0, 255, 0.15), transparent 60%) !important;
+            background-attachment: fixed;
+        }
+
         .section {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -349,7 +388,6 @@ button, .btn {
             padding-left: 10px;
             margin: 8px 0;
         }
-
 </style>
 
 </body>
