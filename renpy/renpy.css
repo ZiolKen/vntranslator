@@ -81,26 +81,56 @@
             gap: 25px;
         }
 
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 50;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.7);
-    }
-    .modal-content {
-      background-color: #1e293b;
-      margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #334155;
-      width: 80%;
-      max-width: 500px;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(2, 0, 26, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal:not(.hidden) {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background-color: var(--bg-primary);
+            padding: 30px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--neon-red);
+            box-shadow: 0 0 25px rgba(255, 27, 27, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+ 
+        .modal:not(.hidden) .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+ 
+        .modal ul {
+            margin: 15px 0 15px 20px;
+        }
+
     .close-modal {
       color: #94a3b8;
       float: right;
