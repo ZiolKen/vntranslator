@@ -130,17 +130,6 @@
         .modal ul {
             margin: 15px 0 15px 20px;
         }
-
-    .close-modal {
-      color: #94a3b8;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .close-modal:hover {
-      color: #f8fafc;
-    }
  
   .file-error {
     color: #ef4444;
