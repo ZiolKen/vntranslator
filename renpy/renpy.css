@@ -112,13 +112,13 @@
             backdrop-filter: blur(10px);
             padding: 15px;
             opacity: 0;
-            visibility: hidden;
+            visibility: hidden !important;
             transition: all 0.3s;
         }
  
         .modal:not(.hidden) {
             opacity: 1;
-            visibility: visible;
+            visibility: visible !important;
         }
  
         .modal-content {
@@ -492,4 +492,19 @@
             font-size: 0.8em;
             letter-spacing: 1px;
             color: var(--neon-magenta);
+        }
+        
+        .usage-tips {
+            border-left: 3px solid var(--neon-cyan);
+            padding: 20px;
+        }
+ 
+        .notice-list {
+            margin: 12px 0 12px 20px;
+            list-style-type: '» ';
+        }
+ 
+        .notice-list li {
+            padding-left: 10px;
+            margin-bottom: 8px;
         }
