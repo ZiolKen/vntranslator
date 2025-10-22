@@ -18,11 +18,13 @@
     <div class="modal-content">
       <span class="close-modal">&times;</span>
       <h3>Important Notice About Lingva Translate</h3>
-      <p>
-        Lingva is a free service that may not perfectly preserve Ren'Py code structure.<br>
-        We recommend using it only for testing purposes or when you're willing to manually review the results.<br>
-        For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.
-      </p>
+      <div class="notice-content">
+        <ul class="notice-list">
+          <li>Lingva is a free service that may not perfectly preserve Ren'Py code structure.</li>
+          <li>We recommend using it only for testing purposes or when you're willing to manually review the results.</li>
+          <li>For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.</li>
+        </ul>
+      </div>
       <div class="modal-footer">
         <button id="confirmLibre" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">
           I Understand
@@ -100,13 +102,18 @@
           <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">GET HELP:</p>
             <a href="https://grviewer.com/" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">🔁</span>Extract RPA & Decompile RPYC</a>
             <a href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">❓</span>How to get a DeepSeek API Key?</a>
-            <a href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">📂</span>How to get <span class="font-mono text-sky-200">.rpy</span> file from game?</a>
+            <a href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">📂</span>How to get RPY file from game?</a>
         </div>
   </div>
 </div>
-  <div class="card">
+  <div class="card usage-tips">
     <h6>Important</h6>
-      <p>DeepSeek requires an API key but provides higher quality translations that preserve Ren'Py formatting. Lingva is free but may require manual adjustments.</p>
+    <div class="notice-content">
+      <ul class="notice-list">
+        <li>DeepSeek requires an API key but provides higher quality translations that preserve Ren'Py formatting.</li>
+        <li>Lingva is free but may require manual adjustments.</li>
+      </ul>
+    </div>
   </div>
 
   <div class="footer-note">
