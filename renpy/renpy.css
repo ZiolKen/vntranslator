@@ -511,3 +511,9 @@
         .hidden {
             display: none !important;
         }
+        
+        .modal h3 {
+            font-family: 'Turret Road';
+            color: var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red);
+        }
