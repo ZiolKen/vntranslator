@@ -501,13 +501,13 @@
         }
         
         #translateLabel {
-            border-color: var(--neon-green) !important;
-            color: var(--neon-green);
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
         }
  
         #translateLabel:hover:not(:disabled) {
-            background-color: var(--neon-green);
-            box-shadow: 0 0 20px var(--neon-green);
+            background-color: var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-cyan);
             color: var(--bg-primary);
         }
  
