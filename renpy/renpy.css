@@ -501,13 +501,14 @@
         }
         
         #translateLabel {
-            border-color: var(--neon-green);
+            border-color: var(--neon-green) !important;
             color: var(--neon-green);
         }
  
         #translateLabel:hover:not(:disabled) {
             background-color: var(--neon-green);
             box-shadow: 0 0 20px var(--neon-green);
+            color: var(--bg-primary);
         }
  
         #stopBtn {
@@ -518,6 +519,7 @@
         #stopBtn:hover:not(:disabled) {
             background-color: var(--neon-yellow);
             box-shadow: 0 0 20px var(--neon-yellow);
+            color: var(--bg-primary);
         }
         
         #downloadFinal,
@@ -541,11 +543,12 @@
         #resumeBtn:hover:not(:disabled) {
             background-color: var(--neon-yellow);
             box-shadow: 0 0 20px var(--neon-yellow);
+            color: var(--bg-primary);
         }
         
         #downloadFinal:hover,
         #downloadProgress:hover {
             background-color: var(--neon-green);
             box-shadow: 0 0 20px var(--neon-green);
-            color: var(--neon-green);
+            color: var(--bg-primary);
         }
