@@ -83,7 +83,7 @@
             position: sticky;
             bottom: 0;
             z-index: 20;
-            background: rgba(31, 41, 55, 0.92);
+            padding: 0.4rem;
             padding-top: 0.4rem;
             padding-bottom: 0.2rem;
             margin-top: -0.7rem;
@@ -498,4 +498,50 @@
  
         #modelSelect:focus {
             box-shadow: 0 0 10px var(--neon-magenta);
+        }
+        
+        #translateLabel {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+ 
+        #translateLabel:hover:not(:disabled) {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+ 
+        #stopBtn {
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+        }
+ 
+        #stopBtn:hover:not(:disabled) {
+            background-color: var(--neon-yellow);
+            box-shadow: 0 0 20px var(--neon-yellow);
+        }
+        
+        #downloadFinal,
+        #downloadProgress,
+        #previewBtn {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+            color: var(--bg-primary);
+        }
+        
+        #downloadFinal:hover:not(:disabled),
+        #downloadProgress:hover:not(:disabled),
+        #previewBtn:hover:not(:disabled) {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+            color: var(--bg-primary);
+        }
+        
+        #resumeBtn {
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+        }
+ 
+        #resumeBtn:hover:not(:disabled) {
+            background-color: var(--neon-yellow);
+            box-shadow: 0 0 20px var(--neon-yellow);
         }
