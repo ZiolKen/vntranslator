@@ -523,7 +523,7 @@
         #downloadFinal,
         #downloadProgress,
         #previewBtn {
-            background-color: var(--neon-green);
+            border-color: var(--neon-green);
             color: var(--neon-green);
         }
         
