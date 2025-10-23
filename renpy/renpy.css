@@ -446,20 +446,6 @@
             color: var(--text-secondary);
         }
  
-        #downloadFinal,
-        #previewBtn {
-            margin-bottom: 10px;
-            border-color: var(--neon-green);
-            color: var(--neon-green);
-        }
- 
-        #downloadFinal:hover:not(:disabled),
-        #previewBtn:hover:not(:disabled) {
-            background-color: var(--neon-green);
-            box-shadow: 0 0 20px var(--neon-green);
-            color: var(--bg-primary);
-        }
- 
         .translation-original {
             color: var(--text-secondary);
             word-break: break-word;
