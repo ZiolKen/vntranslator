@@ -100,6 +100,7 @@
         }
  
         .modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -111,14 +112,7 @@
             z-index: 1000;
             backdrop-filter: blur(10px);
             padding: 15px;
-            opacity: 0;
-            visibility: hidden !important;
             transition: all 0.3s;
-        }
- 
-        .modal:not(.hidden) {
-            opacity: 1;
-            visibility: visible !important;
         }
  
         .modal-content {
@@ -133,19 +127,11 @@
             transition: transform 0.3s;
         }
  
-        .modal:not(.hidden) .modal-content {
-            transform: scale(1);
-        }
- 
         .modal-footer {
             margin-top: 25px;
             display: flex;
             gap: 15px;
             justify-content: flex-end;
-        }
- 
-        .modal ul {
-            margin: 15px 0 15px 20px;
         }
  
         .file-error {
@@ -516,4 +502,14 @@
             font-family: 'Turret Road';
             color: var(--neon-red);
             text-shadow: 0 0 10px var(--neon-red);
+        }
+        
+        #modelSelect {
+            border: 1px solid var(--neon-magenta);
+            color: var(--neon-magenta);
+            font-weight: bold;
+        }
+ 
+        #modelSelect:focus {
+            box-shadow: 0 0 10px var(--neon-magenta);
         }
