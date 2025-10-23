@@ -524,12 +524,9 @@
         #downloadProgress,
         #previewBtn {
             background-color: var(--neon-green);
-            box-shadow: 0 0 20px var(--neon-green);
-            color: var(--bg-primary);
+            color: var(--neon-green);
         }
         
-        #downloadFinal:hover:not(:disabled),
-        #downloadProgress:hover:not(:disabled),
         #previewBtn:hover:not(:disabled) {
             background-color: var(--neon-green);
             box-shadow: 0 0 20px var(--neon-green);
@@ -544,4 +541,11 @@
         #resumeBtn:hover:not(:disabled) {
             background-color: var(--neon-yellow);
             box-shadow: 0 0 20px var(--neon-yellow);
+        }
+        
+        #downloadFinal:hover,
+        #downloadProgress:hover {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+            color: var(--neon-green);
         }
