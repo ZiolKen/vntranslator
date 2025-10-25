@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="ie=edge" http-equiv="X-UA-Compatible">
+  <meta name="theme-color" content="#000000">
+  <title>Tool Extract & Merge Ren'Py Dialog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-cyan: #00ffff;
+      --neon-magenta: #ff00ff;
+      --neon-green: #39ff14;
+      --neon-red: #ff1b1b;
+      --neon-yellow: #f1f759;
+      --bg-primary: #02001a;
+      --bg-secondary: rgba(14, 2, 54, 0.4);
+      --text-primary: #e0e0e0;
+      --text-secondary: #a3a1b9;
+      --border-color: rgba(0, 255, 255, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Roboto Mono', monospace;
+      padding: 15px;
+      background-image:
+        radial-gradient(ellipse at top, rgba(0, 255, 255, 0.15), transparent 60%),
+        radial-gradient(ellipse at bottom, rgba(255, 0, 255, 0.15), transparent 60%);
+      background-attachment: fixed;
+    }
+
+    h1,
+    h2 {
+      font-family: 'Turret Road', sans-serif;
+      text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan);
+    }
+
+    .section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 25px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    }
+
+    .log-container {
+      width: 100%;
+      height: 250px;
+      background: rgba(2, 0, 26, 0.7);
+      border: 1px solid var(--border-color);
+      color: var(--neon-cyan);
+      padding: 10px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 12px;
+      border: 1px solid var(--neon-cyan);
+      border-radius: 4px;
+      font-family: 'Turret Road', sans-serif;
+      background: transparent;
+      color: var(--neon-cyan);
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: var(--neon-cyan);
+      color: var(--bg-primary);
+      box-shadow: 0 0 15px var(--neon-cyan);
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Tool Ren'Py RPY Dialog</h1>
+
+  <div class="section">
+    <h2>Extract Dialogs</h2>
+    <input type="file" id="extractFile" accept=".rpy" multiple>
+    <button id="extractBtn" style="margin-top:10px;">Extract Dialogs</button>
+  </div>
+
+  <div class="section">
+    <h2>Merge RPY</h2>
+    <label>📘 Select Translated RPY</label>
+    <input type="file" id="translatedFile" accept=".rpy">
+
+    <label style="margin-top:10px;display:block;">📗 Select Original RPY</label>
+    <input type="file" id="originalFile" accept=".rpy">
+
+    <button id="mergeBtn" style="margin-top:15px;">Combine translated + original</button>
+  </div>
+
+  <div class="section">
+    <h2>Conversion Log</h2>
+    <div id="log" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</div>
+  </div>
+
+  <script>
+    const logBox = document.getElementById("log");
+    function log(msg, type = "info") {
+      let color = {
+        success: "var(--neon-green)",
+        error: "var(--neon-red)",
+        warn: "var(--neon-yellow)",
+        info: "var(--neon-cyan)"
+      }[type] || "var(--neon-cyan)";
+      logBox.innerHTML += `\n<span style="color:${color}">${msg}</span>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function isDialogLine(line) {
+      const trimmed = line.trim();
+      if (!trimmed.includes('"')) return false;
+      if (/^#/.test(trimmed)) return false;
+      if (/^(define|label|show|hide|scene|jump|menu|return|if|elif|else|\$)/.test(trimmed)) return false;
+      if (/[#=']/.test(trimmed)) return false;
+      return true;
+    }
+
+    // === Extract ===
+    document.getElementById("extractBtn").addEventListener("click", async () => {
+      const files = document.getElementById("extractFile").files;
+      if (!files.length) return alert("Chọn ít nhất 1 file .rpy để tách thoại!");
+      log(`🔄 Processing ${files.length} file(s)...`, "info");
+
+      for (const file of files) {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/);
+        const dialogs = [];
+        lines.forEach((line, index) => {
+          if (isDialogLine(line)) {
+            const match = line.match(/"([^"]+)"/);
+            if (match) {
+              dialogs.push({ dialog: match[1], line: index + 1 });
+              log(`✅ Extracted: ${match[1]}`, "success");
+            }
+          }
+        });
+
+        const output = `texts = [\n${dialogs.map(d => `    { dialog: "${d.dialog}", line: ${d.line} }`).join(",\n")}\n]`;
+        const blob = new Blob([output], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${file.name.replace(".rpy", "")}_extracted.rpy`;
+        a.click();
+      }
+
+      log("✅ Extracted All Files", "success");
+    });
+
+    // === Merge ===
+    document.getElementById("mergeBtn").addEventListener("click", async () => {
+      const translated = document.getElementById("translatedFile").files[0];
+      const original = document.getElementById("originalFile").files[0];
+      if (!translated || !original) return alert("Chọn đầy đủ 2 file: translated và original!");
+
+      const transText = await translated.text();
+      const origText = await original.text();
+
+      const dialogs = [];
+      const transMatch = [...transText.matchAll(/{ dialog: "([^"]+)",? line: (\d+) }/g)];
+      for (const m of transMatch) {
+        dialogs.push({ dialog: m[1], line: parseInt(m[2]) });
+      }
+
+      const origLines = origText.split(/\r?\n/);
+      dialogs.forEach(d => {
+        const i = d.line - 1;
+        if (origLines[i] && origLines[i].includes('"')) {
+          origLines[i] = origLines[i].replace(/"([^"]+)"/, `"${d.dialog}"`);
+        }
+      });
+
+      const merged = origLines.join("\n");
+      const blob = new Blob([merged], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
+      a.click();
+
+      log("✅ Merged successfully!", "success");
+    });
+  </script>
+
+</body>
+
+</html>
