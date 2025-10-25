@@ -426,51 +426,53 @@
             }
  
             log(`✅ Extracted All Files: ${totalDialogs} Dialog(s)`, "success");
-        });
- 
-        // === Merge ===
-        document.getElementById("mergeBtn").addEventListener("click", async () => {
-            const translated = document.getElementById("translatedFile").files[0];
-            const original = document.getElementById("originalFile").files[0];
-            if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
+            
+            // === Merge ===
+            document.getElementById("mergeBtn").addEventListener("click", async () => {
+                const translated = document.getElementById("translatedFile").files[0];
+                const original = document.getElementById("originalFile").files[0];
+                if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
 
-            log(`🔄 Merging files...`, "info");
+                log(`🔄 Merging files...`, "info");
 
-            const transText = await translated.text();
-            const origText = await original.text();
+                const transText = await translated.text();
+                const origText = await original.text();
 
-            const dialogs = [];
-            const transMatch = [...transText.matchAll(/{\s*dialog:\s*"([\s\S]*?)",?\s*line:\s*(\d+)\s*}/g)];
-            for (const m of transMatch) {
-                dialogs.push({
-                    dialog: m[1],
-                    line: parseInt(m[2])
-                });
-            }
-
-            const origLines = origText.split(/\r?\n/);
-
-            dialogs.forEach(d => {
-                const i = d.line - 1;
-                if (i >= 0 && i < origLines.length) {
-                    const match = origLines[i].match(/"(?:[^"\\]|\\.)*"/s);
-                    if (match) {
-                        origLines[i] = origLines[i].replace(match[0], `"${d.dialog}"`);
-                    }
-                } else {
-                    log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
+                const dialogs = [];
+                const transMatch = [...transText.matchAll(/{\s*dialog:\s*["']([\s\S]*?)["']\s*,?\s*line:\s*(\d+)\s*}/g)];
+                for (const m of transMatch) {
+                    dialogs.push({
+                        dialog: m[1],
+                        line: parseInt(m[2])
+                    });
                 }
+
+                function escapeQuotes(str) {
+                    return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+                }
+
+                const origLines = origText.split(/\r?\n/);
+
+                dialogs.forEach(d => {
+                    const i = d.line - 1;
+                    if (i >= 0 && i < origLines.length) {
+                        const replaced = origLines[i].replace(/(["'])(?:(?=(\\?))\2.)*?\1/, `"${escapeQuotes(d.dialog)}"`);
+                        log(`✅ Line ${d.line} merged: ${d.dialog}`, "success");
+                        origLines[i] = replaced;
+                    } else {
+                        log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
+                    }
+                });
+
+                const merged = origLines.join("\n");
+                const blob = new Blob([merged], { type: "text/plain;charset=utf-8" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
+                a.click();
+
+                log(`✅ Merge completed successfully!`, "success");
             });
-
-            const merged = origLines.join("\n");
-            const blob = new Blob([merged], { type: "text/plain;charset=utf-8" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
-            a.click();
-
-            log(`✅ Merge completed successfully!`, "success");
-        });
     </script>
  
 </body>
