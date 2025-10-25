@@ -316,7 +316,7 @@
  
     <div class="section" style="margin-bottom: 25px;">
         <h2>Extract Dialogs</h2>
-        <div class="form-group">
+        <div>
             <input type="file" id="extractFile" accept=".rpy" multiple>
             <button id="extractBtn" style="margin-top:10px;">Extract Dialogs</button>
         </div>
@@ -324,11 +324,11 @@
  
     <div class="section" style="margin-bottom: 25px;">
         <h2>Merge RPY</h2>
-        <div class="form-group">
-            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📘 Select Original RPY</label>
+        <div>
+            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📘 Select Translated RPY</label>
             <input type="file" id="translatedFile" accept=".rpy">
  
-            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📗 Select Translated RPY</label>
+            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📗 Select Original RPY</label>
             <input type="file" id="originalFile" accept=".rpy">
  
             <button id="mergeBtn" style="margin-top: 15px;">Combine translated + original</button>
@@ -337,7 +337,7 @@
  
     <div class="section" style="margin-bottom: 25px;">
         <h2>Conversion Log</h2>
-        <div id="log" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</div>
+        <div id="log" class="log-container">[SYSTEM_BOOT] :: Awaiting input...<br></div>
     </div>
     
     <div class="section" style="margin-bottom: 25px;">
@@ -432,24 +432,20 @@
         document.getElementById("mergeBtn").addEventListener("click", async () => {
             const translated = document.getElementById("translatedFile").files[0];
             const original = document.getElementById("originalFile").files[0];
-            if (!translated || !original) return alert("⚠️ Select both 2 files: translated and original!");
+            if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
+
+            log(`🔄 Merging files...`, "info");
 
             const transText = await translated.text();
             const origText = await original.text();
 
             const dialogs = [];
-            const dialogRegex = /\{\s*dialog:\s*"([^"]*)",\s*line:\s*(\d+)\s*\}/g;
-            let match;
-            while ((match = dialogRegex.exec(transText)) !== null) {
+            const transMatch = [...transText.matchAll(/{\s*dialog:\s*"([\s\S]*?)",?\s*line:\s*(\d+)\s*}/g)];
+            for (const m of transMatch) {
                 dialogs.push({
-                    dialog: match[1],
-                    line: parseInt(match[2])
+                    dialog: m[1],
+                    line: parseInt(m[2])
                 });
-            }
-
-            if (dialogs.length === 0) {
-                log("⚠️ Dialog not found in file!", "warn");
-                return;
             }
 
             const origLines = origText.split(/\r?\n/);
@@ -457,9 +453,10 @@
             dialogs.forEach(d => {
                 const i = d.line - 1;
                 if (origLines[i]) {
-                    origLines[i] = origLines[i].replace(/(["'])(?:(?=(\\?))\2.)*?\1/, `"${d.dialog}"`);
+                    origLines[i] = origLines[i].replace(/".*"/s, `"${d.dialog}"`);
+                    log(`✅ Merged line ${d.line}`, "success");
                 } else {
-                    log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
+                    log(`⚠️ Line ${d.line} not found in original file!`, "warn");
                 }
             });
 
@@ -470,7 +467,7 @@
             a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
             a.click();
 
-            log(`✅ Merged successfully!`, "success");
+            log(`✅ Merge completed successfully!`, "success");
         });
     </script>
  
