@@ -140,6 +140,8 @@
       if (!files.length) return alert("⚠️ Select atleast 1 .rpy file to extract dialog!");
       log(`🔄 Processing ${files.length} file(s)...`, "info");
 
+      let totalDialogs = 0;
+
       for (const file of files) {
         const text = await file.text();
         const lines = text.split(/\r?\n/);
@@ -153,6 +155,8 @@
             }
           }
         });
+        
+        totalDialogs += dialogs.length;
 
         const output = `texts = [\n${dialogs.map(d => `    { dialog: "${d.dialog}", line: ${d.line} }`).join(",\n")}\n]`;
         const blob = new Blob([output], { type: "text/plain;charset=utf-8" });
@@ -162,7 +166,7 @@
         a.click();
       }
 
-      log("✅ Extracted All Files", "success");
+      log(`✅ Extracted All Files: ${totalDialogs} Dialog(s)`, "success");
     });
 
     // === Merge ===
