@@ -447,9 +447,9 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
 
     const origLines = origText.split(/\r?\n/);
 
-    function cleanDialog(str) {
+    function fixDialog(str) {
+        str = str.replace(/\\\\n/g, "\\n"); 
         str = str.replace(/\{w=([0-9]+),([0-9]+)\}/g, "{w=$1.$2}");
-        str = str.replace(/\\(?![ntr"'\\])/g, ""); 
         return str;
     }
 
@@ -458,7 +458,7 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
         if (i >= 0 && i < origLines.length) {
             const match = origLines[i].match(/"(?:[^"\\]|\\.)*"/s);
             if (match) {
-                origLines[i] = origLines[i].replace(match[0], `"${cleanDialog(d.dialog)}"`);
+                origLines[i] = origLines[i].replace(match[0], `"${fixDialog(d.dialog)}"`);
             }
         } else {
             log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
