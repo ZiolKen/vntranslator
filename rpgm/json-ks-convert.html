@@ -322,20 +322,21 @@
   
 <div class="section" style="margin-bottom: 25px;">  
   <h2>JSON → KS</h2>  
+  <div class="form-group">
+    <label for="jsonFile" style="display:block;margin-bottom:6px;color:#94a3b8;">  
+      📘 Select translated <b>.json</b> file:  
+    </label>  
+    <input type="file" id="jsonFile" accept=".json">  
   
-  <label for="jsonFile" style="display:block;margin-bottom:6px;color:#94a3b8;">  
-    📘 Select translated <b>.json</b> file:  
-  </label>  
-  <input type="file" id="jsonFile" accept=".json">  
+    <br><br>  
   
-  <br><br>  
+    <label for="ksOriginFile" style="display:block;margin-bottom:6px;color:#94a3b8;">  
+      📗 Select original <b>.ks</b> file:  
+    </label>  
+    <input type="file" id="ksOriginFile" accept=".ks">  
   
-  <label for="ksOriginFile" style="display:block;margin-bottom:6px;color:#94a3b8;">  
-    📗 Select original <b>.ks</b> file:  
-  </label>  
-  <input type="file" id="ksOriginFile" accept=".ks">  
-  
-  <button id="mergeBtn" style="margin-top: 15px;">Combine translated JSON and original KS</button>  
+    <button id="mergeBtn" style="margin-top: 15px;">Combine translated JSON and original KS</button>
+  </div>
 </div>  
 
 <div class="section" style="margin-bottom: 25px;">
@@ -351,7 +352,7 @@
                 <li>🧩 This Tool Is Still In <b>Experiment (Beta)</b>.</li>
                 <li>⚙️ Some complex KS files may require re-checking of the text extraction.</li>
                 <li>🛠 The KS → JSON and JSON → KS functionality has been working fine with standard projects.</li>
-                <li>🔁 This tool only support conversion and when translate JSON file you need to transfer translated JSON file and original KS file to combine...</li>
+                <li>🔁 This tool only support convert JSON and when merge file you need to transfer translated JSON file and original KS file to combine...</li>
                 <li>🔄 To translate the JSON file transferred from KS click on <a href="https://vntranslator.vercel.app/rpgm/index.html" target="_blank" style="color:#00bfff;text-decoration:none;font-weight:bold;">RPG Maker JSON Translator</a></li>
                 <li>⚠️ This tool only supports extracting text from KS files. Please use at your own risk.</li>
             </ul>
