@@ -432,40 +432,42 @@
 document.getElementById("mergeBtn").addEventListener("click", async () => {
     const translated = document.getElementById("translatedFile").files[0];
     const original = document.getElementById("originalFile").files[0];
-
     if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
-    
-    log("🔄 Merging files...", "info");
+
+    log(`🔄 Merging files...`, "info");
 
     const transText = await translated.text();
     const origText = await original.text();
 
-    // Parse translated JSON-like content
+    // Parse translated dialogs
     const dialogs = [];
-    const transMatch = [...transText.matchAll(/{\s*dialog:\s*"([\s\S]*?)",?\s*line:\s*(\d+)\s*}/g)];
+    const transMatch = [...transText.matchAll(/{\s*dialog:\s*["']([\s\S]*?)["']\s*,?\s*line:\s*(\d+)\s*}/g)];
     for (const m of transMatch) {
-        dialogs.push({ dialog: m[1], line: parseInt(m[2]) });
+        dialogs.push({
+            dialog: m[1],
+            line: parseInt(m[2])
+        });
+    }
+
+    // Escape quotes properly
+    function escapeQuotes(str) {
+        return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     }
 
     const origLines = origText.split(/\r?\n/);
 
-    // Regex match dialog in quotes (handles \n and escaped quotes)
-    const dialogPattern = /"(?:\\.|[^"\\])*"/s;
-
     dialogs.forEach(d => {
         const i = d.line - 1;
         if (i >= 0 && i < origLines.length) {
-            // Replace dialog while keeping tags intact
-            const match = origLines[i].match(dialogPattern);
-            if (match) {
-                let newDialog = d.dialog.replace(/\\n/g, "\n"); // convert \\n -> actual newline
-                origLines[i] = origLines[i].replace(match[0], `"${newDialog}"`);
-            }
+            // Replace dialog inside "..." or '...' without breaking tags
+            origLines[i] = origLines[i].replace(/(["'])([\s\S]*?)\1/, `"${escapeQuotes(d.dialog)}"`);
+            log(`✅ Line ${d.line} merged: ${d.dialog}`, "success");
         } else {
             log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
         }
     });
 
+    // Join lines without adding extra backslashes
     const merged = origLines.join("\n");
     const blob = new Blob([merged], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
@@ -473,7 +475,7 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
     a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
     a.click();
 
-    log("✅ Merge completed successfully!", "success");
+    log(`✅ Merge completed successfully!`, "success");
 });
     </script>
  
