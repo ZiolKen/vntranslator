@@ -452,11 +452,13 @@
 
             dialogs.forEach(d => {
                 const i = d.line - 1;
-                if (origLines[i]) {
-                    origLines[i] = origLines[i].replace(/".*"/s, `"${d.dialog}"`);
-                    log(`✅ Merged line ${d.line}`, "success");
+                if (i >= 0 && i < origLines.length) {
+                    const match = origLines[i].match(/"(?:[^"\\]|\\.)*"/s);
+                    if (match) {
+                        origLines[i] = origLines[i].replace(match[0], `"${d.dialog}"`);
+                    }
                 } else {
-                    log(`⚠️ Line ${d.line} not found in original file!`, "warn");
+                    log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
                 }
             });
 
