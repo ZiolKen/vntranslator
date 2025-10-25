@@ -373,7 +373,7 @@
                 warn: "var(--neon-yellow)",
                 info: "var(--neon-cyan)"
             } [type] || "var(--neon-cyan)";
-            logBox.innerHTML += `\n<span style="color:${color}">${msg}</span>`;
+            logBox.innerHTML += `<span style="color:${color}">${msg}</span><br>`;
             logBox.scrollTop = logBox.scrollHeight;
         }
  
@@ -392,7 +392,7 @@
         document.getElementById("extractBtn").addEventListener("click", async () => {
             const files = document.getElementById("extractFile").files;
             if (!files.length) return alert("⚠️ Select atleast 1 .rpy file to extract dialog!");
-            log(`🔄 Processing ${files.length} file(s)... \n`, "info");
+            log(`🔄 Processing ${files.length} file(s)...`, "info");
  
             let totalDialogs = 0;
  
@@ -408,7 +408,7 @@
                                 dialog: match[1],
                                 line: index + 1
                             });
-                            log(`✅ Extracted: ${match[1]} \n`, "success");
+                            log(`✅ Extracted: ${match[1]}`, "success");
                         }
                     }
                 });
@@ -425,45 +425,52 @@
                 a.click();
             }
  
-            log(`✅ Extracted All Files: ${totalDialogs} Dialog(s) \n`, "success");
+            log(`✅ Extracted All Files: ${totalDialogs} Dialog(s)`, "success");
         });
  
         // === Merge ===
         document.getElementById("mergeBtn").addEventListener("click", async () => {
             const translated = document.getElementById("translatedFile").files[0];
             const original = document.getElementById("originalFile").files[0];
-            if (!translated || !original) return alert("⚠️ Select both 2 file: translated and original!");
- 
+            if (!translated || !original) return alert("⚠️ Select both 2 files: translated and original!");
+
             const transText = await translated.text();
             const origText = await original.text();
- 
+
             const dialogs = [];
-            const transMatch = [...transText.matchAll(/{ dialog: "([^"]+)",? line: (\d+) }/g)];
-            for (const m of transMatch) {
+            const dialogRegex = /\{\s*dialog:\s*"([^"]*)",\s*line:\s*(\d+)\s*\}/g;
+            let match;
+            while ((match = dialogRegex.exec(transText)) !== null) {
                 dialogs.push({
-                    dialog: m[1],
-                    line: parseInt(m[2])
+                    dialog: match[1],
+                    line: parseInt(match[2])
                 });
             }
- 
+
+            if (dialogs.length === 0) {
+                log("⚠️ Dialog not found in file!", "warn");
+                return;
+            }
+
             const origLines = origText.split(/\r?\n/);
+
             dialogs.forEach(d => {
                 const i = d.line - 1;
-                if (origLines[i] && origLines[i].includes('"')) {
-                    origLines[i] = origLines[i].replace(/"([^"]+)"/, `"${d.dialog}"`);
+                if (origLines[i]) {
+                    origLines[i] = origLines[i].replace(/(["'])(?:(?=(\\?))\2.)*?\1/, `"${d.dialog}"`);
+                } else {
+                    log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
                 }
             });
- 
+
             const merged = origLines.join("\n");
-            const blob = new Blob([merged], {
-                type: "text/plain;charset=utf-8"
-            });
+            const blob = new Blob([merged], { type: "text/plain;charset=utf-8" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
             a.click();
- 
-            log(`✅ Merged successfully! \n`, "success");
+
+            log(`✅ Merged successfully!`, "success");
         });
     </script>
  
