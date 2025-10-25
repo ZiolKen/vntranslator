@@ -432,13 +432,15 @@
 document.getElementById("mergeBtn").addEventListener("click", async () => {
     const translated = document.getElementById("translatedFile").files[0];
     const original = document.getElementById("originalFile").files[0];
-    if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
 
+    if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
+    
     log("🔄 Merging files...", "info");
 
     const transText = await translated.text();
     const origText = await original.text();
 
+    // Parse translated JSON-like content
     const dialogs = [];
     const transMatch = [...transText.matchAll(/{\s*dialog:\s*"([\s\S]*?)",?\s*line:\s*(\d+)\s*}/g)];
     for (const m of transMatch) {
@@ -447,18 +449,17 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
 
     const origLines = origText.split(/\r?\n/);
 
-    function fixDialog(str) {
-        str = str.replace(/\\\\n/g, "\\n"); 
-        str = str.replace(/\{w=([0-9]+),([0-9]+)\}/g, "{w=$1.$2}");
-        return str;
-    }
+    // Regex match dialog in quotes (handles \n and escaped quotes)
+    const dialogPattern = /"(?:\\.|[^"\\])*"/s;
 
     dialogs.forEach(d => {
         const i = d.line - 1;
         if (i >= 0 && i < origLines.length) {
-            const match = origLines[i].match(/"(?:[^"\\]|\\.)*"/s);
+            // Replace dialog while keeping tags intact
+            const match = origLines[i].match(dialogPattern);
             if (match) {
-                origLines[i] = origLines[i].replace(match[0], `"${fixDialog(d.dialog)}"`);
+                let newDialog = d.dialog.replace(/\\n/g, "\n"); // convert \\n -> actual newline
+                origLines[i] = origLines[i].replace(match[0], `"${newDialog}"`);
             }
         } else {
             log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
