@@ -325,10 +325,10 @@
     <div class="section" style="margin-bottom: 25px;">
         <h2>Merge RPY</h2>
         <div class="form-group">
-            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📘 Select Translated RPY</label>
+            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📘 Select Original RPY</label>
             <input type="file" id="translatedFile" accept=".rpy">
  
-            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📗 Select Original RPY</label>
+            <label style="display:block;margin-bottom:6px;color:#94a3b8;">📗 Select Translated RPY</label>
             <input type="file" id="originalFile" accept=".rpy">
  
             <button id="mergeBtn" style="margin-top: 15px;">Combine translated + original</button>
@@ -392,7 +392,7 @@
         document.getElementById("extractBtn").addEventListener("click", async () => {
             const files = document.getElementById("extractFile").files;
             if (!files.length) return alert("⚠️ Select atleast 1 .rpy file to extract dialog!");
-            log(`🔄 Processing ${files.length} file(s)...`, "info");
+            log(`🔄 Processing ${files.length} file(s)... \n`, "info");
  
             let totalDialogs = 0;
  
@@ -408,7 +408,7 @@
                                 dialog: match[1],
                                 line: index + 1
                             });
-                            log(`✅ Extracted: ${match[1]}`, "success");
+                            log(`✅ Extracted: ${match[1]} \n`, "success");
                         }
                     }
                 });
@@ -425,7 +425,7 @@
                 a.click();
             }
  
-            log(`✅ Extracted All Files: ${totalDialogs} Dialog(s)`, "success");
+            log(`✅ Extracted All Files: ${totalDialogs} Dialog(s) \n`, "success");
         });
  
         // === Merge ===
@@ -463,7 +463,7 @@
             a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
             a.click();
  
-            log("✅ Merged successfully!", "success");
+            log(`✅ Merged successfully! \n`, "success");
         });
     </script>
  
