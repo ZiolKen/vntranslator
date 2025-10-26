@@ -182,12 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let translatedFile = null;
   const BATCH_SIZE = 5;
 
-  function updateApiKeyVisibility() {
-    apiKeyContainer.style.display = modelSelect.value === "libre" ? "none" : "block";
-  }
-  modelSelect.addEventListener("change", updateApiKeyVisibility);
-  updateApiKeyVisibility();
-
   function log(msg, type = "info") {
     const div = document.createElement("div");
     div.className = `log-entry log-${type}`;
@@ -206,13 +200,24 @@ document.addEventListener("DOMContentLoaded", () => {
     return line.replace(/dialog:\s*"(.*)"\s*,/, `dialog: "${translatedText}",`);
   }
 
-  async function translateLingva(text, targetLang) {
-    const proxy = "https://lingva.ml/api/v1/";
-    const url = `${proxy}${encodeURIComponent(targetLang)}/${encodeURIComponent(text)}`;
-    const response = await fetch(url, { signal: abortController.signal });
-    if (!response.ok) throw new Error(`Lingva API ${response.status}`);
-    const data = await response.json();
-    return data.translation;
+  async function translateLingva(batch, targetLang) {
+    const results = [];
+    for (let i = 0; i < batch.length; i++) {
+      const line = batch[i];
+      try {
+        const url = `https://lingva.ml/auto/${targetLang}/${encodeURIComponent(line)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Lingva error ${res.status}`);
+        const text = await res.text();
+        results.push(text.trim());
+        log(`✅ Line ${i + 1} translated via Lingva`, "success");
+      } catch (err) {
+        log(`❌ Lingva error: ${err.message}`, "error");
+        results.push(line);
+      }
+      if ((i + 1) % 5 === 0) await new Promise(r => setTimeout(r, 1000));
+    }
+    return results;
   }
 
   async function translateAI(batch, apiKey, model, targetLang) {
@@ -251,20 +256,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return text.split("\n").map(t => t.trim());
   }
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   async function startTranslation() {
     const file = fileInput.files[0];
     if (!file) return log("⚠️ Please upload a .rpy file.", "warning");
 
     const model = modelSelect.value;
     const apiKey = apiKeyInput.value.trim();
-
-    if ((model === "chatgpt" || model === "deepseek") && !apiKey) {
-      return log("❌ Missing API Key.", "error");
-    }
+    if ((model === "chatgpt" || model === "deepseek") && !apiKey) return log("❌ Missing API Key.", "error");
 
     const content = await file.text();
     lines = content.split(/\r?\n/);
@@ -308,15 +306,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         let results;
-        if (model === "libre") {
-          results = [];
-          for (const t of batchLines) {
-            const r = await translateLingva(t, langTarget.value);
-            results.push(r);
-          }
-        } else {
-          results = await translateAI(batchLines, apiKey, model, langTarget.value);
-        }
+        if (model === "libre") results = await translateLingva(batchLines, langTarget.value);
+        else results = await translateAI(batchLines, apiKey, model, langTarget.value);
 
         for (let i = 0; i < results.length; i++) {
           const idx = batchIndices[i];
@@ -331,8 +322,6 @@ document.addEventListener("DOMContentLoaded", () => {
         log(`❌ Error: ${err.message}`, "error");
         for (let i of batchIndices) translationResults.push(lines[i]);
       }
-
-      await sleep(1000);
 
       if (isPaused) {
         log("⏸ Translation paused.", "warning");
@@ -354,6 +343,10 @@ document.addEventListener("DOMContentLoaded", () => {
     translateBtn.disabled = false;
     controlBtns.style.display = "none";
   }
+
+  modelSelect.addEventListener("change", () => {
+    apiKeyContainer.style.display = modelSelect.value === "libre" ? "none" : "block";
+  });
 
   translateBtn.addEventListener("click", () => {
     const model = modelSelect.value;
