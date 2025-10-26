@@ -327,6 +327,8 @@
         <div>
             <label style="display:block;margin-bottom:6px;color:#94a3b8;">📘 Select Translated RPY</label>
             <input type="file" id="translatedFile" accept=".rpy">
+                
+            <br><br>
  
             <label style="display:block;margin-bottom:6px;color:#94a3b8;">📗 Select Original RPY</label>
             <input type="file" id="originalFile" accept=".rpy">
@@ -455,6 +457,7 @@
         const origLines = origText.split(/\r?\n/);
 
         dialogs.forEach(d => {
+            d.dialog = d.dialog.replace(/(\{w=\d+),(\d+\})/g, "$1.$2");
             const i = d.line - 1;
             if (i >= 0 && i < origLines.length) {
                 const replaced = origLines[i].replace(/(["'])(?:(?=(\\?))\2.)*?\1/, `"${escapeQuotes(d.dialog)}"`);
