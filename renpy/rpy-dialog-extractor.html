@@ -387,6 +387,7 @@
             if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
             if (/^["'].*["']/.test(trimmed)) return true;
             if (/{.*?}/.test(trimmed) && /[\w\-\?!'"]/i.test(trimmed)) return true;
+            if (/^[\w\s]*\s*".+?"\s*$/.test(trimmed)) return true;
             return false;
         }
  
@@ -404,7 +405,7 @@
                 const dialogs = [];
                 lines.forEach((line, index) => {
                     if (isDialogLine(line)) {
-                        const match = line.match(/"([^"]+)"/);
+                        const match = line.match(/"([^"]*?)"(?=\s*$|[^"]*$)/);
                         if (match) {
                             dialogs.push({
                                 dialog: match[1],
