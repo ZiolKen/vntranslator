@@ -558,3 +558,7 @@
             box-shadow: 0 0 20px var(--neon-yellow) !important;
             color: var(--bg-primary) !important;
         }
+        
+        strong {
+            color: var(--neon-yellow);
+        }
