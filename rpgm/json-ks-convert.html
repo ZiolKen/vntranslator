@@ -378,12 +378,12 @@ document.getElementById('ksFile').addEventListener('change', function(e){
   const files = Array.from(e.target.files);
   if(!files.length) return;
 
-  output.value = "🔄 Processing " + files.length + " file(s)...\n\n";
+  output.value = "🔄 Processing " + files.length + " file(s)...\n";
   let index = 0;
 
   function processNextFile(){
     if(index >= files.length){
-      output.value += "\n✅ Converted All Files!";
+      output.value += "✅ Converted All Files!\n";
       return;
     }
 
