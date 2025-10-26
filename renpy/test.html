@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="ie=edge" http-equiv="X-UA-Compatible">
+  <title>Ren'Py RPY Translator</title>
+  <link rel="stylesheet" href="renpy.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+ 
+<body>
+  <!-- Modal for Lingva Warning -->
+  <div id="libreWarningModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h3>Important Notice About Lingva Translate</h3>
+      <div class="notice-content">
+        <ul class="notice-list">
+          <li>Lingva is a free service that may not perfectly preserve Ren'Py code structure.</li>
+          <li>We recommend using it only for testing purposes or when you're willing to manually review the results.</li>
+          <li>For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button id="confirmLibre" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">
+          I Understand
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="main-title">
+    <h1 id="main-title"
+      class="h1">
+      REN'PY RPY TRANSLATOR
+    </h1>
+    <div class="card">
+      <h4>Translation Settings</h4>
+
+      <div class="form-group">
+        <label>Translation Model</label>
+        <select id="modelSelect">
+          <option value="deepseek">🔥 DeepSeek API — Best Quality (Paid)</option>
+          <option value="chatgpt">💎 ChatGPT API — High Quality (Paid)</option>
+          <option value="libre">🌐 Lingva — Free (Lower Quality)</option>
+        </select>
+      </div>
+      <div class="form-group" id="apiKeyContainer">
+        <label>ChatGPT or DeepSeek API Key</label>
+        <input id="apiKey" type="password" placeholder="Enter your API Key">
+      </div>
+      <div class="form-group">
+        <label>Target Language</label>
+        <select id="langTarget">
+          <option value="Bahasa Indonesia">Indonesian</option>
+          <option value="English">English</option>
+          <option value="Malay">Malay</option>
+          <option value="Vietnamese">Vietnamese</option>
+          <option value="Filipino">Filipino</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Upload .rpy File</label>
+        <input id="fileInput" type="file" accept=".rpy">
+      </div>
+      <div class="progress-container">
+        <label>Progress</label>
+        <progress id="progressBar" value="0" max="1000"></progress>
+        <div id="progressText">0/0</div>
+      </div>
+    </div>
+      <div class="card">
+        <h5>Translation Control</h5>
+        <div class="button-group">
+        <button id="translateBtn">
+          <span id="translateLabel"><span>▶️</span> Start Translating</span>
+          <span id="spinner" class="hidden"></span>
+        </button>
+        <button id="downloadFinal"><span>⬇️</span> Download Result</button>
+        <button id="downloadProgress"><span>⬇️</span> Download Log</button>
+        </div>
+      </div>
+    <div class="card" style="margin-bottom: 25px;">
+      <h2>Translation Log</h2>
+      <div id="logBox" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</div>
+    <div>
+      <div id="controlBtns" style="display:none; margin-top: 10px;">
+        <button id="stopBtn"><span>⏸</span> Stop Translation</button>
+        <button id="resumeBtn" disabled><span>🔄</span> Resume Translation</button>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom: 25px;">
+    <h6>Support & Resources</h6>
+      <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
+        <div style="grid-column: 1 / -1;">
+          <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">GET HELP:</p>
+            <a href="rpy-dialog-extractor.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">🔄</span>Extract RPY dialogs & Merge</a>
+            <a href="https://grviewer.com/" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">🔁</span>Extract RPA & Decompile RPYC</a>
+            <a href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">❓</span>How to get a DeepSeek API Key?</a>
+            <a href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">📂</span>How to get RPY file from game?</a>
+        </div>
+  </div>
+</div>
+  <div class="card usage-tips">
+    <h6>Notice</h6>
+    <div class="notice-content">
+      <p><strong>Suggest:</strong></p>
+      <ul class="notice-list">
+        <li>It is recommended to use the RPY Dialog Extraction & Merge Tool to extract the dialog and translate, then merge the translated RPY with the original RPY.</li>
+      </ul>
+      <p><strong>Important:</strong></p>
+      <ul class="notice-list">
+        <li>DeepSeek requires an API key but provides higher quality translations that preserve Ren'Py formatting.</li>
+        <li>Lingva is free but may require manual adjustments.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    ⚠️ By using this tool, you agree to accept all kinds of risks.
+  </div>
+
+  <div style="text-align: center; margin: 40px 0 20px;">
+  <a href="../index.html" class="back-btn">⬅️ Back to Main Menu</a>
+  </div>
+
+<style>
+  .close-modal {
+      color: var(--text-secondary);
+      float: right;
+      font-size: 30px;
+      font-weight: bold;
+      cursor: pointer;
+  }
+  
+  .close-modal:hover {
+      color: var(--text-secondary);
+  }
+    
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const translateBtn = document.getElementById("translateBtn");
+  const downloadFinal = document.getElementById("downloadFinal");
+  const downloadProgress = document.getElementById("downloadProgress");
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+  const logBox = document.getElementById("logBox");
+  const controlBtns = document.getElementById("controlBtns");
+  const stopBtn = document.getElementById("stopBtn");
+  const resumeBtn = document.getElementById("resumeBtn");
+  const fileInput = document.getElementById("fileInput");
+  const modelSelect = document.getElementById("modelSelect");
+  const apiKeyInput = document.getElementById("apiKey");
+  const langTarget = document.getElementById("langTarget");
+  const libreWarningModal = document.getElementById("libreWarningModal");
+  const confirmLibre = document.getElementById("confirmLibre");
+  const closeModal = document.querySelector(".close-modal");
+  const spinner = document.getElementById("spinner");
+  const translateLabel = document.getElementById("translateLabel");
+
+modelSelect.addEventListener("change", () => {
+  const model = modelSelect.value;
+  if (model === "libre") {
+    apiKeyInput.parentElement.style.display = "none";
+  } else {
+    apiKeyInput.parentElement.style.display = "block";
+  }
+});
+
+  let isTranslating = false;
+  let isPaused = false;
+  let abortController = null;
+  let lines = [];
+  let translatedLines = 0;
+  let translationIndex = 0;
+  let translationResults = [];
+  let translationLog = [];
+  let translatedFile = null;
+  const BATCH_SIZE = 5;
+
+  function log(msg, type = "info") {
+    const div = document.createElement("div");
+    div.className = `log-entry log-${type}`;
+    div.textContent = `[${new Date().toLocaleTimeString()}] :: ${msg}`;
+    logBox.appendChild(div);
+    logBox.scrollTop = logBox.scrollHeight;
+    translationLog.push(div.textContent);
+  }
+
+  function extractDialog(line) {
+    const match = line.match(/dialog:\s*"(.*)"\s*,/);
+    return match ? match[1] : null;
+  }
+
+  function rebuildLine(line, translatedText) {
+    return line.replace(/dialog:\s*"(.*)"\s*,/, `dialog: "${translatedText}",`);
+  }
+
+  async function translateLingva(batch, targetLang) {
+    const results = [];
+    for (const text of batch) {
+      const endpoint = `https://lingva.ml/api/v1/${targetLang}/${encodeURIComponent(text)}`;
+      try {
+        const response = await fetch(endpoint, { signal: abortController.signal });
+        if (!response.ok) throw new Error(`Lingva API ${response.status}`);
+        const data = await response.json();
+        results.push(data.translation);
+      } catch (err) {
+        log(`❌ Lingva translation error: ${err.message}`, "error");
+        results.push(text);
+      }
+    }
+    return results;
+  }
+
+  async function translateAI(batch, apiKey, model, targetLang) {
+    const endpoint =
+      model === "chatgpt"
+        ? "https://api.openai.com/v1/chat/completions"
+        : "https://api.deepseek.com/v1/chat/completions";
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const body = {
+      model: model === "chatgpt" ? "gpt-4o-mini" : "deepseek-chat",
+      messages: [
+        {
+          role: "system",
+          content: `Translate the following Ren'Py dialogs into ${targetLang}. Keep formatting tags like {w}, {nw}, {sc}, {bt}, etc.`,
+        },
+        { role: "user", content: batch.join("\n") },
+      ],
+      temperature: 0.3,
+    };
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content?.trim() || "";
+    return text.split("\n").map(t => t.trim());
+  }
+
+  async function startTranslation() {
+    const file = fileInput.files[0];
+    if (!file) return log("⚠️ Please upload a .rpy file.", "warning");
+
+    const model = modelSelect.value;
+    const apiKey = apiKeyInput.value.trim();
+    if ((model === "chatgpt" || model === "deepseek") && !apiKey)
+      return log("❌ Missing API Key.", "error");
+
+    const content = await file.text();
+    lines = content.split(/\r?\n/);
+    translatedLines = 0;
+    translationIndex = 0;
+    translationResults = [];
+    abortController = new AbortController();
+
+    isTranslating = true;
+    isPaused = false;
+    controlBtns.style.display = "block";
+    translateBtn.disabled = true;
+    stopBtn.disabled = false;
+    resumeBtn.disabled = true;
+    spinner.classList.remove("hidden");
+    translateLabel.style.display = "none";
+    progressBar.max = lines.length;
+    progressBar.value = 0;
+    progressText.textContent = `0/${lines.length}`;
+    log(`🚀 Starting translation (${model}) → ${langTarget.value}`, "info");
+
+    while (translationIndex < lines.length && isTranslating && !isPaused) {
+      const batchLines = [];
+      const batchIndices = [];
+
+      for (let i = 0; i < BATCH_SIZE && translationIndex < lines.length; i++, translationIndex++) {
+        const line = lines[translationIndex];
+        const dialog = extractDialog(line);
+        if (dialog) {
+          batchLines.push(dialog);
+          batchIndices.push(translationIndex);
+        } else {
+          translationResults.push(line);
+          translatedLines++;
+          progressBar.value = translatedLines;
+          progressText.textContent = `${translatedLines}/${lines.length}`;
+        }
+      }
+
+      if (batchLines.length === 0) continue;
+
+      try {
+        let results;
+        if (model === "libre") results = await translateLingva(batchLines, langTarget.value);
+        else results = await translateAI(batchLines, apiKey, model, langTarget.value);
+
+        for (let i = 0; i < results.length; i++) {
+          const idx = batchIndices[i];
+          const rebuilt = rebuildLine(lines[idx], results[i].replace(/"/g, '\\"'));
+          translationResults.push(rebuilt);
+          log(`✅ Line ${idx + 1} translated.`, "success");
+          translatedLines++;
+          progressBar.value = translatedLines;
+          progressText.textContent = `${translatedLines}/${lines.length}`;
+        }
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, "error");
+        for (let i of batchIndices) translationResults.push(lines[i]);
+      }
+
+      if (isPaused) {
+        log("⏸ Translation paused.", "warning");
+        break;
+      }
+    }
+
+    if (translatedLines >= lines.length) {
+      translatedFile = new Blob([translationResults.join("\n")], { type: "text/plain" });
+      log("🎉 Translation completed!", "success");
+      endTranslation();
+    }
+  }
+
+  function endTranslation() {
+    isTranslating = false;
+    spinner.classList.add("hidden");
+    translateLabel.style.display = "inline";
+    translateBtn.disabled = false;
+    controlBtns.style.display = "none";
+  }
+
+  translateBtn.addEventListener("click", () => {
+    const model = modelSelect.value;
+    if (model === "libre") libreWarningModal.style.display = "flex";
+    else startTranslation();
+  });
+
+  confirmLibre.addEventListener("click", () => {
+    libreWarningModal.style.display = "none";
+    startTranslation();
+  });
+
+  closeModal.addEventListener("click", () => {
+    libreWarningModal.style.display = "none";
+  });
+
+  stopBtn.addEventListener("click", () => {
+    if (!isTranslating) return;
+    isPaused = true;
+    stopBtn.disabled = true;
+    resumeBtn.disabled = false;
+    abortController?.abort();
+    log("⏸ Paused translation.", "warning");
+  });
+
+  resumeBtn.addEventListener("click", async () => {
+    if (!isPaused) return;
+    isPaused = false;
+    stopBtn.disabled = false;
+    resumeBtn.disabled = true;
+    log("🔄 Resuming translation...", "info");
+    await startTranslation();
+  });
+
+  downloadFinal.addEventListener("click", () => {
+    if (!translatedFile) return log("⚠️ No translated file available.", "warning");
+    const url = URL.createObjectURL(translatedFile);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "translated_file.rpy";
+    a.click();
+    URL.revokeObjectURL(url);
+    log("⬇️ Translated file downloaded.", "info");
+  });
+
+  downloadProgress.addEventListener("click", () => {
+    if (!translationLog.length) return log("⚠️ No log available.", "warning");
+    const blob = new Blob([translationLog.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "translation_log.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+    log("⬇️ Log file downloaded.", "info");
+  });
+});
+</script>
+
+</body>
+
+</html>
