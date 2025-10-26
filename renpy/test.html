@@ -163,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fileInput = document.getElementById("fileInput");
   const modelSelect = document.getElementById("modelSelect");
   const apiKeyInput = document.getElementById("apiKey");
+  const apiKeyContainer = document.getElementById("apiKeyContainer");
   const langTarget = document.getElementById("langTarget");
   const libreWarningModal = document.getElementById("libreWarningModal");
   const confirmLibre = document.getElementById("confirmLibre");
@@ -180,6 +181,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let translationLog = [];
   let translatedFile = null;
   const BATCH_SIZE = 5;
+
+  function updateApiKeyVisibility() {
+    apiKeyContainer.style.display = modelSelect.value === "libre" ? "none" : "block";
+  }
+  modelSelect.addEventListener("change", updateApiKeyVisibility);
+  updateApiKeyVisibility();
 
   function log(msg, type = "info") {
     const div = document.createElement("div");
@@ -199,22 +206,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return line.replace(/dialog:\s*"(.*)"\s*,/, `dialog: "${translatedText}",`);
   }
 
-  async function translateLingva(batch, targetLang) {
-    const results = [];
-    for (const text of batch) {
-      try {
-        const url = `https://lingva.ml/${targetLang}/${encodeURIComponent(text)}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const html = await res.text();
-        const match = html.match(/<textarea[^>]*id="textarea"[^>]*>([\s\S]*?)<\/textarea>/);
-        results.push(match ? match[1].trim() : text);
-      } catch (err) {
-        results.push(text);
-        console.error("Lingva error:", err);
-      }
-    }
-    return results;
+  async function translateLingva(text, targetLang) {
+    const proxy = "https://lingva.ml/api/v1/";
+    const url = `${proxy}${encodeURIComponent(targetLang)}/${encodeURIComponent(text)}`;
+    const response = await fetch(url, { signal: abortController.signal });
+    if (!response.ok) throw new Error(`Lingva API ${response.status}`);
+    const data = await response.json();
+    return data.translation;
   }
 
   async function translateAI(batch, apiKey, model, targetLang) {
@@ -253,6 +251,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return text.split("\n").map(t => t.trim());
   }
 
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async function startTranslation() {
     const file = fileInput.files[0];
     if (!file) return log("⚠️ Please upload a .rpy file.", "warning");
@@ -260,8 +262,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const model = modelSelect.value;
     const apiKey = apiKeyInput.value.trim();
 
-    if ((model === "chatgpt" || model === "deepseek") && !apiKey) 
+    if ((model === "chatgpt" || model === "deepseek") && !apiKey) {
       return log("❌ Missing API Key.", "error");
+    }
 
     const content = await file.text();
     lines = content.split(/\r?\n/);
@@ -305,8 +308,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         let results;
-        if (model === "libre") results = await translateLingva(batchLines, langTarget.value);
-        else results = await translateAI(batchLines, apiKey, model, langTarget.value);
+        if (model === "libre") {
+          results = [];
+          for (const t of batchLines) {
+            const r = await translateLingva(t, langTarget.value);
+            results.push(r);
+          }
+        } else {
+          results = await translateAI(batchLines, apiKey, model, langTarget.value);
+        }
 
         for (let i = 0; i < results.length; i++) {
           const idx = batchIndices[i];
@@ -322,7 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let i of batchIndices) translationResults.push(lines[i]);
       }
 
-      if (!isPaused) await new Promise(res => setTimeout(res, 1000));
+      await sleep(1000);
 
       if (isPaused) {
         log("⏸ Translation paused.", "warning");
@@ -344,15 +354,6 @@ document.addEventListener("DOMContentLoaded", () => {
     translateBtn.disabled = false;
     controlBtns.style.display = "none";
   }
-
-  modelSelect.addEventListener("change", () => {
-    const model = modelSelect.value;
-    if (model === "libre") {
-      apiKeyInput.parentElement.style.display = "none";
-    } else {
-      apiKeyInput.parentElement.style.display = "block";
-    }
-  });
 
   translateBtn.addEventListener("click", () => {
     const model = modelSelect.value;
