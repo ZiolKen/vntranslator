@@ -170,15 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const spinner = document.getElementById("spinner");
   const translateLabel = document.getElementById("translateLabel");
 
-modelSelect.addEventListener("change", () => {
-  const model = modelSelect.value;
-  if (model === "libre") {
-    apiKeyInput.parentElement.style.display = "none";
-  } else {
-    apiKeyInput.parentElement.style.display = "block";
-  }
-});
-
   let isTranslating = false;
   let isPaused = false;
   let abortController = null;
@@ -211,15 +202,16 @@ modelSelect.addEventListener("change", () => {
   async function translateLingva(batch, targetLang) {
     const results = [];
     for (const text of batch) {
-      const endpoint = `https://lingva.ml/api/v1/${targetLang}/${encodeURIComponent(text)}`;
       try {
-        const response = await fetch(endpoint, { signal: abortController.signal });
-        if (!response.ok) throw new Error(`Lingva API ${response.status}`);
-        const data = await response.json();
-        results.push(data.translation);
+        const url = `https://lingva.ml/${targetLang}/${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const html = await res.text();
+        const match = html.match(/<textarea[^>]*id="textarea"[^>]*>([\s\S]*?)<\/textarea>/);
+        results.push(match ? match[1].trim() : text);
       } catch (err) {
-        log(`❌ Lingva translation error: ${err.message}`, "error");
         results.push(text);
+        console.error("Lingva error:", err);
       }
     }
     return results;
@@ -267,7 +259,8 @@ modelSelect.addEventListener("change", () => {
 
     const model = modelSelect.value;
     const apiKey = apiKeyInput.value.trim();
-    if ((model === "chatgpt" || model === "deepseek") && !apiKey)
+
+    if ((model === "chatgpt" || model === "deepseek") && !apiKey) 
       return log("❌ Missing API Key.", "error");
 
     const content = await file.text();
@@ -329,6 +322,8 @@ modelSelect.addEventListener("change", () => {
         for (let i of batchIndices) translationResults.push(lines[i]);
       }
 
+      if (!isPaused) await new Promise(res => setTimeout(res, 1000));
+
       if (isPaused) {
         log("⏸ Translation paused.", "warning");
         break;
@@ -349,6 +344,15 @@ modelSelect.addEventListener("change", () => {
     translateBtn.disabled = false;
     controlBtns.style.display = "none";
   }
+
+  modelSelect.addEventListener("change", () => {
+    const model = modelSelect.value;
+    if (model === "libre") {
+      apiKeyInput.parentElement.style.display = "none";
+    } else {
+      apiKeyInput.parentElement.style.display = "block";
+    }
+  });
 
   translateBtn.addEventListener("click", () => {
     const model = modelSelect.value;
