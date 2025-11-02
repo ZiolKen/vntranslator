@@ -46,6 +46,7 @@
         }
  
         h2 {
+            font-family: 'Turret Road', sans-serif;
             text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
             letter-spacing: 2px;
             animation: flicker 3s infinite alternate;
