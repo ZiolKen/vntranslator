@@ -179,7 +179,7 @@
         h5,
         h6 {
             font-family: 'Turret Road', sans-serif;
-            text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-magenta);
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
             letter-spacing: 2px;
             animation: zflicker 3s infinite alternate;
         }
@@ -259,7 +259,7 @@
         h6 {
             font-size: 1.5rem;
             margin-bottom: 20px;
-            color: var(--neon-cyan);
+            color: #fff;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
             display: flex;
@@ -270,11 +270,12 @@
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: block;               
+            font-size: 0.750rem;          
+            font-weight: 600;             
+            color: rgb(192, 132, 252);
         }
  
         select,
@@ -282,10 +283,10 @@
         textarea {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(192, 132, 252, 0.5);
             border-radius: 12px;
             font-size: 1rem;
-            background-color: rgba(2, 0, 26, 0.8);
+            background-color: rgba(168, 85, 247, 0.08);
             color: var(--text-primary);
             font-family: 'Roboto Mono', monospace;
             transition: all 0.2s;
@@ -480,6 +481,14 @@
             background: linear-gradient(135deg, #2c0735, #1a0420);
             border-radius: 1rem;
             padding: 20px;
+        }
+        
+        .notice-box:hover,
+        .usage-tips:hover {
+            background: linear-gradient(135deg, #2c0735, #1a0420);
+            border-color: rgba(168, 85, 247, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(168, 85, 247, 0.25);
         }
  
         .notice-box::before,
