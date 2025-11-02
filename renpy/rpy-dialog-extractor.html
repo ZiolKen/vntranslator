@@ -634,7 +634,7 @@
                 const dialogs = [];
                 lines.forEach((line, index) => {
                     if (isDialogLine(line)) {
-                        const match = line.match(/(["'])((?:\\.|(?!\1)[^\\])*)\1/);
+                        const match = line.match(/"((?:\\.|[^"\\])*)"/);
                         if (match) {
                             dialogs.push({
                                 dialog: match[1],
