@@ -5,10 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <meta name="theme-color" content="#000000">
     <title>Tool Convert KS To JSON & Tyranor Engine</title>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <meta name="theme-color" content="#000000">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
- 
     <style>
         :root {
             --neon-cyan: #00ffff;
@@ -36,34 +38,42 @@
         }
  
         body {
-            background-color: var(--bg-primary) !important;
             color: var(--text-primary);
             font-family: 'Roboto Mono', monospace;
             line-height: 1.7;
-            padding: 15px;
+            padding: 16px;
             overflow-x: hidden;
             min-height: 100vh;
-            background-image:
-                radial-gradient(ellipse at top, rgba(0, 255, 255, 0.15), transparent 60%),
-                radial-gradient(ellipse at bottom, rgba(255, 0, 255, 0.15), transparent 60%) !important;
             background-attachment: fixed;
+            background: #2c0735;
+            background: linear-gradient(135deg, #2c0735 0%, #1a0420 50%, #0f0515 100%);
+            min-height: 100vh;
         }
  
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
         .section {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 16px;
             padding: 25px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(255, 0, 255, 0.1);
+            backdrop-filter: blur(1px);
+            -webkit-backdrop-filter: blur(1px);
             transition: all 0.3s ease-in-out;
+            background: rgba(168, 85, 247, 0.05);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 rgba(168, 85, 247, 0.15);
+            animation: slideIn 0.5s ease-out;
         }
- 
-        h1,
+
         h2 {
             font-family: 'Turret Road', sans-serif;
-            text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-magenta);
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
             letter-spacing: 2px;
             animation: zflicker 3s infinite alternate;
         }
@@ -117,14 +127,16 @@
         }
  
         .section:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4), inset 0 0 15px rgba(255, 0, 255, 0.2);
+            background: rgba(168, 85, 247, 0.08);
+            border-color: rgba(168, 85, 247, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(168, 85, 247, 0.25);
         }
  
         h2 {
             font-size: 1.5rem;
             margin-bottom: 20px;
-            color: var(--neon-cyan);
+            color: #fff;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
             display: flex;
@@ -137,10 +149,10 @@
         textarea {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border: 1px solid rgba(192, 132, 252, 0.5);
+            border-radius: 12px;
             font-size: 1rem;
-            background-color: rgba(2, 0, 26, 0.8);
+            background-color: rgba(168, 85, 247, 0.08);
             color: var(--text-primary);
             font-family: 'Roboto Mono', monospace;
             transition: all 0.2s;
@@ -155,6 +167,11 @@
             box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 8px rgba(0, 255, 255, 0.3);
         }
  
+        textarea:hover,
+        .log-container:hover {
+            border-color: var(--neon-cyan);
+        }
+ 
         input[type="file"] {
             padding: 10px;
         }
@@ -164,7 +181,7 @@
             border: 1px solid var(--neon-cyan);
             color: var(--neon-cyan);
             padding: 8px 12px;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -195,7 +212,7 @@
             width: 100%;
             padding: 14px;
             border: 1px solid var(--neon-cyan);
-            border-radius: 4px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
@@ -206,6 +223,7 @@
             position: relative;
             overflow: hidden;
             background: transparent;
+            backdrop-filter: blur(2px);
             color: var(--neon-cyan);
         }
  
@@ -241,7 +259,7 @@
             height: 200px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 12px;
             padding: 15px;
             background-color: rgba(2, 0, 26, 0.7);
             font-size: 0.9rem;
@@ -291,8 +309,36 @@
  
         .notice-box,
         .usage-tips {
-            border-left: 3px solid var(--neon-cyan);
+            position: relative;
+            background: linear-gradient(135deg, #2c0735, #1a0420);
+            border-radius: 1rem;
             padding: 20px;
+        }
+        
+        .notice-box:hover,
+        .usage-tips:hover {
+            background: linear-gradient(135deg, #2c0735, #1a0420);
+            border-color: rgba(168, 85, 247, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(168, 85, 247, 0.25);
+        }
+
+        .notice-box::before,
+        .usage-tips::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 1rem;
+            padding: 2px;
+            background: linear-gradient(135deg, #a855f7, #ec4899, #10b981);
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
         }
  
         .notice-list {
@@ -309,6 +355,17 @@
             color: var(--neon-yellow);
         }
         
+        #extractBtn {
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+        }
+ 
+        #extractBtn:hover {
+            background-color: var(--neon-yellow);
+            box-shadow: 0 0 20px var(--neon-yellow);
+            color: var(--bg-primary);
+        }
+        
         #mergeBtn {
             border-color: var(--neon-green);
             color: var(--neon-green);
@@ -319,20 +376,105 @@
             box-shadow: 0 0 20px var(--neon-green);
             color: var(--bg-primary);
         }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+ 
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid-bg {
+            background-image:
+                linear-gradient(rgba(168, 85, 247, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168, 85, 247, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        .floating {
+            animation: floating 6s ease-in-out infinite;
+        }
+ 
+        @keyframes floating {
+ 
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+ 
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+ 
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+ 
+        @keyframes pulse-glow {
+ 
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            }
+ 
+            50% {
+                box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
+            }
+        }
+ 
+        @keyframes slideIn {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+ 
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 4.5rem;
+            }
+        }
+
+        .cyber-grid {
+            background-image:
+                repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(168, 85, 247, 0.03) 2px,
+                    rgba(168, 85, 247, 0.03) 4px);
+        }
     </style>
-
 </head>
-
+ 
 <body>
+    <div id="particles-js"></div>
+    <div class="grid-bg"></div>
+    <h1 class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">TOOL CONVERT KS TO JSON<br><span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool Tyranor Engine</span></h1>
   
-<h1>TOOL CONVERT KS TO JSON<br>Tool Tyranor Engine</h1>  
-  
-<div class="section" style="margin-bottom: 25px;"> 
+<div class="section cyber-grid" style="margin-bottom: 25px;"> 
   <h2>KS → JSON</h2>
   <input type="file" id="ksFile" accept=".ks" multiple>  
 </div>  
   
-<div class="section" style="margin-bottom: 25px;">  
+<div class="section cyber-grid" style="margin-bottom: 25px;">  
   <h2>JSON + KS</h2>  
   
   <label for="jsonFile" style="display:block;margin-bottom:6px;color:#94a3b8;">  
@@ -350,12 +492,12 @@
   <button id="mergeBtn" style="margin-top: 15px;">🔀 Combine JSON + KS</button>  
 </div>
 
-<div class="section" style="margin-bottom: 25px;">
+<div class="section cyber-grid" style="margin-bottom: 25px;">
     <h2>Conversion Log</h2>
-    <textarea id="output" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</textarea>
+    <textarea id="output" class="log-container" readonly>[SYSTEM_BOOT] :: Awaiting input...</textarea>
 </div>
 
-<div class="section" style="margin-bottom: 25px;">
+<div class="section usage-tips" style="margin-bottom: 25px;">
         <h2>Notice</h2>
         <div class="notice-content">
             <p><strong>Beta Version 1.3 Fix:</strong></p>
@@ -381,6 +523,73 @@
 <div style="text-align: center; margin: 40px 0 20px;">
         <a href="index.html" class="back-btn">⬅️ Back to Translator</a>
 </div>
+
+    <script>
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {
+                    "value": 100,
+                    "density": {
+                        "enable": true,
+                        "value_area": 800
+                    }
+                },
+                "color": { "value": "#a855f7" },
+                "shape": {
+                    "type": "circle",
+                    "stroke": { "width": 0, "color": "#000" }
+                },
+                "opacity": {
+                    "value": 0.7,
+                    "random": true,
+                    "anim": {
+                        "enable": true,
+                        "speed": 0.5,
+                        "opacity_min": 0.3,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": {
+                        "enable": true,
+                        "speed": 2,
+                        "size_min": 0.3,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#a855f7",
+                    "opacity": 0.3,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 1.5,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": { "enable": true, "mode": "repulse" },
+                    "onclick": { "enable": false },
+                    "resize": true
+                },
+                "modes": {
+                    "repulse": { "distance": 100, "duration": 0.4 }
+                }
+            },
+            "retina_detect": true
+        });
+    </script>
 
 <script>
 const output = document.getElementById('output');
