@@ -231,14 +231,6 @@
             transform: translateY(0);
         }
  
-        .btn-renpy {
-            background: linear-gradient(45deg, var(--renpy), #ff7bac);
-        }
- 
-        .btn-rpgm {
-            background: linear-gradient(45deg, var(--rpgm), #2de2e6);
-        }
- 
         .icon {
             margin-right: 15px;
             font-size: 1.8rem;
