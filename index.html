@@ -7,6 +7,7 @@
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="assets/manifest.json">
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <title>Translate Tool | Translate Ren'Py & RPG Maker Games</title>
     <meta name="description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages.">
     <meta name="keywords" content="translator renpy, translator rpg maker, translate visual novel, translate game, translator online, renpy, rpgm, renpy translate, rpgm translate, avns, vn translator, renpy game, rpgm game, rpy, json">
@@ -28,6 +29,7 @@
 </head>
  
 <body>
+    <div id="particles-js"></div>
     <div class="grid-bg"></div>
     <div class="scanlines"></div>
     <div class="floating-elements" id="floatingElements"></div>
@@ -37,7 +39,7 @@
             <h1 class="glitch" data-text="Translate Tool">Translate Tool</h1>
             <h2 class="terminal">For Ren'Py & RPG Maker Games</h2>
         </div>
-        <div class="card hologram">
+        <div class="card hologram cyber-grid">
             <div class="btn-container">
                 <a href="renpy/index.html" class="btn btn-renpy">
                     <span class="icon">🎮</span>
@@ -50,6 +52,73 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {
+                    "value": 100,
+                    "density": {
+                        "enable": true,
+                        "value_area": 800
+                    }
+                },
+                "color": { "value": "#a855f7" },
+                "shape": {
+                    "type": "circle",
+                    "stroke": { "width": 0, "color": "#000" }
+                },
+                "opacity": {
+                    "value": 0.7,
+                    "random": true,
+                    "anim": {
+                        "enable": true,
+                        "speed": 0.5,
+                        "opacity_min": 0.3,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": {
+                        "enable": true,
+                        "speed": 2,
+                        "size_min": 0.3,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#a855f7",
+                    "opacity": 0.3,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 1.5,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": { "enable": true, "mode": "repulse" },
+                    "onclick": { "enable": false },
+                    "resize": true
+                },
+                "modes": {
+                    "repulse": { "distance": 100, "duration": 0.4 }
+                }
+            },
+            "retina_detect": true
+        });
+    </script>
 
 <script
   src="script.js">
