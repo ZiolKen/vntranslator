@@ -18,11 +18,20 @@
             --text-secondary: #a3a1b9;
             --border-color: rgba(0, 255, 255, 0.3);
         }
+        
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-cyan) var(--bg-primary);
+        }
  
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+        
+        .floating {
+            animation: floating 6s ease-in-out infinite;
         }
         
         #particles-js {
