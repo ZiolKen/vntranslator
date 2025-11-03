@@ -682,3 +682,15 @@
                     rgba(168, 85, 247, 0.03) 2px,
                     rgba(168, 85, 247, 0.03) 4px);
         }
+        
+        @media (min-width: 768px) {
+          .button-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+          }
+
+          #translateBtn {
+            grid-column: 1 / -1;
+          }
+        }
