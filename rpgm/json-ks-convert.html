@@ -462,13 +462,22 @@
                     rgba(168, 85, 247, 0.03) 2px,
                     rgba(168, 85, 247, 0.03) 4px);
         }
+        
+        .main-title {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
     </style>
 </head>
  
 <body>
-    <div id="particles-js"></div>
-    <div class="grid-bg"></div>
-    <h1 class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">TOOL CONVERT KS TO JSON<br><span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool Tyranor Engine</span></h1>
+<div id="particles-js"></div>
+<div class="grid-bg"></div>
+<div class="main-title">
+<h1 class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">TOOL CONVERT KS TO JSON<br><span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool Tyranor Engine</span></h1>
   
 <div class="section cyber-grid" style="margin-bottom: 25px;"> 
   <h2>KS → JSON</h2>
@@ -523,6 +532,7 @@
  
 <div style="text-align: center; margin: 40px 0 20px;">
         <a href="index.html" class="back-btn">⬅️ Back to Translator</a>
+</div>
 </div>
 
     <script>
