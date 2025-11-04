@@ -183,21 +183,6 @@
             letter-spacing: 2px;
         }
  
-        h2::before,
-        h4::before,
-        h5::before,
-        h6::before {
-            content: '>';
-            font-weight: bold;
-            animation: blink 1s step-end infinite;
-        }
- 
-        @keyframes blink {
-            50% {
-                opacity: 0;
-            }
-        }
- 
         .help-btn {
             display: block;
             border: 1px solid var(--border-color);
