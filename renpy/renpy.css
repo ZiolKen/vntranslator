@@ -181,7 +181,6 @@
             font-family: 'Turret Road', sans-serif;
             text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
             letter-spacing: 2px;
-            animation: zflicker 3s infinite alternate;
         }
  
         h2::before,
@@ -191,18 +190,6 @@
             content: '>';
             font-weight: bold;
             animation: blink 1s step-end infinite;
-        }
- 
-        @keyframes zflicker {
- 
-            0%,
-            100% {
-                opacity: 1;
-            }
- 
-            50% {
-                opacity: 0.8;
-            }
         }
  
         @keyframes blink {
@@ -629,22 +616,6 @@
  
             50% {
                 transform: translateY(-20px);
-            }
-        }
- 
-        .pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite;
-        }
- 
-        @keyframes pulse-glow {
- 
-            0%,
-            100% {
-                box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-            }
- 
-            50% {
-                box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
             }
         }
  
