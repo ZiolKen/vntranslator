@@ -463,7 +463,6 @@
         }
 
         .notice-box, .usage-tips {
-            border-left: 3px solid var(--neon-cyan);
             padding: 20px;
         }
         
