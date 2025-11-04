@@ -144,7 +144,7 @@
             position: relative;
             overflow: hidden;
             border-radius: 16px;
-            padding: 25px;
+            padding: 30px;
             backdrop-filter: blur(1px);
             -webkit-backdrop-filter: blur(1px);
             transition: all 0.3s ease-in-out;
@@ -224,7 +224,17 @@
  
         .btn:hover {
             transform: scale(1.1);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            border-color: var(--neon-magenta);
+            color: var(--neon-magenta);
+            background: rgba(255, 0, 255, 0.1);
+        }
+        
+        .btn-renpy {
+            border-color: var(--renpy);
+        }
+        
+        .btn-rpgm {
+            border-color: var(--rpgm);
         }
  
         .btn:active {
