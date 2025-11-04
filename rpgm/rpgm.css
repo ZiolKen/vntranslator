@@ -70,12 +70,6 @@
             gap: 10px;
         }
  
-        h2::before {
-            content: '>';
-            font-weight: bold;
-            animation: blink 1s step-end infinite;
-        }
- 
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -429,49 +423,12 @@
             margin: 15px 0 15px 20px;
         }
  
-        .notice-box,
-        .usage-tips {
-            position: relative;
-            background: linear-gradient(135deg, #2c0735, #1a0420);
-            border-radius: 1rem;
+        .notice-box, .usage-tips {
             padding: 20px;
         }
         
-        .notice-box:hover,
-        .usage-tips:hover {
-            background: linear-gradient(135deg, #2c0735, #1a0420);
-            border-color: rgba(168, 85, 247, 0.3);
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px 0 rgba(168, 85, 247, 0.25);
-        }
-
-        .notice-box::before,
-        .usage-tips::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 1rem;
-            padding: 2px;
-            background: linear-gradient(135deg, #a855f7, #ec4899, #10b981);
-            -webkit-mask:
-                linear-gradient(#fff 0 0) content-box,
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-        }
- 
-        .notice-list {
-            margin: 12px 0 12px 20px;
-            list-style-type: '» ';
-        }
- 
-        .notice-list li {
-            padding-left: 10px;
-            margin-bottom: 8px;
-        }
+        .notice-list { margin: 12px 0 12px 20px; list-style-type: '» '; }
+        .notice-list li { padding-left: 10px; margin-bottom: 8px;}
  
         strong {
             color: var(--neon-yellow);
@@ -488,12 +445,6 @@
  
         .hidden {
             display: none !important;
-        }
- 
-        @keyframes blink {
-            50% {
-                opacity: 0;
-            }
         }
  
         @keyframes fadeIn {
@@ -571,10 +522,6 @@
             50% {
                 transform: translateY(-20px);
             }
-        }
- 
-        .pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite;
         }
  
         @keyframes slideIn {
