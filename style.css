@@ -225,7 +225,7 @@
         .btn:hover {
             transform: scale(1.1);
             border-color: var(--neon-magenta);
-            color: var(--neon-magenta);
+            color: var(--bg-primary);
             background: rgba(255, 0, 255, 0.1);
         }
         
