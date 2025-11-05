@@ -75,31 +75,6 @@
             font-family: 'Turret Road', sans-serif;
             text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
             letter-spacing: 2px;
-            animation: zflicker 3s infinite alternate;
-        }
- 
-        h2::before {
-            content: '>';
-            font-weight: bold;
-            animation: blink 1s step-end infinite;
-        }
- 
-        @keyframes zflicker {
- 
-            0%,
-            100% {
-                opacity: 1;
-            }
- 
-            50% {
-                opacity: 0.8;
-            }
-        }
- 
-        @keyframes blink {
-            50% {
-                opacity: 0;
-            }
         }
  
         .back-btn {
@@ -307,50 +282,12 @@
             margin: 8px 0;
         }
  
-        .notice-box,
-        .usage-tips {
-            position: relative;
-            background: linear-gradient(135deg, #2c0735, #1a0420);
-            border-radius: 1rem;
+        .notice-box, .usage-tips {
             padding: 20px;
         }
         
-        .notice-box:hover,
-        .usage-tips:hover {
-            background: linear-gradient(135deg, #2c0735, #1a0420);
-            border-color: rgba(168, 85, 247, 0.3);
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px 0 rgba(168, 85, 247, 0.25);
-        }
-
-        .notice-box::before,
-        .usage-tips::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 1rem;
-            padding: 2px;
-            background: linear-gradient(135deg, #a855f7, #ec4899, #10b981);
-            -webkit-mask:
-                linear-gradient(#fff 0 0) content-box,
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-        }
- 
-        .notice-list {
-            margin: 12px 0 12px 20px;
-            list-style-type: '» ';
-        }
- 
-        .notice-list li {
-            padding-left: 10px;
-            margin-bottom: 8px;
-        }
+        .notice-list { margin: 12px 0 12px 20px; list-style-type: '» '; }
+        .notice-list li { padding-left: 10px; margin-bottom: 8px;}
  
         strong {
             color: var(--neon-yellow);
@@ -417,22 +354,6 @@
  
             50% {
                 transform: translateY(-20px);
-            }
-        }
- 
-        .pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite;
-        }
- 
-        @keyframes pulse-glow {
- 
-            0%,
-            100% {
-                box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-            }
- 
-            50% {
-                box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
             }
         }
  
@@ -539,7 +460,7 @@
         particlesJS("particles-js", {
             "particles": {
                 "number": {
-                    "value": 100,
+                    "value": 70,
                     "density": {
                         "enable": true,
                         "value_area": 800
