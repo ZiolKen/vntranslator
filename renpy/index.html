@@ -167,10 +167,12 @@
 </style>
 
 <script>
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const particleCount = isMobile ? 55 : 111;
         particlesJS("particles-js", {
             "particles": {
                 "number": {
-                    "value": 70,
+                    "value": particleCount,
                     "density": {
                         "enable": true,
                         "value_area": 800
