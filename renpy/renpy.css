@@ -30,9 +30,18 @@
             padding: 16px;
             overflow-x: hidden;
             min-height: 100vh;
-            background-attachment: fixed;
-            background: #2c0735;
-            background: linear-gradient(135deg, #2c0735 0%, #1a0420 50%, #0f0515 100%);
+            background: #13233d;
+            background: linear-gradient(
+                145deg,
+                rgba(18, 37, 60, 1) 0%,
+                rgba(36, 10, 56, 1) 25%,
+                rgba(63, 16, 88, 1) 45%,
+                rgba(47, 25, 82, 1) 60%,
+                rgba(22, 42, 72, 1) 80%,
+                rgba(14, 32, 54, 1) 100%
+            );
+            background-blend-mode: screen;
+            filter: blur(45px) brightness(1.2);
             min-height: 100vh;
         }
  
