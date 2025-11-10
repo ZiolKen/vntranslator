@@ -31,16 +31,14 @@
     <button onclick="downloadFile()" class="mt-6 w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold shadow-lg transition">⬇️ Download Final .rpy</button>
     <div id="watermark-place" class="flex justify-center mt-6"></div>
     <div class="text-center mt-8 mb-2">
-        <a href="index.html" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full shadow hover:bg-blue-700 transition">⬅️ Back to Translator</a>
+        <a href="./" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full shadow hover:bg-blue-700 transition">⬅️ Back to Translator</a>
     </div>
   </div>
 
   <script>
-    // State variables with proper JSON parsing and fallbacks
     let currentPage = 1;
     const pageSize = 50;
     
-    // Safe JSON parsing with proper fallbacks
     function safeJsonParse(data, fallback) {
       try {
         return data ? JSON.parse(data) : fallback;
@@ -57,9 +55,7 @@
     const langTarget = localStorage.getItem('targetLang') || 'Bahasa Indonesia';
     const translationModel = localStorage.getItem('translationModel') || 'deepseek';
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-      // Show error if no data found
       if (detectedDialogs.length === 0) {
         document.getElementById('list').innerHTML = `
           <div class="text-center text-red-400 p-4 bg-gray-800 rounded-lg">
@@ -279,18 +275,12 @@ Text to translate: "${text}"`;
     const indentation = (originalLines[index] || '').match(/^\s*/)?.[0] || '';
     let val = (translatedDialogs[i] || '').trim();
     
-    // Handle escaped quotes properly
     val = val
-      // First preserve existing escaped quotes
-      .replace(/\\"/g, '\uFFFF') // Temporary placeholder
-      // Remove surrounding quotes if they exist
+      .replace(/\\"/g, '\uFFFF')
       .replace(/^["']|["']$/g, '')
-      // Restore escaped quotes
       .replace(/\uFFFF/g, '\\"')
-      // Escape any unescaped quotes in the content
       .replace(/([^\\])"/g, '$1\\"');
     
-    // Ensure we don't exceed original lines array
     if (index < finalLines.length) {
       finalLines[index] = 
         indentation +
@@ -310,7 +300,7 @@ Text to translate: "${text}"`;
     function escapeHtml(str) {
   if (!str) return '';
   return str
-    .replace(/\\"/g, '\uFFFF') // Preserve escaped quotes
+    .replace(/\\"/g, '\uFFFF')
     .replace(/[&<>"']/g, function(m) {
       return {
         '&': '&amp;',
@@ -320,7 +310,7 @@ Text to translate: "${text}"`;
         "'": '&#39;'
       }[m];
     })
-    .replace(/\uFFFF/g, '\\"'); // Restore escaped quotes
+    .replace(/\uFFFF/g, '\\"');
 }
 
     function injectWatermark() {
