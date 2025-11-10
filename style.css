@@ -84,6 +84,17 @@
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
+            position: relative;
+            color: var(--light);
+        }
+        
+        .bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
             background: #13233d;
             background: linear-gradient(
                 145deg,
@@ -96,8 +107,6 @@
             );
             background-blend-mode: screen;
             filter: blur(45px) brightness(1.2);
-            position: relative;
-            color: var(--light);
         }
  
         .grid-bg {
