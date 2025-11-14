@@ -557,6 +557,11 @@
             if (keywords.some(kw => new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes))) return false;
             if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
             if (/^["'].*["']/.test(trimmed)) return true;
+            const q = trimmed.match(/(['"])(.*)\1/);
+            if (q) {
+                const t = q[2].trim();
+                if (t === "" || /^[.\s]+$/.test(t)) return false;
+            }
             if (/{.*?}/.test(trimmed) && /[\w\-\?!'"]/i.test(trimmed)) return true;
             if (/^[\w\s]*\s*".+?"\s*$/.test(trimmed)) return true;
             return false;
@@ -577,7 +582,7 @@
                 lines.forEach((line, index) => {
                     if (isDialogLine(line)) {
                         const match = line.match(/"((?:\\.|[^"\\])*)"/);
-                        if (match) {
+                        if (match && match[1].trim() !== "" && !/^[.\s]+$/.test(match[1])) {
                             dialogs.push({
                                 dialog: match[1],
                                 line: index + 1
