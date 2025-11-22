@@ -412,30 +412,26 @@
     const dialogs = [];
 
     lines.forEach((line, index) => {
-      if (!line) return;
-
       const trimmed = line.trim();
-      if (!trimmed) return;
-      if (trimmed.startsWith('#')) return;
-
-      if (trimmed.startsWith('python') || trimmed.startsWith('init ')) {
-        return;
+      if (trimmed === '') return false;
+      if (/#/.test(trimmed)) return false;
+      if (/^(#|label\s|menu\s|jump\s|scene\s|init\s|show\s|stop\s|play\s|transform\s|define\s|image\s|window\s|voice\s|pause\s|call\s|return\s|$\s|renpy\s|queue\s|python\s)/i.test(trimmed)) return false;
+      if (/^[\w\s]*=[^"]/.test(trimmed)) return false;
+      if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff|woff2|eot|svg)["']?/i.test(trimmed)) return false;
+      if (/["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i.test(trimmed)) return false;
+      const keywords = ["screen", "background", "outlines", "outline_scaling", "=", "_", "font", "text", "text_font", "style", "add", "action", "show", "play", "image", "sound"];
+      const outsideQuotes = trimmed.replace(/"[^"]*"|'[^']*'/g, "");
+      if (keywords.some(kw => new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes))) return false;
+      if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
+      if (/^["'].*["']/.test(trimmed)) return true;
+      const q = trimmed.match(/(['"])(.*)\1/);
+      if (q) {
+          const t = q[2].trim();
+          if (t === "" || /^[.\s]+$/.test(t)) return false;
       }
-
-      const firstQuote = line.indexOf('"');
-      const lastQuote = line.lastIndexOf('"');
-
-      if (firstQuote === -1 || lastQuote <= firstQuote) return;
-
-      const indentMatch = line.match(/^(\s*)/);
-      const indent = indentMatch ? indentMatch[1] : '';
-
-      const prefix = line.slice(indent.length, firstQuote).trimEnd();
-      const quoteText = line.slice(firstQuote + 1, lastQuote);
-      const suffix = line.slice(lastQuote + 1);
-
-      if (!/[A-Za-z0-9]/.test(quoteText)) return; // skip non-text things
-
+      if (/{.*?}/.test(trimmed) && /[\w\-\?!'"]/i.test(trimmed)) return true;
+      if (/^[\w\s]*\s*".+?"\s*$/.test(trimmed)) return true;
+    
       dialogs.push({
         index,
         indent,
