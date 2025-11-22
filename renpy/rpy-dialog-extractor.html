@@ -659,6 +659,9 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
             const m = line.match(RGX_STRING_INSIDE);
             if (!m) continue;
 
+            const cleaned = m[1].trim();
+            if (!cleaned || /^[.\s]+$/.test(cleaned)) continue;
+
             dialogs.push({
                 dialog: escapeDialog(m[1]),
                 line: i + 1
@@ -668,6 +671,8 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
         }
 
         total += dialogs.length;
+        
+        log(`✅ ${file.name}: Extracted ${dialogs.length} dialogs`, "info");
 
         const output =
             `texts = [\n` +
@@ -707,6 +712,7 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
 
     const origLines = origText.split(/\r?\n/);
 
+    let mergedCount = 0;
     dialogs.forEach(d => {
         const i = d.line - 1;
 
@@ -721,6 +727,7 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
         );
 
         log(`✅ Line ${d.line} merged`, "success");
+        mergedCount++;
     });
 
     const merged = origLines.join("\n");
@@ -731,7 +738,7 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
     a.click();
 
     flushLog();
-    log(`✅ Merge Completed!`, "success");
+    log(`✅ Merge Completed: ${mergedCount} dialogs!`, "success");
 });
 </script>
  
