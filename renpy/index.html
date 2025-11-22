@@ -335,17 +335,27 @@
   }
 
   function log(message, level = 'info') {
-    const now = new Date();
-    const time = now.toISOString().split('T')[1].replace('Z', '');
-    const levelTag = level.toUpperCase();
-    const entryText = `[${time}] [${levelTag}] ${message}`;
+    const entryText = message;
 
     state.logEntries.push(entryText);
 
     if (!el.logBox) return;
     const p = document.createElement('p');
     p.textContent = entryText;
-    p.dataset.level = level;
+    switch (level) {
+      case 'error':
+        p.style.color = '#ff1b1b';
+        break;
+      case 'warn':
+        p.style.color = '#f1f759';
+        break;
+      case 'success':
+        p.style.color = '#39ff14';
+        break;
+      default:
+        p.style.color = '#00ffff';
+        break;
+    }
     el.logBox.appendChild(p);
     el.logBox.scrollTop = el.logBox.scrollHeight;
   }
@@ -1008,7 +1018,7 @@
 
     if (el.translateBtn) {
       el.translateBtn.addEventListener('click', startTranslation);
-      el.translateBtn.disabled = true; // until file is loaded
+      el.translateBtn.disabled = true;
     }
 
     if (el.stopBtn) {
@@ -1045,8 +1055,6 @@
     setupModalBehavior();
     updateControlButtons();
     updateProgress();
-
-    log('ℹ️ Ready. Upload a .rpy file and click "Start Translating".', 'info');
   }
 
   if (document.readyState === 'loading') {
