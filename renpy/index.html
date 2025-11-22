@@ -438,9 +438,9 @@
       if (dialogText.trim() === '' || /^[.\s]+$/.test(dialogText)) return;
 
       dialogs.push({
-        index,            
-        quote: dialogText,
-        translated: null, 
+        index: i,
+        quote: text,
+        translated: null,
       });
 
     });
@@ -850,27 +850,67 @@
   }
 
   function handlePreview() {
-    const output = buildOutputText();
-    if (!output) {
-      alert('Nothing to preview yet.');
+    if (!state.originalLines.length || !state.dialogs.length) {
+      alert('*️⃣ There is no data to preview yet. Please finish translating (or at least partially translate) first.');
       return;
     }
 
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (!win) {
-      alert(
-        '*️⃣ Popup blocked. Please allow popups for this site or use Download to view the result.'
-      );
+    const originalLines = state.originalLines.slice();
+
+    const dialogIndexes = state.dialogs.map(d => {
+      const index = d.index;
+      const line = originalLines[index] || '';
+
+      const indentMatch = line.match(/^\s*/);
+      const indent = indentMatch ? indentMatch[0] : '';
+      const withoutIndent = line.slice(indent.length);
+
+      const m = withoutIndent.match(/(["'])(.*)\1/);
+      let pre = '';
+      let quoteChar = '"';
+      let post = '';
+
+      if (m) {
+        quoteChar = m[1];
+        const before = withoutIndent.slice(0, m.index);
+        const after = withoutIndent.slice(m.index + m[0].length);
+        pre = before.trim();
+        post = after.trim();
+      }
+
+      return {
+        index,
+        pre,
+        quote: quoteChar,
+        post,
+      };
+    });
+
+    const detectedDialogs = state.dialogs.map(d => d.quote || '');
+    const translatedDialogs = state.dialogs.map(d => d.translated || '');
+
+    try {
+      localStorage.setItem('originalLines', JSON.stringify(originalLines));
+      localStorage.setItem('dialogIndexes', JSON.stringify(dialogIndexes));
+      localStorage.setItem('detectedDialogs', JSON.stringify(detectedDialogs));
+      localStorage.setItem('translatedDialogs', JSON.stringify(translatedDialogs));
+
+      if (el.apiKey) {
+        localStorage.setItem('deepseekApiKey', el.apiKey.value.trim() || '');
+      }
+      if (el.langTarget) {
+        localStorage.setItem('targetLang', el.langTarget.value);
+      }
+      if (el.modelSelect) {
+        localStorage.setItem('translationModel', el.modelSelect.value || 'deepseek');
+      }
+    } catch (err) {
+      console.error('Failed to write preview data to localStorage:', err);
+      alert('*️⃣ Unable to save preview data to localStorage (maybe due to quota or incognito mode).');
       return;
     }
 
-    win.document.write(
-      '<!DOCTYPE html><html><head><title>RPY Preview</title></head><body>' +
-        '<pre style="white-space: pre-wrap; font-family: monospace; padding: 16px;">' +
-        escapeHtml(output) +
-        '</pre></body></html>'
-    );
-    win.document.close();
+    window.location.href = 'preview.html';
   }
 
   function handleFileChange(evt) {
