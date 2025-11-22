@@ -408,10 +408,7 @@
    * - Look for first and last double quote (")
    * - Anything between them is treated as dialog text, if it has letters/digits
    */
-  function extractDialogsFromLines(lines) {
-    const dialogs = [];
-
-    lines.forEach((line, index) => {
+  function isDialogLine(line) {
       const trimmed = line.trim();
       if (trimmed === '') return false;
       if (/#/.test(trimmed)) return false;
@@ -431,19 +428,34 @@
       }
       if (/{.*?}/.test(trimmed) && /[\w\-\?!'"]/i.test(trimmed)) return true;
       if (/^[\w\s]*\s*".+?"\s*$/.test(trimmed)) return true;
-    
-      dialogs.push({
-        index,
-        indent,
-        prefix,
-        quote: quoteText,
-        suffix,
-        translated: null,
-      });
-    });
-
-    return dialogs;
+      return false;
   }
+    
+  const dialogLines = [];
+
+  for (const file of files) {
+      const text = await file.text();
+      const lines = text.split(/\r?\n/);
+
+      lines.forEach((line, index) => {
+          if (!isDialogLine(line)) return;
+
+          const match = line.match(/"((?:\\.|[^"\\])*)"/);
+          if (!match) return;
+
+          const dialogText = match[1];
+          if (dialogText.trim() === "" || /^[.\s]+$/.test(dialogText)) return;
+
+          dialogLines.push({
+              fileName: file.name,
+              lineNumber: index + 1,
+              originalLine: line,
+              originalText: dialogText
+          });
+      });
+  }
+
+  log(`ℹ️ Detected ${dialogLines.length} dialog lines. Creating translation batches...`, "info");
 
   async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
     const lines = batchDialogs.map(d => d.quote);
