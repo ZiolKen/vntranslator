@@ -554,34 +554,76 @@ function flushLog() {
     logBox.scrollTop = logBox.scrollHeight;
 }
 
-const rgx_fileAsset = /\.(png|jpe?g|gif|webp|mp3|ogg|wav|mp4|webm|m4a|avi|mov|ttf|otf|woff2?|eot|svg)["']?/i;
-const rgx_pathAsset = /["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i;
+const RGX_ASSET_FILE = /\.(png|jpe?g|gif|webp|mp3|ogg|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff2?|eot|svg)["']?$/i;
+const RGX_ASSET_PATH = /["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i;
 
-const rgx_dialogStrict = /^"((?:\\.|[^"\\])*)"$/;
-const rgx_dialogInside = /"((?:\\.|[^"\\])*)"/;
+const RGX_FULL_STRING = /^"((?:\\.|[^"\\])*)"$/;      
+const RGX_STRING_INSIDE = /"((?:\\.|[^"\\])*)"/;       
+const RGX_ANY_STRING = /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/g;  
 
-const rgx_dict = /{\s*dialog:\s*["']([\s\S]*?)["']\s*,\s*line:\s*(\d+)\s*}/g;
+const DIALOG_BLACKLIST = [
+    "screen", "background", "outlines", "outline_scaling",
+    "font", "text", "text_font", "style",
+    "add", "action", "show", "play", "image", "sound"
+];
 
 function isDialogLine(line) {
-    const t = line.trim();
-    if (!t) return false;
-    if (t.startsWith("#")) return false;
+    const raw = line;
+    const trimmed = raw.trim();
+    if (!trimmed) return false;
 
-    if (/^(label|menu|jump|scene|define|init|python|if|elif|else|return)\b/i.test(t))
-        return false;
+    let lineNoComment = "";
+    {
+        let inS = false, inD = false;
+        for (let i = 0; i < trimmed.length; i++) {
+            const c = trimmed[i];
+            const prev = i > 0 ? trimmed[i - 1] : null;
 
-    if (/^[\w\s]*=[^"']/.test(t)) return false;
+            if (c === "'" && !inD && prev !== "\\") inS = !inS;
+            else if (c === '"' && !inS && prev !== "\\") inD = !inD;
+            else if (c === "#" && !inS && !inD) break;
 
-    if (rgx_fileAsset.test(t)) return false;
-    if (rgx_pathAsset.test(t)) return false;
-
-    if (/\b(screen|style|background|show|add|action|play|stop|voice|sound|image)\b/i.test(t)) {
-        if (!/^[a-zA-Z_][\w]*\s+["']/.test(t))
-            return false;
+            lineNoComment += c;
+        }
     }
 
-    if (rgx_dialogStrict.test(t)) return true;
-    if (rgx_dialogInside.test(t)) return true;
+    const t = lineNoComment.trim();
+    if (!t) return false;
+
+    if (/^(label|menu|jump|scene|init|show|hide|stop|play|queue|transform|define|image|window|voice|pause|call|return|renpy|python)\b/i.test(t))
+        return false;
+
+    if (/^[\w\s]*=[^"'`]/.test(t)) return false;
+
+    if (RGX_ASSET_FILE.test(t)) return false;
+    if (RGX_ASSET_PATH.test(t)) return false;
+
+    const outsideQuotes = t.replace(RGX_ANY_STRING, "");
+    for (const kw of DIALOG_BLACKLIST) {
+        if (new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes)) {
+            if (!/^[a-zA-Z_][\w]*\s+["']/.test(t)) return false;
+        }
+    }
+
+    if (/^[\w\s]+:\s*["'].*["']/.test(t)) return true;
+
+    if (RGX_FULL_STRING.test(t)) return true;
+
+    if (/^[\w_]+\s+"(.+?)"/.test(t)) return true;
+
+    if (RGX_STRING_INSIDE.test(t)) {
+        const m = t.match(RGX_STRING_INSIDE);
+        if (!m) return false;
+
+        const text = m[1].trim();
+        if (!text) return false;
+        if (/^[.\s]+$/.test(text)) return false; // chuỗi rỗng / "..."
+
+        return true;
+    }
+
+    if (/{.*?}/.test(t) && /[A-Za-z0-9\u00C0-\u1EF9]/.test(t))
+        return true;
 
     return false;
 }
