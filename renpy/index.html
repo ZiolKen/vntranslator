@@ -401,13 +401,6 @@
     el.resumeBtn.disabled = !state.isPaused;
   }
 
-  /**
-   * Extract dialog lines from Ren'Py .rpy content.
-   * Heuristics:
-   * - Skip empty lines and comments starting with '#'
-   * - Look for first and last double quote (")
-   * - Anything between them is treated as dialog text, if it has letters/digits
-   */
   function isDialogLine(line) {
       const trimmed = line.trim();
       if (trimmed === '') return false;
@@ -431,31 +424,28 @@
       return false;
   }
     
-  const dialogLines = [];
+  function extractDialogsFromLines(lines) {
+    const dialogs = [];
 
-  for (const file of files) {
-      const text = await file.text();
-      const lines = text.split(/\r?\n/);
+    lines.forEach((line, index) => {
+      if (!isDialogLine(line)) return;
 
-      lines.forEach((line, index) => {
-          if (!isDialogLine(line)) return;
+      const match = line.match(/"((?:\\.|[^"\\])*)"/);
+      if (!match) return;
 
-          const match = line.match(/"((?:\\.|[^"\\])*)"/);
-          if (!match) return;
+      const dialogText = match[1];
+      if (dialogText.trim() === '' || /^[.\s]+$/.test(dialogText)) return;
 
-          const dialogText = match[1];
-          if (dialogText.trim() === "" || /^[.\s]+$/.test(dialogText)) return;
-
-          dialogLines.push({
-              fileName: file.name,
-              lineNumber: index + 1,
-              originalLine: line,
-              originalText: dialogText
-          });
+      dialogs.push({
+        index,            
+        quote: dialogText,
+        translated: null, 
       });
-  }
 
-  log(`ℹ️ Detected ${dialogLines.length} dialog lines. Creating translation batches...`, "info");
+    });
+
+    return dialogs;
+  }
 
   async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
     const lines = batchDialogs.map(d => d.quote);
@@ -538,7 +528,7 @@
     'en-US': 'en',
     'en-GB': 'en',
     Filipino: 'tl',
-    Indonesian: 'id',
+    Bahasa Indonesian: 'id',
     Malay: 'ms',
   };
 
