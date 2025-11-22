@@ -435,14 +435,13 @@
       if (!match) return;
 
       const dialogText = match[1];
-      if (dialogText.trim() === '' || /^[.\s]+$/.test(dialogText)) return;
+      if (dialogText.trim() === "" || /^[.\s]+$/.test(dialogText)) return;
 
       dialogs.push({
-        index: i,
-        quote: text,
+        index,
+        quote: dialogText,
         translated: null,
       });
-
     });
 
     return dialogs;
