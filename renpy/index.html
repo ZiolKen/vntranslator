@@ -278,15 +278,16 @@
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  function languageLabel(code) {
-    switch (code) {
-      case 'id': return 'Indonesian';
-      case 'en': return 'English';
-      case 'ms': return 'Malay';
-      case 'vi': return 'Vietnamese';
-      case 'fil': return 'Filipino';
-      default: return code;
-    }
+  function languageLabel(codeOrName) {
+    const v = String(codeOrName || '').toLowerCase();
+
+    if (['id', 'indonesian', 'bahasa indonesia'].includes(v)) return 'Indonesian';
+    if (['en', 'english', 'en-us', 'en-gb'].includes(v)) return 'English';
+    if (['ms', 'malay', 'ms-my'].includes(v)) return 'Malay';
+    if (['vi', 'vietnamese', 'vi-vn'].includes(v)) return 'Vietnamese';
+    if (['tl', 'fil', 'filipino', 'tagalog'].includes(v)) return 'Filipino';
+
+    return codeOrName || '';
   }
 
   function escapeHtml(str) {
@@ -522,14 +523,20 @@
   }
   
   const LINGVA_LANG_MAP = {
+    'Bahasa Indonesia': 'id',
+    Indonesian: 'id',
+
     Vietnamese: 'vi',
     'vi-VN': 'vi',
+
     English: 'en',
     'en-US': 'en',
     'en-GB': 'en',
-    Filipino: 'tl',
-    Bahasa Indonesian: 'id',
+
     Malay: 'ms',
+
+    Filipino: 'tl',
+    Filipina: 'tl',
   };
 
   function getLingvaLangCode(lang) {
