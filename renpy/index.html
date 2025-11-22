@@ -274,8 +274,6 @@
     logEntries: [],
   };
 
-  const LINGVA_BASE_URL = 'https://translate.astian.org';
-
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -525,6 +523,18 @@
     return outLines;
   }
   
+  function lingvaLang(code) {
+    switch (code) {
+      case 'id': return 'id';
+      case 'en': return 'en';
+      case 'ms': return 'ms';
+      case 'vi': return 'vi';
+      case 'fil': return 'tl';
+      default: return code;
+    }
+  }
+  const lingvaTrans = lingvaLang(lingvaTarget);
+  
   const LINGVA_BASE_URLS = [
     'https://lingva.lunar.icu',
     'https://lingva.ml',
@@ -577,7 +587,7 @@
 
       const path =
         '/api/v1/auto/' +
-        encodeURIComponent(targetLang) +
+        encodeURIComponent(lingvaTarget) +
         '/' +
         encodeURIComponent(text);
 
