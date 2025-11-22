@@ -384,15 +384,6 @@
                 font-size: 4.5rem;
             }
         }
-
-        .cyber-grid {
-            background-image:
-                repeating-linear-gradient(0deg,
-                    transparent,
-                    transparent 2px,
-                    rgba(168, 85, 247, 0.03) 2px,
-                    rgba(168, 85, 247, 0.03) 4px);
-        }
         
         .main-title {
             max-width: 1000px;
@@ -410,12 +401,12 @@
 <div class="main-title">
 <h1 class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">TOOL CONVERT KS TO JSON<br><span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool Tyranor Engine</span></h1>
   
-<div class="section cyber-grid" style="margin-bottom: 25px;"> 
+<div class="section" style="margin-bottom: 25px;"> 
   <h2>KS → JSON</h2>
   <input type="file" id="ksFile" accept=".ks" multiple>  
 </div>  
   
-<div class="section cyber-grid" style="margin-bottom: 25px;">  
+<div class="section" style="margin-bottom: 25px;">  
   <h2>JSON + KS</h2>  
   
   <label for="jsonFile" style="display:block;margin-bottom:6px;color:#94a3b8;">  
@@ -433,7 +424,7 @@
   <button id="mergeBtn" style="margin-top: 15px;">🔀 Combine JSON + KS</button>  
 </div>
 
-<div class="section cyber-grid" style="margin-bottom: 25px;">
+<div class="section" style="margin-bottom: 25px;">
     <h2>Conversion Log</h2>
     <textarea id="output" class="log-container" readonly>[SYSTEM_BOOT] :: Awaiting input...</textarea>
 </div>
