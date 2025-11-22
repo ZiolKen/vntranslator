@@ -530,133 +530,213 @@
         });
     </script>
  
-    <script>
-        const logBox = document.getElementById("log");
- 
-        function log(msg, type = "info") {
-            let color = {
-                success: "var(--neon-green)",
-                error: "var(--neon-red)",
-                warn: "var(--neon-yellow)",
-                info: "var(--neon-cyan)"
-            } [type] || "var(--neon-cyan)";
-            logBox.innerHTML += `<span style="color:${color}">${msg}</span><br>`;
-            logBox.scrollTop = logBox.scrollHeight;
-        }
- 
-        function isDialogLine(line) {
-            const trimmed = line.trim();
-            if (trimmed === '') return false;
-            if (/#/.test(trimmed)) return false;
-            if (/^(#|label\s|menu\s|jump\s|scene\s)/i.test(trimmed)) return false;
-            if (/^[\w\s]*=[^"]/.test(trimmed)) return false;
-            if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff|woff2|eot|svg)["']?/i.test(trimmed)) return false;
-            if (/["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i.test(trimmed)) return false;
-            const keywords = ["screen", "background", "outlines", "outline_scaling", "=", "_", "font", "text", "text_font", "style", "add", "action", "show", "play", "image", "sound"];
-            const outsideQuotes = trimmed.replace(/"[^"]*"|'[^']*'/g, "");
-            if (keywords.some(kw => new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes))) return false;
-            if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
-            if (/^["'].*["']/.test(trimmed)) return true;
-            const q = trimmed.match(/(['"])(.*)\1/);
-            if (q) {
-                const t = q[2].trim();
-                if (t === "" || /^[.\s]+$/.test(t)) return false;
+<script>
+    const logBox = document.getElementById("log");
+
+    function log(msg, type = "info") {
+        let color = {
+            success: "var(--neon-green)",
+            error: "var(--neon-red)",
+            warn: "var(--neon-yellow)",
+            info: "var(--neon-cyan)"
+        }[type] || "var(--neon-cyan)";
+        logBox.innerHTML += `<span style="color:${color}">${msg}</span><br>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // ====== UTILITIES ======
+    function stripComments(line) {
+        let inSingle = false;
+        let inDouble = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            const prev = i > 0 ? line[i - 1] : null;
+
+            if (c === "'" && !inDouble && prev !== "\\") {
+                inSingle = !inSingle;
+            } else if (c === '"' && !inSingle && prev !== "\\") {
+                inDouble = !inDouble;
+            } else if (c === "#" && !inSingle && !inDouble) {
+                return line.slice(0, i);
             }
-            if (/{.*?}/.test(trimmed) && /[\w\-\?!'"]/i.test(trimmed)) return true;
-            if (/^[\w\s]*\s*".+?"\s*$/.test(trimmed)) return true;
-            return false;
         }
- 
-        // === Extract ===
-        document.getElementById("extractBtn").addEventListener("click", async () => {
-            const files = document.getElementById("extractFile").files;
-            if (!files.length) return alert("⚠️ Select atleast 1 .rpy file to extract dialog!");
-            log(`🔄 Processing ${files.length} file(s)...`, "info");
- 
-            let totalDialogs = 0;
- 
-            for (const file of files) {
-                const text = await file.text();
-                const lines = text.split(/\r?\n/);
-                const dialogs = [];
-                lines.forEach((line, index) => {
-                    if (isDialogLine(line)) {
-                        const match = line.match(/"((?:\\.|[^"\\])*)"/);
-                        if (match && match[1].trim() !== "" && !/^[.\s]+$/.test(match[1])) {
-                            dialogs.push({
-                                dialog: match[1],
-                                line: index + 1
-                            });
-                            log(`✅ Extracted: ${match[1]}`, "success");
-                        }
-                    }
-                });
- 
-                totalDialogs += dialogs.length;
- 
-                const output = `texts = [\n${dialogs.map(d => `    { dialog: "${d.dialog}", line: ${d.line} }`).join(",\n")}\n]`;
-                const blob = new Blob([output], {
-                    type: "text/plain;charset=utf-8"
-                });
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = `${file.name.replace(".rpy", "")}_extracted.rpy`;
-                a.click();
+        return line;
+    }
+
+    function escapeForQuote(str, quoteChar) {
+        let s = String(str).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        s = s.replace(/\\/g, "\\\\");
+
+        if (quoteChar === '"') {
+            s = s.replace(/"/g, '\\"');
+        } else {
+            s = s.replace(/'/g, "\\'");
+        }
+
+        s = s.replace(/\n/g, "\\n");
+
+        return s;
+    }
+
+    function isDialogLine(rawLine) {
+        if (!rawLine) return false;
+
+        let line = stripComments(rawLine).trim();
+        if (line === "") return false;
+
+        if (/^(label|menu|jump|scene|$|renpy|define|init|call|window|pause|queue|show|voice|stop|play|transform|python|if|elif|else|return)\b/i.test(line)) return false;
+        if (/^[\w\s]*=[^"']/.test(line)) return false;
+
+        const stringRegex = /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/g;
+        const matches = [...line.matchAll(stringRegex)];
+        if (!matches.length) return false;
+
+        let hasSpoken = false;
+        for (const m of matches) {
+            const text = (m[1] ?? m[2] ?? "").trim();
+            if (!text) continue;
+
+            if (/\/.+\.(png|jpe?g|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff2?|eot|svg)$/i.test(text)) {
+                continue;
             }
- 
-            log(`✅ Extracted All Files: ${totalDialogs} Dialog(s)`, "success");
-        });
-            
-        // === Merge ===
-        document.getElementById("mergeBtn").addEventListener("click", async () => {
-            const translated = document.getElementById("translatedFile").files[0];
-            const original = document.getElementById("originalFile").files[0];
-            if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
- 
-            log(`🔄 Merging files...`, "info");
- 
-            const transText = await translated.text();
-            const origText = await original.text();
- 
+
+            if (/^\{.*\}$/.test(text)) continue;
+
+            if (!/[0-9A-Za-z\u00C0-\u024F\u1E00-\u1EFF]/.test(text)) continue;
+
+            hasSpoken = true;
+            break;
+        }
+
+        if (!hasSpoken) return false;
+
+        const outsideQuotes = line.replace(stringRegex, "");
+        if (/\b(screen|background|style|add|action|image|show|play|voice|sound|music)\b/i.test(outsideQuotes)) {
+            if (!/^[a-zA-Z_][\w]*\s+["']/.test(line)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ====== EXTRACT ======
+    document.getElementById("extractBtn").addEventListener("click", async () => {
+        const files = document.getElementById("extractFile").files;
+        if (!files.length) return alert("⚠️ Select atleast 1 .rpy file to extract dialog!");
+
+        log(`🔄 Processing ${files.length} file(s)...`, "info");
+
+        let totalDialogs = 0;
+
+        for (const file of files) {
+            const text = await file.text();
+            const lines = text.split(/\r?\n/);
             const dialogs = [];
-            const transMatch = [...transText.matchAll(/{\s*dialog:\s*["']([\s\S]*?)["']\s*,?\s*line:\s*(\d+)\s*}/g)];
-            for (const m of transMatch) {
-                dialogs.push({
-                    dialog: m[1],
-                    line: parseInt(m[2])
-                });
-            }
- 
-            function escapeQuotes(str) {
-                return str.replace(/"/g, '\\"');
-            }
- 
-            const origLines = origText.split(/\r?\n/);
- 
-            dialogs.forEach(d => {
-                d.dialog = d.dialog.replace(/(\{w=\d+),(\d+\})/g, "$1.$2");
-                const i = d.line - 1;
-                if (i >= 0 && i < origLines.length) {
-                    const replaced = origLines[i].replace(/(["'])(?:(?=(\\?))\2.)*?\1/, `"${escapeQuotes(d.dialog)}"`);
-                    log(`✅ Line ${d.line} merged: ${d.dialog}`, "success");
-                    origLines[i] = replaced;
-                } else {
-                    log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
+
+            lines.forEach((line, index) => {
+                if (isDialogLine(line)) {
+                    const m = stripComments(line).match(/"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'/);
+                    const content = (m && (m[1] ?? m[2])) || "";
+
+                    const trimmed = content.trim();
+                    if (trimmed && !/^[.\s]+$/.test(trimmed)) {
+                        dialogs.push({
+                            dialog: content,
+                            line: index + 1
+                        });
+                        log(`✅ Extracted (line ${index + 1}): ${trimmed}`, "success");
+                    }
                 }
             });
- 
-            const merged = origLines.join("\n");
-            const blob = new Blob([merged], {
-                type: "text/plain;charset=utf-8"
+
+            totalDialogs += dialogs.length;
+
+            const linesOut = dialogs.map(d => {
+                const dialogStr = JSON.stringify(d.dialog);
+                return `    { dialog: ${dialogStr}, line: ${d.line} }`;
             });
+
+            const output = `texts = [\n${linesOut.join(",\n")}\n]\n`;
+            const blob = new Blob([output], { type: "text/plain;charset=utf-8" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = `${original.name.replace(".rpy", "")}_merged.rpy`;
+            a.download = `${file.name.replace(/\.rpy$/i, "")}_extracted.rpy`;
             a.click();
- 
-            log(`✅ Merge completed successfully!`, "success");
+        }
+
+        log(`✅ Extracted All Files: ${totalDialogs} Dialog(s)`, "success");
+    });
+
+    // ====== MERGE ======
+    document.getElementById("mergeBtn").addEventListener("click", async () => {
+        const translated = document.getElementById("translatedFile").files[0];
+        const original = document.getElementById("originalFile").files[0];
+        if (!translated || !original) return alert("⚠️ Select both files: translated and original!");
+
+        log(`🔄 Merging files...`, "info");
+
+        const transText = await translated.text();
+        const origText = await original.text();
+
+        const dialogs = [];
+
+        const transLines = transText.split(/\r?\n/);
+        for (const line of transLines) {
+            const m = line.match(/\{\s*dialog:\s*(.+?),\s*line:\s*(\d+)\s*\}/);
+            if (!m) continue;
+
+            let dialogRaw = m[1].trim();
+            let lineNum = parseInt(m[2], 10);
+
+            try {
+                const dialogParsed = JSON.parse(dialogRaw);
+
+                dialogs.push({
+                    dialog: dialogParsed,
+                    line: lineNum
+                });
+            } catch (e) {
+                log(`⚠️ Skip line with invalid dialog JSON: ${line}`, "warn");
+            }
+        }
+
+        function normalizeWaitTag(str) {
+            return str.replace(/(\{w=\d+),(\d+\})/g, "$1.$2");
+        }
+
+        const origLines = origText.split(/\r?\n/);
+
+        dialogs.forEach(d => {
+            d.dialog = normalizeWaitTag(d.dialog);
+
+            const i = d.line - 1;
+            if (i < 0 || i >= origLines.length) {
+                log(`⚠️ Line ${d.line} does not exist in the original file!`, "warn");
+                return;
+            }
+
+            const originalLine = origLines[i];
+
+            const newLine = originalLine.replace(/(["'])(?:(?=(\\?))\2.)*?\1/, (match, quoteChar) => {
+                const safeText = escapeForQuote(d.dialog, quoteChar);
+                log(`✅ Line ${d.line} merged`, "success");
+                return `${quoteChar}${safeText}${quoteChar}`;
+            });
+
+            origLines[i] = newLine;
         });
-    </script>
+
+        const merged = origLines.join("\n");
+        const blob = new Blob([merged], { type: "text/plain;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${original.name.replace(/\.rpy$/i, "")}_merged.rpy`;
+        a.click();
+
+        log(`✅ Merge completed successfully!`, "success");
+    });
+</script>
  
 </body>
  
