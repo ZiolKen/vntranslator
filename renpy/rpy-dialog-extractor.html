@@ -554,9 +554,9 @@ const RGX_DICT = /{\s*dialog:\s*["']([\s\S]*?)["']\s*,\s*line:\s*(\d+)\s*}/g;
 const RGX_ANY_STRING = /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/g;  
 
 const DIALOG_BLACKLIST = [
-    "screen", "background", "outlines", "outline_scaling",
-    "font", "text", "text_font", "style",
-    "add", "action", "show", "play", "image", "sound"
+    "screen", "background", "outlines", "outline_scaling", "easeout", "hovered", "unhovered",
+    "font", "text", "text_font", "style", "key", "if", "else", "at", "def", "config", "size",
+    "add", "action", "show", "play", "image", "sound", "align", "import", "with", "move"
 ];
 
 function isDialogLine(line) {
@@ -582,7 +582,7 @@ function isDialogLine(line) {
     const t = lineNoComment.trim();
     if (!t) return false;
 
-    if (/^(label|menu|jump|scene|init|show|hide|stop|play|queue|transform|define|image|window|voice|pause|call|return|renpy|python)\b/i.test(t))
+    if (/^(label|key|style|text_font|font|$|if|else|at|align|easeout|size|hovered|unhovered|import|config|with|def|move|background|text|add|action|screen|sound|outlines|outline_scaling|menu|jump|scene|init|show|hide|stop|play|queue|transform|define|image|window|voice|pause|call|return|renpy|python)\b/i.test(t))
         return false;
 
     if (/^[\w\s]*=[^"'`]/.test(t)) return false;
