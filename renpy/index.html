@@ -832,32 +832,37 @@
   }
 
   function handleDownloadFinal() {
-    const output = state.originalLines.map((line, idx) => {
-        const d = state.dialogs.find(x => x.index === idx);
+    const lines = [...state.originalLines]; 
 
-        if (!d || !d.translated) return line;
+    for (const d of state.dialogs) {
+        if (!d.translated) continue; 
+
+        const idx = d.index; 
+        let line = lines[idx] || "";
 
         const first = line.indexOf('"');
-        const last = line.lastIndexOf('"');
-        if (first === -1 || last <= first) return line;
+        const last  = line.lastIndexOf('"');
+        if (first === -1 || last <= first) continue;
 
-        return line.slice(0, first + 1)
-            + d.translated
-            + line.slice(last);
-    }).join("\n");
+        const newLine =
+            line.slice(0, first + 1) +
+            d.translated +
+            line.slice(last);
 
-    const blob = new Blob([output], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+        lines[idx] = newLine;
+    }
+
+    const blob = new Blob([lines.join("\n")], {
+        type: "text/plain;charset=utf-8"
+    });
 
     const a = document.createElement("a");
-    const base = state.fileName.replace(/\.rpy$/i, "");
-    a.download = base + "_translated.rpy";
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
 
-    document.body.appendChild(a);
+    const base = (state.fileName || "translated").replace(/\.rpy$/i, "");
+    a.download = base + "_partial.rpy";
+
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 
     log("⬇️ Downloaded translated file.", "success");
   }
