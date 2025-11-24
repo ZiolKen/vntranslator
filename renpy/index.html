@@ -449,6 +449,7 @@
 
       dialogs.push({
         index,
+        originalLine: line,
         quote: dialogText,
         translated: null,
       });
@@ -836,16 +837,16 @@
   }
 
   function handleDownloadFinal() {
-    const lines = [...state.originalLines]; 
+    const lines = [...state.originalLines];
 
     for (const d of state.dialogs) {
-        if (!d.translated) continue; 
+        if (!d.translated) continue;
 
-        const idx = d.index; 
-        let line = lines[idx] || "";
+        let line = d.originalLine;
+        const idx = d.index;
 
         const first = line.indexOf('"');
-        const last  = line.lastIndexOf('"');
+        const last = line.lastIndexOf('"');
         if (first === -1 || last <= first) continue;
 
         const newLine =
@@ -864,7 +865,7 @@
     a.href = URL.createObjectURL(blob);
 
     const base = (state.fileName || "translated").replace(/\.rpy$/i, "");
-    a.download = base + "_partial.rpy";
+    a.download = base + "_translated.rpy";
 
     a.click();
 
