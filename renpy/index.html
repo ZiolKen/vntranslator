@@ -314,7 +314,7 @@
 
     for (const dialog of dialogs) {
       const text = dialog.quote || '';
-      const tokens = estimateTokens(text) + 8; // small overhead per line
+      const tokens = estimateTokens(text) + 8; 
 
       if (currentBatch.length > 0 &&
           (currentBatch.length >= maxLines || currentTokens + tokens > maxTokens)) {
@@ -784,6 +784,8 @@
     state.isTranslating = true;
     state.isPaused = false;
 
+    if (el.downloadFinal) el.downloadFinal.disabled = false;
+
     if (el.progressBar) {
       el.progressBar.value = 0;
       el.progressBar.max = state.dialogs.length;
@@ -830,23 +832,34 @@
   }
 
   function handleDownloadFinal() {
-    const output = buildOutputText();
+    const output = state.originalLines.map((line, idx) => {
+        const d = state.dialogs.find(x => x.index === idx);
 
-    const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+        if (!d || !d.translated) return line;
+
+        const first = line.indexOf('"');
+        const last = line.lastIndexOf('"');
+        if (first === -1 || last <= first) return line;
+
+        return line.slice(0, first + 1)
+            + d.translated
+            + line.slice(last);
+    }).join("\n");
+
+    const blob = new Blob([output], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    const baseName = state.fileName
-      ? state.fileName.replace(/\.rpy$/i, '')
-      : 'translated';
-    a.download = baseName + '_translated.rpy';
+    const a = document.createElement("a");
+    const base = state.fileName.replace(/\.rpy$/i, "");
+    a.download = base + "_translated.rpy";
     a.href = url;
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    log('⬇️ Downloaded translated .rpy file.', 'success');
+    log("⬇️ Downloaded translated file.", "success");
   }
 
   function handleDownloadProgress() {
