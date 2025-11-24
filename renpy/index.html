@@ -712,6 +712,10 @@
        
         if (translated) {
           dialog.translated = translated;
+
+          const original = state.dialogs.find(x => x.index === dialog.index);
+          if (original) original.translated = translated;
+
           log(`✅ [${realIndex}] ${translated}`, "success");
         } else {
           log(`*️⃣ [${realIndex}] Cannot translate`, "warn");
