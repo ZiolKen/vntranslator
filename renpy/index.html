@@ -416,11 +416,11 @@
       const trimmed = line.trim();
       if (trimmed === '') return false;
       if (/#/.test(trimmed)) return false;
-      if (/^(#|label\s|menu\s|jump\s|scene\s|init\s|show\s|stop\s|play\s|transform\s|define\s|image\s|window\s|voice\s|pause\s|call\s|return\s|$\s|renpy\s|queue\s|python\s)/i.test(trimmed)) return false;
+      if (/^(#|label\s|key\s|style\s|text_font\s|font\s|$\s|if\s|else\s|at\s|align\s|easeout\s|size\s|hovered\s|unhovered\s|import\s|config\s|with\s|def\s|move\s|background\s|text\s|add\s|action\s|screen\s|sound\s|outlines\s|outline_scaling\s|menu\s|jump\s|scene\s|init\s|show\s|hide\s|stop\s|play\s|queue\s|transform\s|define\s|image\s|window\s|voice\s|pause\s|call\s|return\s|renpy\s|python\s)/i.test(trimmed)) return false;
       if (/^[\w\s]*=[^"]/.test(trimmed)) return false;
       if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff|woff2|eot|svg)["']?/i.test(trimmed)) return false;
       if (/["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i.test(trimmed)) return false;
-      const keywords = ["screen", "background", "outlines", "outline_scaling", "=", "_", "font", "text", "text_font", "style", "add", "action", "show", "play", "image", "sound"];
+      const keywords = ["screen", "background", "outlines", "outline_scaling", "easeout", "hovered", "unhovered", "font", "text", "text_font", "style", "key", "if", "else", "at", "def", "config", "size", "add", "action", "show", "play", "image", "sound", "align", "import", "with", "move"];
       const outsideQuotes = trimmed.replace(/"[^"]*"|'[^']*'/g, "");
       if (keywords.some(kw => new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes))) return false;
       if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
@@ -706,8 +706,15 @@
       }
 
       for (let i = 0; i < batchDialogs.length; i++) {
-        if (translatedLines[i]) {
-          batchDialogs[i].translated = translatedLines[i];
+        const dialog = batchDialogs[i];
+        const translated = translatedLines[i];
+        const realIndex = dialog.index + 1;
+       
+        if (translated) {
+          dialog.translated = translated;
+          log(`✅ [${realIndex}] ${translated}`, "success");
+        } else {
+          log(`*️⃣ [${realIndex}] Cannot translate`, "warn");
         }
       }
 
@@ -783,7 +790,7 @@
     }
     updateProgress();
 
-    setTranslateButtonBusy(true, 'Translating...');
+    setTranslateButtonBusy(true, '🔁 Translating...');
     if (el.controlBtns) el.controlBtns.style.display = 'flex';
     updateControlButtons();
 
