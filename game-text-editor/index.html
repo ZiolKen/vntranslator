@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+	<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <meta name="theme-color" content="#000000">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<title>Game Text Editor</title>
+	<link href="./Content/custom.css" rel="stylesheet"/>
+	<link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="./Content/style.css" rel="stylesheet"/>
+	<link href="./Content/jquery.fileupload.css" rel="stylesheet" />
+	<style>
+		.qnavi {
+			position: fixed;
+			right: 20px;
+			bottom: 20px;
+			z-index: 150;
+			opacity: 0.3;
+		}
+
+		.qnavi:hover {
+			opacity: 1;
+		}
+
+		.hl {
+			color: black;
+		}
+	</style>
+
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-R4CH6HS4YB"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+
+		gtag('config', 'G-R4CH6HS4YB');
+	</script>
+</head>
+
+<body>
+<div id="particles-js"></div>
+<div class="grid-bg"></div>
+<h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">
+    Game Text <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Editor</span>
+</h1>
+
+<div class="container body-content">
+
+<div class="card usage-tips" id="head">
+	<p style="font-size: 1.2rem;" itemprop="description">
+		This tool can extract and update texts of game in most easy way. For editing, translating, or you can rename any character. Just drag your 📂 <b>Data</b> directory to the site.
+		<br />Translate games before playing, it's easy.
+	</p>
+	<ul class="notice-list">
+		<li>Editor for RPG Maker MV, MZ. *.json</li>
+		<li>Editor for RenPy *.rpy</li>
+		<li>Editor for Kirikiri *.ks</li>
+		<li>Editor for Tyranobuild *.ks</li>
+		<li>For MV, MZ the <b>data</b> have be here \www\data</li>
+		<li><i>I recommend <b>deepl</b> Translate, it's a little slow but the result keeps more meaning.</i></li>
+		<li>Be careful, make backups.</li>
+	</ul>
+</div>
+
+<div id="headM" style="display: none;"><br /></div>
+
+<div id="dropZone" style="margin-top: 25px;">
+    📂 <b>DROP YOUR FILE HERE</b><br>
+    or <u>click to choose</u>
+</div>
+<input id="fileupload" type="file" multiple name="files">
+<script src="./Scripts/filedrop.js"></script>
+<div id="tabBar"></div>
+<div id="editorContainer"></div>
+<div class="border"></div>
+</div>
+<div id="PreLoad" style="left: 0; top: 0; height: 100%; width: 100%; position: fixed; margin: 0; padding: 300px; font-size: 30px; text-align: center; background-color: rgba(0, 0, 0, 0.6); color: white; display: none;">Loading...</div>
+<script src="./bundles/custom.js"></script>
+
+<script src="./bundles/script.js"></script>
+
+<script>
+		function getFormData($form){
+			var unindexed_array = $form.serializeArray();
+			var indexed_array = {};
+			$.map(unindexed_array, function (n, i) {
+				if (!(n['name'] in indexed_array))
+					indexed_array[n['name']] = n['value'];
+			});
+			return indexed_array;
+		}
+</script>
+
+<script>
+		function PreLoadOn() {
+			$('#PreLoad').show();
+		}
+		function PreLoadOff() {
+			$('#PreLoad').hide();
+		}
+
+		document.addEventListener("contextmenu", e => e.preventDefault());
+
+        	document.addEventListener("keydown", e => {
+         	  if (
+          	    e.key === "F12" ||
+          	    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
+         	    (e.ctrlKey && e.key === "U")
+        	 ) {
+         	    e.preventDefault();
+        	 }
+       		});
+
+       		console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
+</script>
+
+<script src="./bundles/index.js"></script>
+<script src="./Scripts/particles.js"></script>
+
+<div class="footer-note">
+    ⚠️ By using this tool, you agree to accept all kinds of risks.
+</div>
+<div style="text-align: center; margin: 30px 0 20px;">
+    <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
+</div>
+
+<script>
+// =====================================
+// CONFIG
+// =====================================
+const API_BASE = "https://game-text-backend.onrender.com";
+
+// =====================================
+// HANDLE FILE UPLOAD
+// =====================================
+document.getElementById("fileupload").addEventListener("change", async function(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const fd = new FormData();
+    for (const file of files) {
+        fd.append("files", file);
+    }
+
+    PreLoadOn();
+
+    try {
+        const res = await fetch(API_BASE + "/Upload", {
+            method: "POST",
+            body: fd
+        });
+
+        if (!res.ok) {
+            alert("Upload failed: " + res.status);
+            PreLoadOff();
+            return;
+        }
+
+        const json = await res.json();
+        console.log("UPLOAD RESULT:", json);
+
+        if (json.error) {
+            alert("ERROR: " + json.error);
+            PreLoadOff();
+            return;
+        }
+
+        function openTabForFile(fileInfo) {
+            loadEditor(fileInfo.id);
+        }
+
+        json.files.forEach(f => openTabForFile(f));
+
+        if (json.files.length > 0) {
+            loadEditor(json.files[0].id);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Network error!");
+    }
+
+    PreLoadOff();
+});
+
+// =====================================
+// LOAD EDITOR
+// =====================================
+async function loadEditor(id) {
+    PreLoadOn();
+
+    try {
+        const res = await fetch(API_BASE + "/Edit/" + id);
+
+        if (!res.ok) {
+            alert("Load editor error: " + res.status);
+            PreLoadOff();
+            return;
+        }
+
+        const json = await res.json();
+
+        // Show editor
+        $('#headM').show();
+        $('#editorContainer').show();
+
+        renderEditor(json);
+    } catch (e) {
+        console.error(e);
+        alert("Editor load failed");
+    }
+
+    PreLoadOff();
+}
+
+// =====================================
+// RENDER EDITOR
+// =====================================
+function renderEditor(data) {
+    const c = document.getElementById("editorContainer");
+    c.innerHTML = "";
+
+    const title = document.createElement("h3");
+    title.textContent = "Editing: " + data.name + " (" + data.type + ")";
+    c.appendChild(title);
+
+    const ta = document.createElement("textarea");
+    ta.id = "editorArea";
+    ta.style.width = "100%";
+    ta.style.height = "600px";
+    ta.style.fontFamily = "monospace";
+
+    let output = "";
+    (data.lines || []).forEach((t, i) => {
+        output += "---------" + i + "\n" + t + "\n";
+    });
+
+    ta.value = output;
+    c.appendChild(ta);
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn btn-primary";
+    saveBtn.style.marginTop = "10px";
+    saveBtn.textContent = "Save & Download";
+    saveBtn.onclick = () => saveTextList(data.id);
+    c.appendChild(saveBtn);
+}
+
+// =====================================
+// SAVE TEXT LIST
+// =====================================
+async function saveTextList(id) {
+    let raw = document.getElementById("editorArea").value;
+
+    let parts = raw.split(/---------\d+\s*\n/);
+    let lines = parts.map(v => v.trim()).filter(v => v.length > 0);
+
+    PreLoadOn();
+
+    try {
+        const res = await fetch(API_BASE + "/Edit/" + id, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lines })
+        });
+
+        if (!res.ok) {
+            alert("Save failed: " + res.status);
+            PreLoadOff();
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "edited_file";
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error(err);
+        alert("Save network error!");
+    }
+
+    PreLoadOff();
+}
+
+// =====================================
+// EXTRACT TEXTS FROM RPG MAKER MV/MZ
+// =====================================
+function extractTextsFromCommonEvents(commonEvents) {
+    const result = [];
+    if (!Array.isArray(commonEvents)) return result;
+
+    commonEvents.forEach(ev => {
+        if (!ev || !Array.isArray(ev.list)) return;
+
+        ev.list.forEach(cmd => {
+            const code = cmd.code;
+            const params = cmd.parameters || [];
+
+            // 401 / 405: message text / comments
+            if ((code === 401 || code === 405) && typeof params[0] === "string") {
+                result.push(params[0]);
+            }
+            // 102: Show choices (params[0] = array choices)
+            else if (code === 102 && Array.isArray(params[0])) {
+                params[0].forEach(choice => {
+                    if (typeof choice === "string") result.push(choice);
+                });
+            }
+            // 402: When [choice], params[1] = text
+            else if (code === 402 && typeof params[1] === "string") {
+                result.push(params[1]);
+            }
+            else if ((code === 118 || code === 119) && typeof params[0] === "string") {
+                result.push(params[0]);
+            }
+        });
+    });
+
+    return result;
+}
+
+// =====================================
+// SAVE DATA
+// =====================================
+async function saveData(id) {
+    let dataText = document.getElementById("editorArea").value;
+    let json;
+
+    try {
+        json = JSON.parse(dataText);
+    } catch (e) {
+        alert("Invalid JSON!");
+        return;
+    }
+
+    PreLoadOn();
+
+    try {
+        const res = await fetch(API_BASE + "/Edit/" + id, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: json })
+        });
+
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "edited.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        } else {
+            alert("Save failed: " + res.status);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Save network error!");
+    }
+
+    PreLoadOff();
+}
+</script>
+
+<script src="./Scripts/editor.js"></script>
+
+</body>
+
+</html>
