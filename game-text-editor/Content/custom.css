@@ -339,3 +339,11 @@ textarea.form-control.ta-editor {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0a; }
 ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
+
+
+.button-bar {
+    margin-top: auto;    
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+}
