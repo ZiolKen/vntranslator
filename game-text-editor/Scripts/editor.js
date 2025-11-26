@@ -1,64 +1,175 @@
+// ===================================
+// GLOBAL STORAGE
+// ===================================
+
+const OPEN_FILES = {};   
+let ACTIVE_FILE_ID = null;  
+
+// Monaco system
+let MONACO_EDITOR = null;  
+const MONACO_MODELS = {};  
+let MONACO_READY = false;  
+
+// ===================================
+// DOM READY
+// ===================================
+
 document.addEventListener("DOMContentLoaded", function () {
-    
-// ===================================
-// GLOBAL STORAGE (frontend)
-// ===================================
-    
-const OPEN_FILES = {};  
-let ACTIVE_FILE_ID = null;
+    const fileupload = document.getElementById("fileupload");
 
-// ===================================
-// HANDLE MULTI FILE UPLOAD
-// ===================================
-    
-fileInput.addEventListener("change", async function(e) {
-
-	if (!fileInput.files || fileInput.files.length === 0) {
-        console.log("User canceled file dialog.");
-        PreLoadOff();  
-        return;
-    }
-
-    const fd = new FormData();
-    for (const f of fileInput.files) {
-        fd.append("files", f);
-    }
-
-    PreLoadOn();
-	const res = await apiFetch("/Upload", {
-		method: "POST",
-  		body: fd
-	});
-    const json = await res.json();
-    PreLoadOff();
-
-    json.files.forEach(f => {
-        if (!f.id || f.error) return;
-        OPEN_FILES[f.id] = f;
-        addTab(f);
+    // ================================
+    // INIT MONACO 
+    // ================================
+    require.config({
+        paths: {
+            "vs": "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs"
+        }
     });
 
-    if (json.files.length > 0) {
-        const first = json.files.find(x => x.id);
-        if (first) switchTab(first.id);
-    }
+    require(["vs/editor/editor.main"], function () {
+        const editorContainer = document.getElementById("editorContainer");
+
+        MONACO_EDITOR = monaco.editor.create(editorContainer, {
+            value: "",
+            language: "plaintext",
+            theme: "vs-dark",
+            automaticLayout: true,
+            minimap: { enabled: true },
+            fontSize: 14,
+            wordWrap: "off",
+            unicodeHighlight: {
+                ambiguousCharacters: false,
+                invisibleCharacters: false,
+                nonBasicASCII: false,
+            },
+        
+            accessibilitySupport: "off"
+        });
+
+        MONACO_READY = true;
+
+        MONACO_EDITOR.onDidChangeCursorPosition(updateStatusBar);
+        MONACO_EDITOR.onDidChangeModel(updateStatusBar);
+        MONACO_EDITOR.onDidChangeModelContent(updateStatusBar);
+        updateStatusBar();
+
+        function updateStatusBar() {
+            if (!MONACO_EDITOR) return;
+
+            const pos = MONACO_EDITOR.getPosition();
+            const model = MONACO_EDITOR.getModel();
+
+            document.getElementById("cursorPos").textContent =
+                `Ln ${pos.lineNumber}, Col ${pos.column}`;
+
+            const indent = model.getOptions().indentSize;
+            document.getElementById("indentInfo").textContent =
+                `Spaces: ${indent}`;
+
+            document.getElementById("encodingInfo").textContent = "UTF-8";
+
+            const eol = model.getEOL() === "\n" ? "LF" : "CRLF";
+            document.getElementById("eolInfo").textContent = eol;
+
+            const lang = monaco.languages.getEncodedLanguageId(model.getLanguageId());
+            const langName = model.getLanguageId();
+            document.getElementById("langInfo").textContent =
+                langName ? langName.toUpperCase() : "PLAIN TEXT";
+        }
+ 
+        if (ACTIVE_FILE_ID && OPEN_FILES[ACTIVE_FILE_ID]) {
+            renderEditor(OPEN_FILES[ACTIVE_FILE_ID]);
+        }
+    });
 });
 
 // ===================================
-// ADD TAB TO TAB BAR
+// ADD TAB WITH CLOSE + DRAGGABLE
 // ===================================
-    
+
 function addTab(fileObj) {
     const tabBar = document.getElementById("tabBar");
 
     const tab = document.createElement("div");
     tab.className = "tab";
     tab.dataset.id = fileObj.id;
-    tab.textContent = fileObj.name;
+    tab.draggable = true;
 
-    tab.onclick = () => switchTab(fileObj.id);
+    const title = document.createElement("span");
+    title.textContent = fileObj.name;
+    title.className = "tab-title";
+    title.onclick = () => switchTab(fileObj.id);
 
+    const closeBtn = document.createElement("span");
+    closeBtn.className = "tab-close";
+    closeBtn.textContent = "×";
+    closeBtn.title = "Close";
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        closeTab(fileObj.id);
+    };
+
+    tab.appendChild(title);
+    tab.appendChild(closeBtn);
     tabBar.appendChild(tab);
+
+    enableTabDrag(tab);
+}
+
+// ===================================
+// CLOSE TAB
+// ===================================
+
+function closeTab(id) {
+    const tabEl = document.querySelector(`.tab[data-id="${id}"]`);
+    if (tabEl) tabEl.remove();
+ 
+    if (MONACO_MODELS[id]) {
+        MONACO_MODELS[id].dispose();
+        delete MONACO_MODELS[id];
+    }
+
+    delete OPEN_FILES[id];
+ 
+    if (ACTIVE_FILE_ID === id) {
+        const remaining = document.querySelectorAll(".tab");
+        if (remaining.length > 0) {
+            switchTab(remaining[0].dataset.id);
+        } else {
+            ACTIVE_FILE_ID = null;
+            if (MONACO_EDITOR) {
+                MONACO_EDITOR.setValue("");
+            } 
+            const bar = document.getElementById("buttonBar");
+            if (bar) bar.innerHTML = "";
+        }
+    }
+}
+
+// ===================================
+// DRAG-REORDER TABS
+// ===================================
+
+function enableTabDrag(tab) {
+    tab.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", tab.dataset.id);
+        tab.classList.add("dragging");
+    });
+
+    tab.addEventListener("dragend", () => {
+        tab.classList.remove("dragging");
+    });
+
+    tab.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const dragging = document.querySelector(".tab.dragging");
+        if (!dragging || dragging === tab) return;
+
+        const tabBar = document.getElementById("tabBar");
+        const rect = tab.getBoundingClientRect();
+        const before = e.clientX < rect.left + rect.width / 2;
+        tabBar.insertBefore(dragging, before ? tab : tab.nextSibling);
+    });
 }
 
 // ===================================
@@ -72,123 +183,190 @@ function switchTab(id) {
         t.classList.toggle("active", t.dataset.id === id);
     });
 
-    renderEditor(OPEN_FILES[id]);
+    if (OPEN_FILES[id]) {
+        renderEditor(OPEN_FILES[id]);
+    }
 }
 
 // ===================================
-// RENDER EDITOR FOR CURRENT TAB
+// RENDER EDITOR  
 // ===================================
-    
+
 function renderEditor(fileData) {
-    const container = document.getElementById("editorContainer");
-    if (!container) {
-        console.warn("editorContainer missing, retrying...");
-        setTimeout(() => renderEditor(fileData), 30);
+    if (!MONACO_READY || !MONACO_EDITOR) {
+        setTimeout(() => renderEditor(fileData), 50);
         return;
     }
-
-    container.innerHTML = "";
-
-    const title = document.createElement("h3");
-    title.textContent = "Editing: " + fileData.name;
-    container.appendChild(title);
-
-    const ta = document.createElement("textarea");
-    ta.id = "editorArea";
-    ta.style.width = "100%";
-    ta.style.height = "600px";
-    ta.style.fontFamily = "monospace";
-
-    if (!fileData.lines || fileData.lines.length === 0) {
-        ta.value = "(No dialog extracted from this file)";
-    } else {
+ 
+    if (!MONACO_MODELS[fileData.id]) {
         let txt = "";
-        fileData.lines.forEach((line, i) => {
-            txt += "---------" + i + "\n" + line + "\n";
-        });
-        ta.value = txt;
+        if (!fileData.lines || fileData.lines.length === 0) {
+            txt = "(No dialog extracted)";
+        } else {
+            txt = fileData.lines
+                .map((line, i) => `---------${i}\n${line}`)
+                .join("\n");
+        }
+
+        MONACO_MODELS[fileData.id] = monaco.editor.createModel(txt, "plaintext");
     }
 
-    container.appendChild(ta);
+    MONACO_EDITOR.setModel(MONACO_MODELS[fileData.id]);
 
-	const bar = document.createElement("div");
-    bar.className = "button-bar";
-    container.appendChild(bar);
+    renderButtons(fileData);
+}
 
-	const saveBtn = document.createElement("button");
-	saveBtn.className = "save-btn";
-	saveBtn.textContent = "💾 Save & Download";
-	saveBtn.onclick = () => saveTextList(fileData.id);
-	container.appendChild(saveBtn);
-	 
-	const reloadBtn = document.createElement("button");
-	reloadBtn.className = "save-btn";
-	reloadBtn.style.marginLeft = "8px";
-	reloadBtn.textContent = "🔄";
-	reloadBtn.title = "Reload text from server";
-	reloadBtn.onclick = () => switchTab(fileData.id);
-	container.appendChild(reloadBtn);
-	 
-	const copyBtn = document.createElement("button");
-	copyBtn.className = "save-btn";
-	copyBtn.style.marginLeft = "8px";
-	copyBtn.textContent = "📋";
-	copyBtn.title = "Copy all text";
-	copyBtn.onclick = () => {
-	    navigator.clipboard.writeText(ta.value);
-	    alert("Copied to clipboard!");
-	};
-	container.appendChild(copyBtn);
-	 
-	const dlBtn = document.createElement("button");
-	dlBtn.className = "save-btn";
-	dlBtn.style.marginLeft = "8px";
-	dlBtn.textContent = "⬇️";
-	dlBtn.title = "Download extracted text";
-	dlBtn.onclick = () => {
-	    const blob = new Blob([ta.value], { type: "text/plain" });
-	    const a = document.createElement("a");
-	    a.href = URL.createObjectURL(blob);
-	    a.download = fileData.name + "_text.txt";
-	    a.click();
-	};
-	container.appendChild(dlBtn);
-	 
-	const uploadLabel = document.createElement("label");
-	uploadLabel.className = "save-btn";
-	uploadLabel.style.marginLeft = "8px";
-	uploadLabel.style.cursor = "pointer";
-	uploadLabel.textContent = "⬆️";
-	uploadLabel.title = "Upload text file";
-	
-	const uploadInput = document.createElement("input");
-	uploadInput.type = "file";
-	uploadInput.accept = ".txt";
-	uploadInput.style.display = "none";
-	
-	uploadInput.onchange = async function () {
-	    const f = uploadInput.files[0];
-	    if (!f) return;
-	
-	    let txt = await f.text();
-	 
-	    txt = txt
-	        .replace(/\r/g, "")
-	        .trim()
-	        .split("\n")
-	        .map(t => t.trim())
-	        .filter(t => t.length >= 0)
-	        .map((t, i) => `---------${i}\n${t}`)
-	        .join("\n");
-	
-	    document.getElementById("editorArea").value = txt;
-	
-	    alert("Loaded text from file!");
-	};
-	
-	uploadLabel.appendChild(uploadInput);
-	container.appendChild(uploadLabel);
+// ===================================
+// BUTTON BAR
+// ===================================
 
+function renderButtons(fileData) {
+    const bar = document.getElementById("buttonBar");
+    if (!bar) return;
+
+    bar.innerHTML = "";
+
+    // SAVE
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "save-btn";
+    saveBtn.textContent = "💾 Save & Download";
+    saveBtn.onclick = () => saveTextList(fileData.id);
+    bar.appendChild(saveBtn);
+
+    // RELOAD
+    const reloadBtn = document.createElement("button");
+    reloadBtn.className = "save-btn";
+    reloadBtn.style.marginLeft = "8px";
+    reloadBtn.textContent = "🔄";
+    reloadBtn.title = "Reload text from server";
+    reloadBtn.onclick = () => reloadFile(fileData.id);
+    bar.appendChild(reloadBtn);
+
+    // COPY
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "save-btn";
+    copyBtn.style.marginLeft = "8px";
+    copyBtn.textContent = "📋";
+    copyBtn.title = "Copy all text";
+    copyBtn.onclick = () => {
+        navigator.clipboard.writeText(MONACO_EDITOR.getValue());
+        alert("Copied to clipboard!");
+    };
+    bar.appendChild(copyBtn);
+
+    // DOWNLOAD TXT
+    const dlBtn = document.createElement("button");
+    dlBtn.className = "save-btn";
+    dlBtn.style.marginLeft = "8px";
+    dlBtn.textContent = "⬇️";
+    dlBtn.title = "Download extracted text";
+    dlBtn.onclick = () => {
+        const blob = new Blob([MONACO_EDITOR.getValue()], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = fileData.name + "_text.txt";
+        a.click();
+    };
+    bar.appendChild(dlBtn);
+
+    // UPLOAD TXT
+    const uploadLabel = document.createElement("label");
+    uploadLabel.className = "save-btn";
+    uploadLabel.style.marginLeft = "8px";
+    uploadLabel.style.cursor = "pointer";
+    uploadLabel.textContent = "⬆️";
+    uploadLabel.title = "Upload text file";
+
+    const uploadInput = document.createElement("input");
+    uploadInput.type = "file";
+    uploadInput.accept = ".txt";
+    uploadInput.style.display = "none";
+
+    uploadInput.onchange = async function () {
+        const f = uploadInput.files[0];
+        if (!f) return;
+
+        let txt = await f.text();
+        txt = txt
+            .replace(/\r/g, "")
+            .trim()
+            .split("\n")
+            .map(t => t.trim())
+            .map((t, i) => `---------${i}\n${t}`)
+            .join("\n");
+
+        const model = MONACO_MODELS[fileData.id];
+        if (model) {
+            model.setValue(txt);
+        } else {
+            MONACO_MODELS[fileData.id] = monaco.editor.createModel(txt, "plaintext");
+            MONACO_EDITOR.setModel(MONACO_MODELS[fileData.id]);
+        }
+
+        alert("Loaded text from file!");
+    };
+
+    uploadLabel.appendChild(uploadInput);
+    bar.appendChild(uploadLabel);
+
+    // WORD WRAP TOGGLE
+    const wrapBtn = document.createElement("button");
+    wrapBtn.className = "save-btn";
+    wrapBtn.style.marginLeft = "8px";
+    
+    let wrapState = MONACO_EDITOR.getOption(monaco.editor.EditorOption.wordWrap);
+
+    if (wrapState === "on") {
+        wrapBtn.textContent = "🔀 Word Wrap: ON";
+        wrapBtn.style.background = "#2a7a2a"; 
+    } else {
+        wrapBtn.textContent = "🔀 Word Wrap: OFF";
+        wrapBtn.style.background = "#181818"; 
+    }
+
+    wrapBtn.onclick = () => {
+
+        let current = MONACO_EDITOR.getOption(monaco.editor.EditorOption.wordWrap);
+
+        if (current === "off") { 
+            MONACO_EDITOR.updateOptions({ wordWrap: "on" });
+            wrapBtn.textContent = "🔀 Word Wrap: ON";
+            wrapBtn.style.background = "#2a7a2a";
+        } else { 
+            MONACO_EDITOR.updateOptions({ wordWrap: "off" });
+            wrapBtn.textContent = "🔀 Word Wrap: OFF";
+            wrapBtn.style.background = "#181818";
+        }
+    };
+
+    bar.appendChild(wrapBtn);
+
+}
+
+// ===================================
+// RELOAD TEXT FROM SERVER 
+// ===================================
+
+async function reloadFile(id) {
+    const file = OPEN_FILES[id];
+    if (!file) return;
+ 
+    const fileData = OPEN_FILES[id];
+    if (!fileData.lines) return;
+
+    let txt = fileData.lines
+        .map((line, i) => `---------${i}\n${line}`)
+        .join("\n");
+
+    if (MONACO_MODELS[id]) {
+        MONACO_MODELS[id].setValue(txt);
+    } else {
+        MONACO_MODELS[id] = monaco.editor.createModel(txt, "plaintext");
+    }
+
+    if (ACTIVE_FILE_ID === id) {
+        MONACO_EDITOR.setModel(MONACO_MODELS[id]);
+    }
 }
 
 // ===================================
@@ -199,17 +377,23 @@ async function saveTextList(id) {
     const file = OPEN_FILES[id];
     if (!file) return;
 
-    let raw = document.getElementById("editorArea").value;
+    const model = MONACO_MODELS[id];
+    if (!model) {
+        alert("No editor model for this file.");
+        return;
+    }
+
+    let raw = model.getValue();
 
     let parts = raw.split(/---------\d+\s*\n/);
     let lines = parts.map(v => v.trim()).filter(v => v.length > 0);
 
     PreLoadOn();
-	const res = await apiFetch("/Edit/" + id, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ lines })
-	});
+    const res = await apiFetch("/Edit/" + id, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines })
+    });
 
     PreLoadOff();
 
@@ -226,10 +410,3 @@ async function saveTextList(id) {
     a.click();
     URL.revokeObjectURL(url);
 }
-
-});
-
-
-
-
-
