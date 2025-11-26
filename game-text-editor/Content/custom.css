@@ -319,6 +319,7 @@ textarea.form-control.ta-editor {
 	display: inline-flex;
     align-items: center;
     justify-content: center;
+	transition: 0.3s;
 }
 
 .save-btn:hover {
@@ -337,4 +338,3 @@ textarea.form-control.ta-editor {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0a; }
 ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
-
