@@ -279,14 +279,14 @@ function renderEditor(data) {
     c.appendChild(saveBtn);
  
 	const reloadBtn = document.createElement("button");
-	reloadBtn.className = "btn btn-secondary";
+	reloadBtn.className = "btn btn-primary";
 	reloadBtn.style.marginLeft = "10px";
 	reloadBtn.textContent = "🔄";
 	reloadBtn.onclick = () => loadEditor(data.id);
 	c.appendChild(reloadBtn);
 	 
 	const copyBtn = document.createElement("button");
-	copyBtn.className = "btn btn-secondary";
+	copyBtn.className = "btn btn-primary";
 	copyBtn.style.marginLeft = "10px";
 	copyBtn.textContent = "📋";
 	copyBtn.onclick = () => {
@@ -296,9 +296,9 @@ function renderEditor(data) {
 	c.appendChild(copyBtn);
 	 
 	const downloadBtn = document.createElement("button");
-	downloadBtn.className = "btn btn-secondary";
+	downloadBtn.className = "btn btn-primary";
 	downloadBtn.style.marginLeft = "10px";
-	downloadBtn.textContent = "⬇";
+	downloadBtn.textContent = "⬇️";
 	downloadBtn.onclick = () => {
 	    const txt = document.getElementById("editorArea").value;
 	    const blob = new Blob([txt], { type: "text/plain" });
@@ -310,10 +310,12 @@ function renderEditor(data) {
 	c.appendChild(downloadBtn);
 	 
 	const uploadTxt = document.createElement("input");
+	uploadTxt.className = "btn btn-primary";
+	uploadTxt.style.marginLeft = "10px";
+	uploadTxt.textContent = "⬆️";
 	uploadTxt.type = "file";
 	uploadTxt.accept = ".txt";
-	uploadTxt.style.marginLeft = "10px";
-	
+
 	uploadTxt.onchange = async function () {
 	    const f = uploadTxt.files[0];
 	    if (!f) return;
@@ -425,6 +427,7 @@ async function saveData(id) {
 </body>
 	
 </html>
+
 
 
 
