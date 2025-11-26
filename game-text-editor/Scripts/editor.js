@@ -105,6 +105,10 @@ function renderEditor(fileData) {
 
     container.appendChild(ta);
 
+	const bar = document.createElement("div");
+    bar.className = "button-bar";
+    container.appendChild(bar);
+
 	const saveBtn = document.createElement("button");
 	saveBtn.className = "save-btn";
 	saveBtn.textContent = "💾 Save & Download";
@@ -218,6 +222,7 @@ async function saveTextList(id) {
 }
 
 });
+
 
 
 
