@@ -13,6 +13,12 @@ let ACTIVE_FILE_ID = null;
     
 fileInput.addEventListener("change", async function(e) {
 
+	if (!fileInput.files || fileInput.files.length === 0) {
+        console.log("User canceled file dialog.");
+        PreLoadOff();  
+        return;
+    }
+
     const fd = new FormData();
     for (const f of fileInput.files) {
         fd.append("files", f);
@@ -222,6 +228,7 @@ async function saveTextList(id) {
 }
 
 });
+
 
 
 
