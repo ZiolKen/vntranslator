@@ -109,19 +109,18 @@ function renderEditor(fileData) {
     saveBtn.className = "save-btn";
     saveBtn.textContent = "💾 Save & Download";
     saveBtn.onclick = () => saveTextList(fileData.id);
-
     container.appendChild(saveBtn);
 
 	const reloadBtn = document.createElement("button");
-	reloadBtn.className = "btn btn-secondary";
+	reloadBtn.className = "save-btn";
 	reloadBtn.style.marginLeft = "8px";
 	reloadBtn.textContent = "🔄";
 	reloadBtn.title = "Reload text from server";
 	reloadBtn.onclick = () => loadEditor(data.id);
-	c.appendChild(reloadBtn);
+	container.appendChild(reloadBtn);
 
 	const copyBtn = document.createElement("button");
-	copyBtn.className = "btn btn-secondary";
+	copyBtn.className = "save-btn";
 	copyBtn.style.marginLeft = "8px";
 	copyBtn.textContent = "📋";
 	copyBtn.title = "Copy all text";
@@ -129,10 +128,10 @@ function renderEditor(fileData) {
 	    navigator.clipboard.writeText(ta.value);
 	    alert("Copied to clipboard!");
 	};
-	c.appendChild(copyBtn);
+	container.appendChild(copyBtn);
 
 	const dlBtn = document.createElement("button");
-	dlBtn.className = "btn btn-secondary";
+	dlBtn.className = "save-btn";
 	dlBtn.style.marginLeft = "8px";
 	dlBtn.textContent = "⬇️";
 	dlBtn.title = "Download extracted text";
@@ -143,10 +142,10 @@ function renderEditor(fileData) {
 	    a.download = data.name + "_text.txt";
 	    a.click();
 	};
-	c.appendChild(dlBtn);
+	container.appendChild(dlBtn);
 
 	const uploadLabel = document.createElement("label");
-	uploadLabel.className = "btn btn-secondary";
+	uploadLabel.className = "save-btn";
 	uploadLabel.style.marginLeft = "8px";
 	uploadLabel.style.cursor = "pointer";
 	uploadLabel.textContent = "⬆️";
@@ -174,7 +173,7 @@ function renderEditor(fileData) {
 	};
 	
 	uploadLabel.appendChild(uploadInput);
-	c.appendChild(uploadLabel);
+	container.appendChild(uploadLabel);
 }
 
 // ===================================
@@ -214,3 +213,4 @@ async function saveTextList(id) {
 }
 
 });
+
