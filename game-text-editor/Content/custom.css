@@ -309,7 +309,7 @@ textarea.form-control.ta-editor {
 .save-btn {
     margin-top: 12px;
     padding: 10px 16px;
-    background: #9333ea;
+    background: rgba(255,255,255,0.08);
     border: none;
     border-radius: 8px;
     color: #fff;
@@ -322,7 +322,7 @@ textarea.form-control.ta-editor {
 }
 
 .save-btn:hover {
-    background: #a855f7;
+    background: linear-gradient(90deg, #a855f7, #ec4899);
 }
 
 .border {
@@ -337,3 +337,4 @@ textarea.form-control.ta-editor {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0a; }
 ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
+
