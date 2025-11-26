@@ -15,6 +15,8 @@
 	<link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link href="./Content/style.css" rel="stylesheet"/>
 	<link href="./Content/jquery.fileupload.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+
 	<style>
 		.qnavi {
 			position: fixed;
@@ -72,15 +74,29 @@
 
 <div id="headM" style="display: none;"><br /></div>
 
-<div id="dropZone" style="margin-top: 25px;">
+<div id="dropZone" style="margin-top: 35px; margin-block: 35px;">
     📂 <b>DROP YOUR FILE HERE</b><br>
     or <u>click to choose</u>
 </div>
 <input id="fileupload" type="file" multiple name="files">
 <script src="./Scripts/filedrop.js"></script>
-	
-<div id="tabBar"></div>
-<div id="editorContainer"></div>
+
+<div class="border2"></div>
+<h2 style="text-align: center; font-size: 35px; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff; font-family: 'Turret Road', sans-serif;">Monaco Editor</h2>
+<div class="wrapeditor">
+<div id="tabBar" class="tab-bar"></div>
+
+<div id="editorContainer" class="editor-area"></div>
+<div id="statusBar" class="status-bar">
+    <div id="cursorPos">Ln 1, Col 1</div>
+    <div id="indentInfo">Spaces: 4</div>
+    <div id="encodingInfo">UTF-8</div>
+    <div id="eolInfo">CRLF</div>
+    <div id="langInfo">PLAINTEXT</div>
+</div>
+</div>
+<div id="buttonBar" class="button-bar"></div>
+
 <div class="border"></div>
 	
 <div class="footer-note">
@@ -240,9 +256,3 @@ async function saveData(id) {
 </body>
 	
 </html>
-
-
-
-
-
-
