@@ -312,6 +312,7 @@ textarea.form-control.ta-editor {
     background: rgba(255,255,255,0.08);
     border: none;
     border-radius: 8px;
+	position: relative;
     color: #fff;
     font-size: 1rem;
     cursor: pointer;
@@ -338,3 +339,4 @@ textarea.form-control.ta-editor {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0a; }
 ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
+
