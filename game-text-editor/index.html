@@ -47,6 +47,7 @@
 <body>
 <div id="particles-js"></div>
 <div class="grid-bg"></div>
+	
 <h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">
     Game Text <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Editor</span>
 </h1>
@@ -77,13 +78,23 @@
 </div>
 <input id="fileupload" type="file" multiple name="files">
 <script src="./Scripts/filedrop.js"></script>
+	
 <div id="tabBar"></div>
 <div id="editorContainer"></div>
 <div class="border"></div>
+	
+<div class="footer-note">
+    ⚠️ By using this tool, you agree to accept all kinds of risks.
 </div>
-<div id="PreLoad" style="left: auto; top: auto; height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; align-content: center; position: fixed; margin: auto; padding: 300px; font-size: 30px; text-align: center; background-color: rgba(0, 0, 0, 0.6); color: white; display: none;">Loading...</div>
+<div style="text-align: center; margin: 30px 0 20px;">
+    <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
+</div>
+	
+</div>
+	
+<div id="PreLoad" style="font-size: 50px; position: fixed; display: flex; z-index: 999999; padding: auto; font-weight: bold; font-family: 'Turret Road', sans-serif; inset: 0; transition: opacity 0.6s ease; backdrop-filter: blur(3px); justify-content: center; align-items: center; text-align: center; background-color: rgba(0, 0, 0, 0.6); color: white; display: none;">Loading...</div>
+	
 <script src="./bundles/custom.js"></script>
-
 <script src="./bundles/script.js"></script>
 
 <script>
@@ -96,50 +107,41 @@
 			});
 			return indexed_array;
 		}
-</script>
 
-<script>
 		function PreLoadOn() {
 			$('#PreLoad').show();
 		}
 		function PreLoadOff() {
 			$('#PreLoad').hide();
 		}
-
-		document.addEventListener("contextmenu", e => e.preventDefault());
-
-        	document.addEventListener("keydown", e => {
-         	  if (
+	
+        document.addEventListener("keydown", e => {
+	        if (
           	    e.key === "F12" ||
           	    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
          	    (e.ctrlKey && e.key === "U")
-        	 ) {
+        	) {
          	    e.preventDefault();
-        	 }
-       		});
+        	}
+       	});
 
-       		console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
+       	console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
 </script>
 
 <script src="./bundles/index.js"></script>
 <script src="./Scripts/particles.js"></script>
 
-<div class="footer-note">
-    ⚠️ By using this tool, you agree to accept all kinds of risks.
-</div>
-<div style="text-align: center; margin: 30px 0 20px;">
-    <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
-</div>
-
 <script>
 // =====================================
 // CONFIG
 // =====================================
+	
 const API_BASE = "https://game-text-backend.onrender.com";
 
 // =====================================
 // HANDLE FILE UPLOAD
 // =====================================
+	
 document.getElementById("fileupload").addEventListener("change", async function(e) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -193,6 +195,7 @@ document.getElementById("fileupload").addEventListener("change", async function(
 // =====================================
 // LOAD EDITOR
 // =====================================
+	
 async function loadEditor(id) {
     PreLoadOn();
 
@@ -223,6 +226,7 @@ async function loadEditor(id) {
 // =====================================
 // RENDER EDITOR
 // =====================================
+	
 function renderEditor(data) {
     const c = document.getElementById("editorContainer");
     c.innerHTML = "";
@@ -256,6 +260,7 @@ function renderEditor(data) {
 // =====================================
 // SAVE TEXT LIST
 // =====================================
+	
 async function saveTextList(id) {
     let raw = document.getElementById("editorArea").value;
 
@@ -293,45 +298,9 @@ async function saveTextList(id) {
 }
 
 // =====================================
-// EXTRACT TEXTS FROM RPG MAKER MV/MZ
-// =====================================
-function extractTextsFromCommonEvents(commonEvents) {
-    const result = [];
-    if (!Array.isArray(commonEvents)) return result;
-
-    commonEvents.forEach(ev => {
-        if (!ev || !Array.isArray(ev.list)) return;
-
-        ev.list.forEach(cmd => {
-            const code = cmd.code;
-            const params = cmd.parameters || [];
-
-            // 401 / 405: message text / comments
-            if ((code === 401 || code === 405) && typeof params[0] === "string") {
-                result.push(params[0]);
-            }
-            // 102: Show choices (params[0] = array choices)
-            else if (code === 102 && Array.isArray(params[0])) {
-                params[0].forEach(choice => {
-                    if (typeof choice === "string") result.push(choice);
-                });
-            }
-            // 402: When [choice], params[1] = text
-            else if (code === 402 && typeof params[1] === "string") {
-                result.push(params[1]);
-            }
-            else if ((code === 118 || code === 119) && typeof params[0] === "string") {
-                result.push(params[0]);
-            }
-        });
-    });
-
-    return result;
-}
-
-// =====================================
 // SAVE DATA
 // =====================================
+	
 async function saveData(id) {
     let dataText = document.getElementById("editorArea").value;
     let json;
@@ -375,6 +344,5 @@ async function saveData(id) {
 <script src="./Scripts/editor.js"></script>
 
 </body>
-
-
+	
 </html>
