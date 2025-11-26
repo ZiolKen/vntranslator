@@ -192,16 +192,16 @@ textarea.form-control.ta-editor {
             font-family: 'Turret Road', sans-serif;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-	    cursor: pointer;
+	        cursor: pointer;
             background: transparent;
             color: var(--neon-cyan);
             text-decoration: none;
             transition: all 0.3s ease;
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-	    -webkit-user-select: none;
-	    -moz-user-select: none;
+	        -webkit-user-select: none;
+	        -moz-user-select: none;
        	    -ms-user-select: none;
- 	    user-select: none;
+ 	        user-select: none;
         }
  
         .back-btn:hover {
@@ -306,7 +306,6 @@ textarea.form-control.ta-editor {
     margin-top: 20px;
 }
 
-/* Save Button */
 .save-btn {
     display: block;
     margin-top: 12px;
@@ -332,3 +331,7 @@ textarea.form-control.ta-editor {
     overflow-x: auto;
     white-space: nowrap;
 }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
