@@ -107,10 +107,74 @@ function renderEditor(fileData) {
 
     const saveBtn = document.createElement("button");
     saveBtn.className = "save-btn";
-    saveBtn.textContent = "Save & Download";
+    saveBtn.textContent = "💾 Save & Download";
     saveBtn.onclick = () => saveTextList(fileData.id);
 
     container.appendChild(saveBtn);
+
+	const reloadBtn = document.createElement("button");
+	reloadBtn.className = "btn btn-secondary";
+	reloadBtn.style.marginLeft = "8px";
+	reloadBtn.textContent = "🔄";
+	reloadBtn.title = "Reload text from server";
+	reloadBtn.onclick = () => loadEditor(data.id);
+	c.appendChild(reloadBtn);
+
+	const copyBtn = document.createElement("button");
+	copyBtn.className = "btn btn-secondary";
+	copyBtn.style.marginLeft = "8px";
+	copyBtn.textContent = "📋";
+	copyBtn.title = "Copy all text";
+	copyBtn.onclick = () => {
+	    navigator.clipboard.writeText(ta.value);
+	    alert("Copied to clipboard!");
+	};
+	c.appendChild(copyBtn);
+
+	const dlBtn = document.createElement("button");
+	dlBtn.className = "btn btn-secondary";
+	dlBtn.style.marginLeft = "8px";
+	dlBtn.textContent = "⬇️";
+	dlBtn.title = "Download extracted text";
+	dlBtn.onclick = () => {
+	    const blob = new Blob([ta.value], { type: "text/plain" });
+	    const a = document.createElement("a");
+	    a.href = URL.createObjectURL(blob);
+	    a.download = data.name + "_text.txt";
+	    a.click();
+	};
+	c.appendChild(dlBtn);
+
+	const uploadLabel = document.createElement("label");
+	uploadLabel.className = "btn btn-secondary";
+	uploadLabel.style.marginLeft = "8px";
+	uploadLabel.style.cursor = "pointer";
+	uploadLabel.textContent = "⬆️";
+	uploadLabel.title = "Upload text file";
+	
+	const uploadInput = document.createElement("input");
+	uploadInput.type = "file";
+	uploadInput.accept = ".txt";
+	uploadInput.style.display = "none";
+	
+	uploadInput.onchange = async () => {
+	    const f = uploadInput.files[0];
+	    if (!f) return;
+	    const txt = await f.text();
+	
+	    const formatted = txt
+	        .replace(/\r/g, "")
+	        .trim()
+	        .split("\n")
+	        .map((t, i) => `---------${i}\n${t}`)
+	        .join("\n");
+	
+	    ta.value = formatted;
+	    alert("Loaded text!");
+	};
+	
+	uploadLabel.appendChild(uploadInput);
+	c.appendChild(uploadLabel);
 }
 
 // ===================================
@@ -127,11 +191,11 @@ async function saveTextList(id) {
     let lines = parts.map(v => v.trim()).filter(v => v.length > 0);
 
     PreLoadOn();
-    const res = await fetch(API_BASE + "/Edit/" + id, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ lines })
-    });
+	const res = await apiFetch("/Edit/" + id, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ lines })
+	});
 
     PreLoadOff();
 
