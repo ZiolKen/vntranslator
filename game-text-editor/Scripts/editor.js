@@ -156,8 +156,8 @@ function renderEditor(fileData) {
 	uploadInput.accept = ".txt";
 	uploadInput.style.display = "none";
 	
-	uploadTxt.onchange = async function () {
-	    const f = uploadTxt.files[0];
+	uploadInput.onchange = async function () {
+	    const f = uploadInput.files[0];
 	    if (!f) return;
 	
 	    let txt = await f.text();
@@ -218,5 +218,6 @@ async function saveTextList(id) {
 }
 
 });
+
 
 
