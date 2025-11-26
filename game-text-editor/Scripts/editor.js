@@ -105,20 +105,20 @@ function renderEditor(fileData) {
 
     container.appendChild(ta);
 
-    const saveBtn = document.createElement("button");
-    saveBtn.className = "save-btn";
-    saveBtn.textContent = "💾 Save & Download";
-    saveBtn.onclick = () => saveTextList(fileData.id);
-    container.appendChild(saveBtn);
-
+	const saveBtn = document.createElement("button");
+	saveBtn.className = "save-btn";
+	saveBtn.textContent = "💾 Save & Download";
+	saveBtn.onclick = () => saveTextList(fileData.id);
+	container.appendChild(saveBtn);
+	 
 	const reloadBtn = document.createElement("button");
 	reloadBtn.className = "save-btn";
 	reloadBtn.style.marginLeft = "8px";
 	reloadBtn.textContent = "🔄";
 	reloadBtn.title = "Reload text from server";
-	reloadBtn.onclick = () => loadEditor(data.id);
+	reloadBtn.onclick = () => switchTab(fileData.id);
 	container.appendChild(reloadBtn);
-
+	 
 	const copyBtn = document.createElement("button");
 	copyBtn.className = "save-btn";
 	copyBtn.style.marginLeft = "8px";
@@ -129,7 +129,7 @@ function renderEditor(fileData) {
 	    alert("Copied to clipboard!");
 	};
 	container.appendChild(copyBtn);
-
+	 
 	const dlBtn = document.createElement("button");
 	dlBtn.className = "save-btn";
 	dlBtn.style.marginLeft = "8px";
@@ -139,11 +139,11 @@ function renderEditor(fileData) {
 	    const blob = new Blob([ta.value], { type: "text/plain" });
 	    const a = document.createElement("a");
 	    a.href = URL.createObjectURL(blob);
-	    a.download = data.name + "_text.txt";
+	    a.download = fileData.name + "_text.txt";
 	    a.click();
 	};
 	container.appendChild(dlBtn);
-
+	 
 	const uploadLabel = document.createElement("label");
 	uploadLabel.className = "save-btn";
 	uploadLabel.style.marginLeft = "8px";
@@ -156,24 +156,29 @@ function renderEditor(fileData) {
 	uploadInput.accept = ".txt";
 	uploadInput.style.display = "none";
 	
-	uploadInput.onchange = async () => {
-	    const f = uploadInput.files[0];
+	uploadTxt.onchange = async function () {
+	    const f = uploadTxt.files[0];
 	    if (!f) return;
-	    const txt = await f.text();
 	
-	    const formatted = txt
+	    let txt = await f.text();
+	 
+	    txt = txt
 	        .replace(/\r/g, "")
 	        .trim()
 	        .split("\n")
+	        .map(t => t.trim())
+	        .filter(t => t.length >= 0)
 	        .map((t, i) => `---------${i}\n${t}`)
 	        .join("\n");
 	
-	    ta.value = formatted;
-	    alert("Loaded text!");
+	    document.getElementById("editorArea").value = txt;
+	
+	    alert("Loaded text from file!");
 	};
 	
 	uploadLabel.appendChild(uploadInput);
 	container.appendChild(uploadLabel);
+
 }
 
 // ===================================
@@ -213,4 +218,5 @@ async function saveTextList(id) {
 }
 
 });
+
 
