@@ -310,7 +310,7 @@ textarea {
 }
 
 .tab-bar {
-    background: #111;
+    background: #181818;
     border-bottom: 1px solid #333;
     position: relative;
     z-index: 10;
@@ -347,3 +347,4 @@ textarea {
 .wrapeditor:hover {
     border-color: rgba(168, 85, 247, 0.3);
 }
+
