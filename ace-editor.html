@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Ace Editor - Web</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: #1e1e1e;
+      color: #ccc;
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .activity-bar div {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .activity-bar div:hover {
+      background: #3c3c3c;
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #252526;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 8px 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #bbb;
+      border-bottom: 1px solid #333;
+    }
+
+    .sidebar-tree {
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .sidebar-item {
+      padding: 4px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .sidebar-item:hover,
+    .sidebar-item.active {
+      background: #37373d;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .titlebar {
+      height: 32px;
+      background: #3c3c3c;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 13px;
+      color: #ddd;
+    }
+
+    .tabs {
+      height: 32px;
+      display: flex;
+      align-items: flex-end;
+      background: #252526;
+      border-bottom: 1px solid #333;
+      overflow-x: auto;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      height: 100%;
+      font-size: 13px;
+      cursor: pointer;
+      border-right: 1px solid #333;
+      color: #bbb;
+    }
+
+    .tab.active {
+      background: #1e1e1e;
+      color: #fff;
+      border-bottom: 2px solid #007acc;
+    }
+
+    .tab span {
+      margin-right: 6px;
+    }
+
+    .tab .close {
+      font-size: 11px;
+      opacity: 0.6;
+    }
+
+    .tab .close:hover {
+      opacity: 1;
+    }
+
+    #editor {
+      flex: 1;
+      width: 100%;
+    }
+
+    .status-bar {
+      height: 22px;
+      background: #007acc;
+      color: #fff;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      white-space: nowrap;
+    }
+
+    .status-left,
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- Main -->
+    <div class="main">
+      <div class="titlebar">Ace Editor - Web</div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active">
+          <span>Tab 1</span>
+        </div>
+      </div>
+
+      <!-- Editor -->
+      <div id="editor"></div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <div class="status-left">
+          <span>UTF-8</span>
+          <span>LF</span>
+        </div>
+        <div class="status-right" id="status-right">
+          <span>Plain Text</span>
+          <span id="cursor-pos">Ln 1, Col 1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ext-language_tools.min.js"></script>
+
+  <script>
+    const editor = ace.edit("editor");
+
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/html");
+
+    editor.setOptions({
+      fontFamily: "JetBrains Mono, Menlo, Monaco, 'Courier New', monospace",
+      fontSize: "14px",
+      showPrintMargin: false,
+      showGutter: true,
+      useSoftTabs: true,
+      tabSize: 2,
+      wrap: true,
+      highlightActiveLine: true,
+      enableBasicAutocompletion: true,
+      enableLiveAutocompletion: true,
+      enableSnippets: true,
+    });
+
+    const cursorPosElement = document.getElementById("cursor-pos");
+    function updateCursorPos() {
+      const pos = editor.getCursorPosition();
+      const line = pos.row + 1;
+      const col = pos.column + 1;
+      cursorPosElement.textContent = `Ln ${line}, Col ${col}`;
+    }
+
+    editor.selection.on("changeCursor", updateCursorPos);
+    updateCursorPos();
+  </script>
+
+</body>
+
+</html>
