@@ -307,7 +307,6 @@ textarea.form-control.ta-editor {
 }
 
 .save-btn {
-    display: block;
     margin-top: 12px;
     padding: 10px 16px;
     background: #9333ea;
@@ -335,3 +334,4 @@ textarea.form-control.ta-editor {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0a0a0a; }
 ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
+
