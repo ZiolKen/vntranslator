@@ -277,6 +277,63 @@ function renderEditor(data) {
     saveBtn.textContent = "Save & Download";
     saveBtn.onclick = () => saveTextList(data.id);
     c.appendChild(saveBtn);
+ 
+	const reloadBtn = document.createElement("button");
+	reloadBtn.className = "btn btn-secondary";
+	reloadBtn.style.marginLeft = "10px";
+	reloadBtn.textContent = "🔄";
+	reloadBtn.onclick = () => loadEditor(data.id);
+	c.appendChild(reloadBtn);
+	 
+	const copyBtn = document.createElement("button");
+	copyBtn.className = "btn btn-secondary";
+	copyBtn.style.marginLeft = "10px";
+	copyBtn.textContent = "📋";
+	copyBtn.onclick = () => {
+	    navigator.clipboard.writeText(document.getElementById("editorArea").value);
+	    alert("Copied!");
+	};
+	c.appendChild(copyBtn);
+	 
+	const downloadBtn = document.createElement("button");
+	downloadBtn.className = "btn btn-secondary";
+	downloadBtn.style.marginLeft = "10px";
+	downloadBtn.textContent = "⬇";
+	downloadBtn.onclick = () => {
+	    const txt = document.getElementById("editorArea").value;
+	    const blob = new Blob([txt], { type: "text/plain" });
+	    const a = document.createElement("a");
+	    a.href = URL.createObjectURL(blob);
+	    a.download = data.name + "_extracted.txt";
+	    a.click();
+	};
+	c.appendChild(downloadBtn);
+	 
+	const uploadTxt = document.createElement("input");
+	uploadTxt.type = "file";
+	uploadTxt.accept = ".txt";
+	uploadTxt.style.marginLeft = "10px";
+	
+	uploadTxt.onchange = async function () {
+	    const f = uploadTxt.files[0];
+	    if (!f) return;
+	
+	    let txt = await f.text();
+	 
+	    txt = txt
+	        .replace(/\r/g, "")
+	        .trim()
+	        .split("\n")
+	        .map(t => t.trim())
+	        .filter(t => t.length >= 0)
+	        .map((t, i) => `---------${i}\n${t}`)
+	        .join("\n");
+	
+	    document.getElementById("editorArea").value = txt;
+	
+	    alert("Loaded text from file!");
+	};
+	c.appendChild(uploadTxt);
 }
 
 // =====================================
@@ -368,6 +425,7 @@ async function saveData(id) {
 </body>
 	
 </html>
+
 
 
 
