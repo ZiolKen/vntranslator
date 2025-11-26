@@ -161,60 +161,6 @@ async function apiFetch(path, options) {
 }
 
 // =====================================
-// HANDLE FILE UPLOAD
-// =====================================
-	
-document.getElementById("fileupload").addEventListener("change", async function(e) {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    const fd = new FormData();
-    for (const file of files) {
-        fd.append("files", file);
-    }
-
-    PreLoadOn();
-
-    try {
-		const res = await apiFetch("/Upload", {
-			method: "POST",
-  			body: fd
-		});
-
-        if (!res.ok) {
-            alert("Upload failed: " + res.status);
-            PreLoadOff();
-            return;
-        }
-
-        const json = await res.json();
-        console.log("UPLOAD RESULT:", json);
-
-        if (json.error) {
-            alert("ERROR: " + json.error);
-            PreLoadOff();
-            return;
-        }
-
-        function openTabForFile(fileInfo) {
-            loadEditor(fileInfo.id);
-        }
-
-        json.files.forEach(f => openTabForFile(f));
-
-        if (json.files.length > 0) {
-            loadEditor(json.files[0].id);
-        }
-    } catch (err) {
-        console.error(err);
-        alert("Network error!");
-    }
-
-    PreLoadOff();
-});
-
-// =====================================
 // LOAD EDITOR
 // =====================================
 	
@@ -246,139 +192,6 @@ async function loadEditor(id) {
 }
 
 // =====================================
-// RENDER EDITOR
-// =====================================
-	
-function renderEditor(data) {
-    const c = document.getElementById("editorContainer");
-    c.innerHTML = "";
-
-    const title = document.createElement("h3");
-    title.textContent = "Editing: " + data.name + " (" + data.type + ")";
-    c.appendChild(title);
-
-    const ta = document.createElement("textarea");
-    ta.id = "editorArea";
-    ta.style.width = "100%";
-    ta.style.height = "600px";
-    ta.style.fontFamily = "monospace";
-
-    let output = "";
-    (data.lines || []).forEach((t, i) => {
-        output += "---------" + i + "\n" + t + "\n";
-    });
-
-    ta.value = output;
-    c.appendChild(ta);
-
-    const saveBtn = document.createElement("button");
-    saveBtn.className = "btn btn-primary";
-    saveBtn.style.marginTop = "10px";
-    saveBtn.textContent = "Save & Download";
-    saveBtn.onclick = () => saveTextList(data.id);
-    c.appendChild(saveBtn);
- 
-	const reloadBtn = document.createElement("button");
-	reloadBtn.className = "btn btn-primary";
-	reloadBtn.style.marginLeft = "10px";
-	reloadBtn.textContent = "🔄";
-	reloadBtn.onclick = () => loadEditor(data.id);
-	c.appendChild(reloadBtn);
-	 
-	const copyBtn = document.createElement("button");
-	copyBtn.className = "btn btn-primary";
-	copyBtn.style.marginLeft = "10px";
-	copyBtn.textContent = "📋";
-	copyBtn.onclick = () => {
-	    navigator.clipboard.writeText(document.getElementById("editorArea").value);
-	    alert("Copied!");
-	};
-	c.appendChild(copyBtn);
-	 
-	const downloadBtn = document.createElement("button");
-	downloadBtn.className = "btn btn-primary";
-	downloadBtn.style.marginLeft = "10px";
-	downloadBtn.textContent = "⬇️";
-	downloadBtn.onclick = () => {
-	    const txt = document.getElementById("editorArea").value;
-	    const blob = new Blob([txt], { type: "text/plain" });
-	    const a = document.createElement("a");
-	    a.href = URL.createObjectURL(blob);
-	    a.download = data.name + "_extracted.txt";
-	    a.click();
-	};
-	c.appendChild(downloadBtn);
-	 
-	const uploadTxt = document.createElement("input");
-	uploadTxt.className = "btn btn-primary";
-	uploadTxt.style.marginLeft = "10px";
-	uploadTxt.textContent = "⬆️";
-	uploadTxt.type = "file";
-	uploadTxt.accept = ".txt";
-
-	uploadTxt.onchange = async function () {
-	    const f = uploadTxt.files[0];
-	    if (!f) return;
-	
-	    let txt = await f.text();
-	 
-	    txt = txt
-	        .replace(/\r/g, "")
-	        .trim()
-	        .split("\n")
-	        .map(t => t.trim())
-	        .filter(t => t.length >= 0)
-	        .map((t, i) => `---------${i}\n${t}`)
-	        .join("\n");
-	
-	    document.getElementById("editorArea").value = txt;
-	
-	    alert("Loaded text from file!");
-	};
-	c.appendChild(uploadTxt);
-}
-
-// =====================================
-// SAVE TEXT LIST
-// =====================================
-	
-async function saveTextList(id) {
-    let raw = document.getElementById("editorArea").value;
-
-    let parts = raw.split(/---------\d+\s*\n/);
-    let lines = parts.map(v => v.trim()).filter(v => v.length > 0);
-
-    PreLoadOn();
-
-    try {
-		const res = await apiFetch("/Edit/" + id, {
-		  method: "POST",
-		  headers: { "Content-Type": "application/json" },
-		  body: JSON.stringify({ lines })
-		});
-
-        if (!res.ok) {
-            alert("Save failed: " + res.status);
-            PreLoadOff();
-            return;
-        }
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "edited_file";
-        a.click();
-        URL.revokeObjectURL(url);
-    } catch (err) {
-        console.error(err);
-        alert("Save network error!");
-    }
-
-    PreLoadOff();
-}
-
-// =====================================
 // SAVE DATA
 // =====================================
 	
@@ -396,7 +209,7 @@ async function saveData(id) {
     PreLoadOn();
 
     try {
-        const res = await fetch(API_BASE + "/Edit/" + id, {
+        const res = await apiFetch("/Edit/" + id, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: json })
@@ -427,6 +240,7 @@ async function saveData(id) {
 </body>
 	
 </html>
+
 
 
 
