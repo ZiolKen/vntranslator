@@ -1,13 +1,16 @@
 document.addEventListener("DOMContentLoaded", function () {
+    
 // ===================================
 // GLOBAL STORAGE (frontend)
 // ===================================
-const OPEN_FILES = {};   // id -> {id, name, type, lines}
+    
+const OPEN_FILES = {};  
 let ACTIVE_FILE_ID = null;
 
 // ===================================
 // HANDLE MULTI FILE UPLOAD
 // ===================================
+    
 fileInput.addEventListener("change", async function(e) {
 
     const fd = new FormData();
@@ -16,10 +19,10 @@ fileInput.addEventListener("change", async function(e) {
     }
 
     PreLoadOn();
-    const res = await fetch(API_BASE + "/Upload", {
-        method: "POST",
-        body: fd
-    });
+	const res = await apiFetch("/Upload", {
+		method: "POST",
+  		body: fd
+	});
     const json = await res.json();
     PreLoadOff();
 
@@ -38,6 +41,7 @@ fileInput.addEventListener("change", async function(e) {
 // ===================================
 // ADD TAB TO TAB BAR
 // ===================================
+    
 function addTab(fileObj) {
     const tabBar = document.getElementById("tabBar");
 
@@ -54,21 +58,21 @@ function addTab(fileObj) {
 // ===================================
 // SWITCH TAB
 // ===================================
+
 function switchTab(id) {
     ACTIVE_FILE_ID = id;
 
-    // highlight tab
     document.querySelectorAll(".tab").forEach(t => {
         t.classList.toggle("active", t.dataset.id === id);
     });
 
-    // render editor
     renderEditor(OPEN_FILES[id]);
 }
 
 // ===================================
 // RENDER EDITOR FOR CURRENT TAB
 // ===================================
+    
 function renderEditor(fileData) {
     const container = document.getElementById("editorContainer");
     if (!container) {
@@ -112,6 +116,7 @@ function renderEditor(fileData) {
 // ===================================
 // SAVE & DOWNLOAD
 // ===================================
+
 async function saveTextList(id) {
     const file = OPEN_FILES[id];
     if (!file) return;
@@ -143,4 +148,5 @@ async function saveTextList(id) {
     a.click();
     URL.revokeObjectURL(url);
 }
+
 });
