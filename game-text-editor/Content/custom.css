@@ -333,7 +333,7 @@ textarea {
     justify-content: flex-end;
     gap: 16px;
     padding: 4px 10px;
-    background: #1e1e1e;
+    background: #181818;
     color: #cccccc;
     font-size: 12px;
     border-top: 1px solid #333;
@@ -347,4 +347,3 @@ textarea {
 .wrapeditor:hover {
     border-color: rgba(168, 85, 247, 0.3);
 }
-
