@@ -167,6 +167,7 @@
     color: #fff;
     cursor: pointer;
     font-size: 14px;
+	border: 1px solid #2B2B2B;
     user-select: none;
     transition: 0.2s;
 }
@@ -343,4 +344,3 @@ textarea {
 .wrapeditor:hover {
     border-color: rgba(168, 85, 247, 0.3);
 }
-
