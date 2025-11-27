@@ -179,7 +179,7 @@
 .tab.active {
     background: #1F1F1F;
     font-weight: bold;
-    border: 1px solid #2B2B2B;
+    border: none;
 }
 
 #editorContainer {
@@ -340,7 +340,6 @@ textarea {
 .wrapeditor {
     border: 1px solid var(--border-color);
 }
-
 .wrapeditor:hover {
     border-color: rgba(168, 85, 247, 0.3);
 }
