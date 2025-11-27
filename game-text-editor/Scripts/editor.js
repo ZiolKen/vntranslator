@@ -102,7 +102,7 @@ function addTab(fileObj) {
 
     const closeBtn = document.createElement("span");
     closeBtn.className = "tab-close";
-    closeBtn.textContent = "×";
+    closeBtn.textContent = "ｘ";
     closeBtn.title = "Close";
     closeBtn.onclick = (e) => {
         e.stopPropagation();
@@ -410,3 +410,4 @@ async function saveTextList(id) {
     a.click();
     URL.revokeObjectURL(url);
 }
+
