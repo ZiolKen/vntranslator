@@ -346,14 +346,7 @@ function renderButtons(fileData) {
         const f = uploadInput.files[0];
         if (!f) return;
 
-        let txt = await f.text();
-        txt = txt
-            .replace(/\r/g, "")
-            .trim()
-            .split("\n")
-            .map(t => t.trim())
-            .map((t, i) => `---------${i}\n${t}`)
-            .join("\n");
+        const txt = await f.text();
 
         const model = MONACO_MODELS[fileData.id];
         if (model) {
@@ -817,5 +810,3 @@ function disableHideTagsRpgm(fileId) {
         OPEN_FILES[fileId].lines = restored;
     }
 }
-
-
