@@ -1,5 +1,5 @@
 // ===================================
-// GLOBAL STORAGE
+// CONFIG
 // ===================================
 
 const OPEN_FILES = {};   
@@ -12,59 +12,41 @@ let MONACO_READY = false;
 
 const HIDE_TAGS = {};
 const HIDE_TAG_STATE = {};
+const RPGM_TAG_STATE = {};
 
 // ================================
 // TEXT HELPERS
 // ================================
 
-function stripSpeakerPrefix(text) {
-    if (typeof text !== "string") return text; 
-    return text.replace(/^\s*(?:[A-Za-z]{2,8}|NPC|Npc|npc)\.\s*/, "");
-}
- 
-function stripTagsForMachineTranslation(text) {
-    if (typeof text !== "string") return text;
+function getEditorLinesForFile(id) {
+    const model = MONACO_MODELS[id];
+    if (!model) return [];
 
-    let s = text;
- 
-    s = stripSpeakerPrefix(s);
- 
-    s = s.replace(/\\n/g, " ");
- 
-    s = s.replace(/\\fn<[^>]*>/gi, "");
-    s = s.replace(/\\[Cc]\[\d+]/g, "");     
-    s = s.replace(/\\[a-zA-Z]+\[[^\]]*]/g, "");   
- 
-    s = s.replace(/\\[a-zA-Z]+/g, "");
- 
-    s = s.replace(/<[^>]+>/g, "");
- 
-    s = s.replace(/\[[^\]]+]/g, "");
- 
-    s = s.replace(/\s+/g, " ").trim();
+    const raw = model.getValue().replace(/\r/g, "");
+    const chunks = raw.split(/---------\d+\s*\n/);
 
-    return s;
-}
-
-function parseEditorLines(raw) {
-    if (!raw) return [];
-    const parts = raw.split(/---------\d+\s*\n/);
-    return parts
-        .map(v => v.trim())
-        .filter(v => v.length > 0);
-}
-
-function buildEditorTextFromLines(lines) {
-    if (!Array.isArray(lines) || lines.length === 0) {
-        return "(No dialog extracted)";
+    const lines = []; 
+    for (let i = 1; i < chunks.length; i++) { 
+        lines.push(chunks[i].replace(/\n/g, ""));
     }
-    return lines
+    return lines;
+}
+
+function setEditorLinesForFile(id, lines) {
+    const txt = lines
         .map((line, i) => `---------${i}\n${line}`)
         .join("\n");
-}
 
-function isHideTagsOn(fileId) {
-    return !!(HIDE_TAGS[fileId] && HIDE_TAGS[fileId].on);
+    let model = MONACO_MODELS[id];
+    if (model) {
+        model.setValue(txt);
+    } else {
+        model = monaco.editor.createModel(txt, "plaintext");
+        MONACO_MODELS[id] = model;
+    }
+    if (ACTIVE_FILE_ID === id && MONACO_EDITOR) {
+        MONACO_EDITOR.setModel(model);
+    }
 }
 
 // ===================================
@@ -400,30 +382,35 @@ function renderButtons(fileData) {
         if (current === "off") { 
             MONACO_EDITOR.updateOptions({ wordWrap: "on" });
             wrapBtn.textContent = "🔀 Word Wrap: ON";
-            wrapBtn.style.background = "#2a7a2a";
         } else { 
             MONACO_EDITOR.updateOptions({ wordWrap: "off" });
             wrapBtn.textContent = "🔀 Word Wrap: OFF";
-            wrapBtn.style.background = "#181818";
         }
     };
 
     bar.appendChild(wrapBtn);
 
-    // HIDE TAGS (for machine translation) - RPGM ONLY
+    // HIDE TAGS (for machine translation) - RPGM ONLY 
     if (fileData.type === "rpgmv-json") {
         const hideBtn = document.createElement("button");
         hideBtn.className = "save-btn";
         hideBtn.style.marginLeft = "8px";
 
-        const state = HIDE_TAG_STATE[fileData.id];
-        const active = state && state.active;
+        const st = RPGM_TAG_STATE[fileData.id];
+        const isHidden = st && st.hidden;
 
-        hideBtn.textContent = active ? "🏷️ Hide Tags: ON" : "🏷️ Hide Tags: OFF";
-        hideBtn.title = "Hide RPGM control codes, tags for machine translation";
-        hideBtn.style.background = active ? "#2a7a2a" : "#181818";
+        hideBtn.textContent = isHidden ? "🏷️ Hide Tags: ON" : "🏷️ Hide Tags: OFF";
+        hideBtn.title = "For machine translation";
 
-        hideBtn.onclick = () => toggleHideTags(fileData.id, hideBtn);
+        hideBtn.onclick = () => {
+            const currentState = RPGM_TAG_STATE[fileData.id] && RPGM_TAG_STATE[fileData.id].hidden;
+            if (currentState) {
+                disableHideTagsRpgm(fileData.id);
+            } else {
+                enableHideTagsRpgm(fileData.id);
+            } 
+            renderButtons(fileData);
+        };
 
         bar.appendChild(hideBtn);
     }
@@ -546,199 +533,265 @@ async function saveTextList(id) {
 // ===================================
 // RPGM TAG SPLITTER
 // ===================================
-
-function splitRpgmLineIntoSegments(text) {
-    const segments = [];
-    if (!text) return segments;
  
-    const re = /(\\[a-zA-Z]+(?:\[[^\]]*\])?(?:<[^>]*>)?)|(<\/?[a-zA-Z][^>]*>)/g;
+const RPGM_TAG_REGEX = /\\[A-Za-z]+(?:\[[0-9]+\]|<[^>]+>)?|<[^>]+>/g;
+
+function isWordChar(ch) {
+    return /[A-Za-z0-9\u00C0-\u1EF9\u3040-\u30FF\u4E00-\u9FFF]/.test(ch);
+}
+
+function isBoundary(pos, s) {
+    const n = s.length;
+    if (pos <= 0 || pos >= n) return true;
+    return !(isWordChar(s[pos - 1]) && isWordChar(s[pos]));
+}
+
+function adjustPosLeft(pos, s) {
+    const n = s.length;
+    pos = Math.max(0, Math.min(n, pos));
+    if (isBoundary(pos, s)) return pos;
+    for (let p = pos - 1; p >= 0; p--) {
+        if (isBoundary(p, s)) return p;
+    }
+    return pos;
+}
+
+function adjustPosRight(pos, s) {
+    const n = s.length;
+    pos = Math.max(0, Math.min(n, pos));
+    if (isBoundary(pos, s)) return pos;
+    for (let p = pos + 1; p <= n; p++) {
+        if (isBoundary(p, s)) return p;
+    }
+    return pos;
+}
+
+function adjustPosAny(pos, s) {
+    const n = s.length;
+    pos = Math.max(0, Math.min(n, pos));
+    if (isBoundary(pos, s)) return pos;
+
+    const MAX_SCAN = 40;
+    let best = pos;
+    let bestScore = Infinity;
+
+    for (let d = 1; d <= MAX_SCAN; d++) {
+        for (const p of [pos - d, pos + d]) {
+            if (p < 0 || p > n) continue;
+            if (!isBoundary(p, s)) continue;
+
+            const before = p > 0 ? s[p - 1] : "";
+            const after = p < n ? s[p] : "";
+
+            let score = d;
+            if (/\s/.test(before) || /\s/.test(after)) {
+                score -= 0.5;
+            } else if (!before || !after || /[.,!?;:]/.test(before) || /[.,!?;:]/.test(after)) {
+                score -= 0.2;
+            }
+
+            if (score < bestScore) {
+                bestScore = score;
+                best = p;
+            }
+        }
+        if (bestScore < Infinity) break;
+    }
+
+    return best;
+}
+
+function mapOffset(oldPos, oldLen, newPlain, mode = "any") {
+    const newLen = newPlain.length;
+    if (oldLen <= 0) return 0;
+    const raw = Math.round(newLen * (oldPos / oldLen));
+    if (mode === "left") return adjustPosLeft(raw, newPlain);
+    if (mode === "right") return adjustPosRight(raw, newPlain);
+    return adjustPosAny(raw, newPlain);
+}
+
+function parseRpgmLineForTags(line) {
+    const tags = [];
+    const colorRegions = [];
+    const colorStack = [];
+    let plainIndex = 0;
     let lastIndex = 0;
+
+    RPGM_TAG_REGEX.lastIndex = 0;
     let m;
+    while ((m = RPGM_TAG_REGEX.exec(line)) !== null) {
+        const tag = m[0];
+        const before = line.slice(lastIndex, m.index);
+        if (before) plainIndex += before.length;
 
-    while ((m = re.exec(text)) !== null) {
-        const idx = m.index;
-        if (idx > lastIndex) {
-            segments.push({ type: "text", value: text.slice(lastIndex, idx) });
-        }
-        segments.push({ type: "tag", value: m[0] });
-        lastIndex = re.lastIndex;
-    }
-
-    if (lastIndex < text.length) {
-        segments.push({ type: "text", value: text.slice(lastIndex) });
-    }
-
-    return segments;
-}
-
-// ===================================
-// MERGE NEW TEXT BACK INTO SEGMENTS
-// ===================================
-
-function mergePlainTextIntoSegments(segments, plainText) {
-    const newText = plainText || "";
- 
-    const textIndices = [];
-    for (let i = 0; i < segments.length; i++) {
-        if (segments[i].type === "text") textIndices.push(i);
-    }
-    if (!textIndices.length) { 
-        return segments.map(s => s.value).join("");
-    }
- 
-    const positiveIndices = textIndices.filter(idx => segments[idx].value.length > 0);
-    const targetIndices = positiveIndices.length ? positiveIndices : textIndices;
-
-    const totalOriginal = targetIndices.reduce(
-        (sum, idx) => sum + segments[idx].value.length,
-        0
-    );
-    const N = newText.length;
-    let pos = 0;
-
-    targetIndices.forEach((idx, index) => {
-        let piece;
-
-        if (index === targetIndices.length - 1) { 
-            piece = newText.slice(pos);
-        } else if (totalOriginal > 0) {
-            const origLen = segments[idx].value.length;
-            const end = Math.min(pos + origLen, N);
-            piece = newText.slice(pos, end);
-            pos = end;
-        } else { 
-            const remainingSegments = targetIndices.length - index;
-            const remainingChars = N - pos;
-            const chunk = remainingSegments <= 1
-                ? remainingChars
-                : Math.floor(remainingChars / remainingSegments);
-            const end = pos + chunk;
-            piece = newText.slice(pos, end);
-            pos = end;
-        }
-
-        segments[idx].value = piece;
-    });
-
-    return segments.map(s => s.value).join("");
-}
-
-// ===================================
-// HIDE TAGS TOGGLE (RPGM only)
-// ===================================
-
-function toggleHideTags(fileId, btn) {
-    const file = OPEN_FILES[fileId];
-    if (!file || !MONACO_EDITOR) return;
-
-    const model = MONACO_MODELS[fileId];
-    if (!model) return;
-
-    const expectedCount = (file.lines && file.lines.length) || 0;
-    if (!expectedCount) {
-        alert("This file has no dialog lines.");
-        return;
-    }
-
-    const state = HIDE_TAG_STATE[fileId];
-    if (!state || !state.active) {
-        enableHideTags(fileId, btn, expectedCount);
-    } else {
-        disableHideTags(fileId, btn, expectedCount);
-    }
-}
-
-function enableHideTags(fileId, btn, expectedCount) {
-    const model = MONACO_MODELS[fileId];
-    if (!model) return;
-
-    const raw = model.getValue();
-    const originalLines = parseEditorBlocks(raw, expectedCount);
-
-    const lineStates = originalLines.map((lineText) => {
-        const segments = splitRpgmLineIntoSegments(lineText);
-        if (!segments.length) {
-            return {
-                original: lineText,
-                segments: [],
-                plainText: "",
-                hasText: false
-            };
-        }
-
-        const plainText = segments
-            .filter(seg => seg.type === "text")
-            .map(seg => seg.value)
-            .join("");
-
-        return {
-            original: lineText,
-            segments,
-            plainText,
-            hasText: plainText.trim().length > 0
+        const entry = {
+            tag,
+            oldOffset: plainIndex, 
+            role: "single",
+            regionIndex: null
         };
+
+        const colorMatch = tag.match(/^\\c\[(\d+)]$/);
+        if (colorMatch) {
+            const num = parseInt(colorMatch[1], 10);
+            if (num === 0) { 
+                if (colorStack.length > 0) {
+                    const open = colorStack.pop();
+                    const regionIndex = colorRegions.length;
+                    colorRegions.push({
+                        start: open.oldOffset,
+                        end: plainIndex,
+                        openTagIndex: open.tagIndex,
+                        closeTagIndex: tags.length
+                    });
+                    tags[open.tagIndex].role = "colorOpen";
+                    tags[open.tagIndex].regionIndex = regionIndex;
+                    entry.role = "colorClose";
+                    entry.regionIndex = regionIndex;
+                } else {
+                    entry.role = "colorResetOrphan";
+                }
+            } else { 
+                const tagIndex = tags.length;
+                colorStack.push({
+                    color: num,
+                    oldOffset: plainIndex,
+                    tagIndex
+                });
+                entry.role = "colorOpenPending";
+            }
+        }
+
+        tags.push(entry);
+        lastIndex = m.index + tag.length;
+    }
+
+    const tail = line.slice(lastIndex);
+    if (tail) plainIndex += tail.length;
+
+    const plain = line.replace(RPGM_TAG_REGEX, "");
+
+    return {
+        original: line,
+        plain,
+        tags,
+        colorRegions,
+        oldLen: plainIndex
+    };
+}
+
+function reapplyTagsToLine(info, newPlain) {
+    const oldPlain = info.plain;
+    if (newPlain === oldPlain) {
+        return info.original;
+    }
+
+    const oldLen = info.oldLen;
+    const tags = info.tags;
+    const colorRegions = info.colorRegions;
+    const placements = [];
+    const usedTagIdx = new Set();
+ 
+    colorRegions.forEach((reg) => {
+        let startPos = mapOffset(reg.start, oldLen, newPlain, "left");
+        let endPos = mapOffset(reg.end, oldLen, newPlain, "right");
+        if (endPos < startPos) endPos = startPos;
+
+        placements.push({
+            tag: tags[reg.openTagIndex].tag,
+            pos: startPos,
+            order: reg.openTagIndex
+        });
+        placements.push({
+            tag: tags[reg.closeTagIndex].tag,
+            pos: endPos,
+            order: reg.closeTagIndex
+        });
+
+        usedTagIdx.add(reg.openTagIndex);
+        usedTagIdx.add(reg.closeTagIndex);
+    });
+ 
+    tags.forEach((tag, i) => {
+        if (usedTagIdx.has(i)) return;
+        const pos = mapOffset(tag.oldOffset, oldLen, newPlain, "any");
+        placements.push({
+            tag: tag.tag,
+            pos,
+            order: i
+        });
+    });
+ 
+    placements.sort((a, b) => {
+        if (a.pos !== b.pos) return a.pos - b.pos;
+        return a.order - b.order;
+    });
+ 
+    let out = "";
+    let last = 0;
+    for (const pl of placements) {
+        if (pl.pos > last) {
+            out += newPlain.slice(last, pl.pos);
+            last = pl.pos;
+        }
+        out += pl.tag;
+    }
+    out += newPlain.slice(last);
+
+    return out;
+}
+
+// ===================================
+// HIDE TAGS (RPGM only)
+// ===================================
+
+function enableHideTagsRpgm(fileId) {
+    const state = RPGM_TAG_STATE[fileId] || { hidden: false, lines: {} };
+    const linesNow = getEditorLinesForFile(fileId);
+
+    const newLines = [];
+    const lineState = {};
+
+    linesNow.forEach((line, idx) => {
+        const info = parseRpgmLineForTags(line);
+        lineState[idx] = info;
+        newLines.push(info.plain);
     });
 
-    const cleanedLines = lineStates.map(st =>
-        st.hasText ? st.plainText : ""
-    );
+    state.hidden = true;
+    state.lines = lineState;
+    RPGM_TAG_STATE[fileId] = state;
 
-    const newText = cleanedLines
-        .map((line, idx) => `---------${idx}\n${line}`)
-        .join("\n");
-
-    model.setValue(newText);
-
-    HIDE_TAG_STATE[fileId] = {
-        active: true,
-        lines: lineStates,
-        count: expectedCount
-    };
-
-    if (btn) {
-        btn.textContent = "🏷️ Hide Tags: ON";
-        btn.style.background = "#2a7a2a";
+    setEditorLinesForFile(fileId, newLines);
+    if (OPEN_FILES[fileId]) {
+        OPEN_FILES[fileId].lines = newLines;
     }
 }
 
-function disableHideTags(fileId, btn, expectedCount) {
-    const model = MONACO_MODELS[fileId];
-    if (!model) return;
+function disableHideTagsRpgm(fileId) {
+    const state = RPGM_TAG_STATE[fileId];
+    if (!state || !state.hidden) return;
 
-    const state = HIDE_TAG_STATE[fileId];
-    if (!state || !state.lines) return;
+    const plainLinesNow = getEditorLinesForFile(fileId);
+    const restored = [];
 
-    const raw = model.getValue();
-    const cleanLines = parseEditorBlocks(raw, expectedCount);
-
-    const mergedLines = cleanLines.map((plain, idx) => {
-        const st = state.lines[idx];
-        if (!st) return plain || "";
-
-        const plainText = plain != null ? plain : "";
- 
-        if (!st.segments.length || !st.hasText) {
-            if (!plainText) return st.original; 
-            return st.original + plainText;
+    plainLinesNow.forEach((plain, idx) => {
+        const info = state.lines[idx];
+        if (!info) {
+            restored.push(plain);
+            return;
         }
+        const newFull = reapplyTagsToLine(info, plain);
+        restored.push(newFull);
  
-        const merged = mergePlainTextIntoSegments(
-            st.segments.map(s => ({ ...s })), 
-            plainText
-        );
-        return merged;
+        state.lines[idx] = parseRpgmLineForTags(newFull);
     });
 
-    const newText = mergedLines
-        .map((line, idx) => `---------${idx}\n${line}`)
-        .join("\n");
+    state.hidden = false;
+    RPGM_TAG_STATE[fileId] = state;
 
-    model.setValue(newText);
- 
-    delete HIDE_TAG_STATE[fileId];
-
-    if (btn) {
-        btn.textContent = "🏷️ Hide Tags: OFF";
-        btn.style.background = "#181818";
+    setEditorLinesForFile(fileId, restored);
+    if (OPEN_FILES[fileId]) {
+        OPEN_FILES[fileId].lines = restored;
     }
 }
