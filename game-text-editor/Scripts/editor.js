@@ -377,11 +377,9 @@ function renderButtons(fileData) {
     let wrapState = MONACO_EDITOR.getOption(monaco.editor.EditorOption.wordWrap);
 
     if (wrapState === "on") {
-        wrapBtn.textContent = "🔀 Word Wrap: ON";
-        wrapBtn.style.background = "#2a7a2a"; 
+        wrapBtn.textContent = "🔀 Word Wrap: ON"; 
     } else {
-        wrapBtn.textContent = "🔀 Word Wrap: OFF";
-        wrapBtn.style.background = "#181818"; 
+        wrapBtn.textContent = "🔀 Word Wrap: OFF"; 
     }
 
     wrapBtn.onclick = () => {
@@ -819,4 +817,5 @@ function disableHideTagsRpgm(fileId) {
         OPEN_FILES[fileId].lines = restored;
     }
 }
+
 
