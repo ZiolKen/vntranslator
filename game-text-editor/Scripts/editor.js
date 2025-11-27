@@ -416,11 +416,14 @@ function renderButtons(fileData) {
         hideBtn.className = "save-btn";
         hideBtn.style.marginLeft = "8px";
 
-        updateHideTagButtonLabel(hideBtn, fileData.id);
+        const state = HIDE_TAG_STATE[fileData.id];
+        const active = state && state.active;
 
-        hideBtn.onclick = () => {
-            toggleHideTags(fileData.id, hideBtn);
-        };
+        hideBtn.textContent = active ? "🏷️ Hide Tags: ON" : "🏷️ Hide Tags: OFF";
+        hideBtn.title = "Hide RPGM control codes, tags for machine translation";
+        hideBtn.style.background = active ? "#2a7a2a" : "#181818";
+
+        hideBtn.onclick = () => toggleHideTags(fileData.id, hideBtn);
 
         bar.appendChild(hideBtn);
     }
@@ -435,9 +438,7 @@ async function reloadFile(id) {
     const file = OPEN_FILES[id];
     if (!file) return;
 
-    if (HIDE_TAG_STATE[id]) {
-        delete HIDE_TAG_STATE[id];
-    }
+    delete HIDE_TAG_STATE[id];
  
     const fileData = OPEN_FILES[id];
     if (!fileData.lines) return;
@@ -458,6 +459,41 @@ async function reloadFile(id) {
 }
 
 // ===================================
+// PARSE EDITOR TEXT TO LINES
+// ===================================
+
+function parseEditorBlocks(raw, expectedCount) {
+    const result = new Array(expectedCount).fill("");
+
+    const text = raw.replace(/\r/g, "");
+    const lines = text.split("\n");
+
+    let currentIndex = null;
+    let buffer = [];
+
+    function flush() {
+        if (currentIndex === null) return;
+        if (currentIndex >= 0 && currentIndex < expectedCount) {
+            result[currentIndex] = buffer.join("\n");
+        }
+        buffer = [];
+    }
+
+    for (const line of lines) {
+        const m = line.match(/^---------([0-9]+)/);
+        if (m) {
+            flush();
+            currentIndex = parseInt(m[1], 10);
+        } else if (currentIndex !== null) {
+            buffer.push(line);
+        }
+    }
+    flush();
+
+    return result;
+}
+
+// ===================================
 // SAVE & DOWNLOAD
 // ===================================
 
@@ -471,15 +507,17 @@ async function saveTextList(id) {
         return;
     }
 
-    if (isHideTagsOn(id)) {
-        alert("Hide Tag is on.\nTurn off Hide Tag to restore the tag, then Save (so the JSON keeps the tag correctly).");
-        return;
+    const expectedCount = (file.lines && file.lines.length) || 0;
+ 
+    const st = HIDE_TAG_STATE[id];
+    if (st && st.active && expectedCount > 0) {
+        disableHideTags(id, null, expectedCount);
     }
 
-    let raw = model.getValue();
-
-    let parts = raw.split(/---------\d+\s*\n/);
-    let lines = parts.map(v => v.trim()).filter(v => v.length > 0);
+    const raw = MONACO_MODELS[id].getValue();
+    const lines = expectedCount > 0
+        ? parseEditorBlocks(raw, expectedCount)
+        : [];
 
     PreLoadOn();
     const res = await apiFetch("/Edit/" + id, {
@@ -487,13 +525,14 @@ async function saveTextList(id) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lines })
     });
-
     PreLoadOff();
 
     if (!res.ok) {
         alert("Save failed: " + res.status);
         return;
     }
+ 
+    file.lines = lines;
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -505,174 +544,201 @@ async function saveTextList(id) {
 }
 
 // ===================================
-// HIDE TAGS (FOR MACHINE TRANSLATION) RPGM
+// RPGM TAG SPLITTER
 // ===================================
- 
-function stripSpeakerPrefixClient(text) {
-    if (typeof text !== "string") return text;
-    return text.replace(/^\s*(?:[A-Za-z]{2,8}|NPC|Npc|npc)\.\s*/, "");
-}
- 
-function stripTagsForMachineTranslation(line) {
-    if (line == null) return "";
-    let text = String(line);
- 
-    text = stripSpeakerPrefixClient(text);
- 
-    text = text
-        .replace(/\\c\[\d+]/gi, "")
-        .replace(/\\v\[\d+]/gi, "")
-        .replace(/\\n\[\d+]/gi, "")
-        .replace(/\\i\[\d+]/gi, "")
-        .replace(/\\fs\[\d+]/gi, "")
-        .replace(/\\ow\[\d+]/gi, "")
-        .replace(/\\fn<[^>]+>/gi, "")
-        .replace(/\\fb/gi, "")
-        .replace(/\\{|\}/g, "") 
-        .replace(/\\[A-Za-z]+\[[^\]]*]/g, "")
-        .replace(/\\[A-Za-z]+/g, "");
- 
-    text = text
-        .replace(/<br\s*\/?>/gi, " ")
-        .replace(/<\/?center>/gi, " ")
-        .replace(/<\/?b>/gi, "")
-        .replace(/<\/?i>/gi, "")
-        .replace(/<\/?font[^>]*>/gi, "");
 
-    return text.trim();
-}
-
-function isHideTagsOn(fileId) {
-    return HIDE_TAG_STATE[fileId]?.mode === "hidden";
-}
-
-function updateHideTagButtonLabel(btn, fileId) {
-    if (isHideTagsOn(fileId)) {
-        btn.textContent = "🏷️ Hide Tags: ON";
-        btn.style.background = "#b35c00";
-        btn.style.color = "#fff";
-    } else {
-        btn.textContent = "🏷️ Hide Tags: OFF";
-        btn.style.background = "#181818";
-        btn.style.color = "";
-    }
-}
- 
-function getLogicalLinesFromEditor(model) {
-    const raw = model.getValue();
-    const parts = raw.split(/---------\d+\s*\n/);
-    const lines = parts
-        .map(v => v.trim())
-        .filter(v => v.length > 0);
-    return lines;
-}
- 
-function mergeCleanIntoOriginal(original, editedClean) {
-    if (!original) return editedClean || "";
-    if (editedClean == null) editedClean = "";
- 
-    const origClean = stripTagsForMachineTranslation(original);
-    if (origClean === editedClean) return original;
- 
-    const tagRegex = /(\\c\[\d+]|\\v\[\d+]|\\n\[\d+]|\\i\[\d+]|\\fs\[\d+]|\\ow\[\d+]|\\fn<[^>]+>|\\fb|\\[A-Za-z]+\[[^\]]*]|\\[A-Za-z]+|<br\s*\/?>|<\/?center>|<\/?b>|<\/?i>|<\/?font[^>]*>)/gi;
+function splitRpgmLineIntoSegments(text) {
     const segments = [];
+    if (!text) return segments;
+ 
+    const re = /(\\[a-zA-Z]+(?:\[[^\]]*\])?(?:<[^>]*>)?)|(<\/?[a-zA-Z][^>]*>)/g;
     let lastIndex = 0;
     let m;
-    while ((m = tagRegex.exec(original)) !== null) {
-        if (m.index > lastIndex) {
-            segments.push({ type: "text", value: original.slice(lastIndex, m.index) });
+
+    while ((m = re.exec(text)) !== null) {
+        const idx = m.index;
+        if (idx > lastIndex) {
+            segments.push({ type: "text", value: text.slice(lastIndex, idx) });
         }
         segments.push({ type: "tag", value: m[0] });
-        lastIndex = m.index + m[0].length;
-    }
-    if (lastIndex < original.length) {
-        segments.push({ type: "text", value: original.slice(lastIndex) });
+        lastIndex = re.lastIndex;
     }
 
-    const textSegmentsIdx = [];
-    segments.forEach((seg, idx) => {
-        if (seg.type === "text" && seg.value.trim() !== "") {
-            textSegmentsIdx.push(idx);
-        }
-    });
-
-    if (textSegmentsIdx.length === 0) { 
-        return original;
+    if (lastIndex < text.length) {
+        segments.push({ type: "text", value: text.slice(lastIndex) });
     }
+
+    return segments;
+}
+
+// ===================================
+// MERGE NEW TEXT BACK INTO SEGMENTS
+// ===================================
+
+function mergePlainTextIntoSegments(segments, plainText) {
+    const newText = plainText || "";
  
-    if (textSegmentsIdx.length === 1) {
-        const idx = textSegmentsIdx[0];
-        const origText = segments[idx].value;
-        const leadingMatch = origText.match(/^\s*/);
-        const trailingMatch = origText.match(/\s*$/);
-        const leading = leadingMatch ? leadingMatch[0] : "";
-        const trailing = trailingMatch ? trailingMatch[0] : "";
-        segments[idx].value = leading + editedClean + trailing;
+    const textIndices = [];
+    for (let i = 0; i < segments.length; i++) {
+        if (segments[i].type === "text") textIndices.push(i);
+    }
+    if (!textIndices.length) { 
         return segments.map(s => s.value).join("");
     }
  
-    const firstIdx = textSegmentsIdx[0];
-    const firstOrigText = segments[firstIdx].value;
-    const leadMatch = firstOrigText.match(/^\s*/);
-    const trailMatch = firstOrigText.match(/\s*$/);
-    const leading = leadMatch ? leadMatch[0] : "";
-    const trailing = trailMatch ? trailMatch[0] : "";
+    const positiveIndices = textIndices.filter(idx => segments[idx].value.length > 0);
+    const targetIndices = positiveIndices.length ? positiveIndices : textIndices;
 
-    segments.forEach((seg, idx) => {
-        if (seg.type === "text") {
-            if (idx === firstIdx) {
-                seg.value = leading + editedClean + trailing;
-            } else {
-                seg.value = "";
-            }
+    const totalOriginal = targetIndices.reduce(
+        (sum, idx) => sum + segments[idx].value.length,
+        0
+    );
+    const N = newText.length;
+    let pos = 0;
+
+    targetIndices.forEach((idx, index) => {
+        let piece;
+
+        if (index === targetIndices.length - 1) { 
+            piece = newText.slice(pos);
+        } else if (totalOriginal > 0) {
+            const origLen = segments[idx].value.length;
+            const end = Math.min(pos + origLen, N);
+            piece = newText.slice(pos, end);
+            pos = end;
+        } else { 
+            const remainingSegments = targetIndices.length - index;
+            const remainingChars = N - pos;
+            const chunk = remainingSegments <= 1
+                ? remainingChars
+                : Math.floor(remainingChars / remainingSegments);
+            const end = pos + chunk;
+            piece = newText.slice(pos, end);
+            pos = end;
         }
+
+        segments[idx].value = piece;
     });
 
     return segments.map(s => s.value).join("");
 }
- 
+
+// ===================================
+// HIDE TAGS TOGGLE (RPGM only)
+// ===================================
+
 function toggleHideTags(fileId, btn) {
+    const file = OPEN_FILES[fileId];
+    if (!file || !MONACO_EDITOR) return;
+
     const model = MONACO_MODELS[fileId];
     if (!model) return;
 
-    let state = HIDE_TAG_STATE[fileId] || { mode: "full", originalLines: null };
+    const expectedCount = (file.lines && file.lines.length) || 0;
+    if (!expectedCount) {
+        alert("This file has no dialog lines.");
+        return;
+    }
 
-    if (state.mode === "full") { 
-        const originalLines = getLogicalLinesFromEditor(model);
-        state.originalLines = originalLines;
+    const state = HIDE_TAG_STATE[fileId];
+    if (!state || !state.active) {
+        enableHideTags(fileId, btn, expectedCount);
+    } else {
+        disableHideTags(fileId, btn, expectedCount);
+    }
+}
 
-        const cleanLines = originalLines.map(line => stripTagsForMachineTranslation(line));
+function enableHideTags(fileId, btn, expectedCount) {
+    const model = MONACO_MODELS[fileId];
+    if (!model) return;
 
-        const newText = cleanLines
-            .map((line, i) => `---------${i}\n${line}`)
-            .join("\n");
+    const raw = model.getValue();
+    const originalLines = parseEditorBlocks(raw, expectedCount);
 
-        model.setValue(newText);
-
-        state.mode = "hidden";
-        HIDE_TAG_STATE[fileId] = state;
-        updateHideTagButtonLabel(btn, fileId);
-    } else { 
-        const editedCleanLines = getLogicalLinesFromEditor(model);
-        const originalLines = state.originalLines || [];
-        const maxLen = Math.max(originalLines.length, editedCleanLines.length);
-        const mergedLines = [];
-
-        for (let i = 0; i < maxLen; i++) {
-            const orig = originalLines[i] || "";
-            const clean = editedCleanLines[i] || "";
-            mergedLines.push(mergeCleanIntoOriginal(orig, clean));
+    const lineStates = originalLines.map((lineText) => {
+        const segments = splitRpgmLineIntoSegments(lineText);
+        if (!segments.length) {
+            return {
+                original: lineText,
+                segments: [],
+                plainText: "",
+                hasText: false
+            };
         }
 
-        const finalText = mergedLines
-            .map((line, i) => `---------${i}\n${line}`)
-            .join("\n");
+        const plainText = segments
+            .filter(seg => seg.type === "text")
+            .map(seg => seg.value)
+            .join("");
 
-        model.setValue(finalText);
+        return {
+            original: lineText,
+            segments,
+            plainText,
+            hasText: plainText.trim().length > 0
+        };
+    });
+
+    const cleanedLines = lineStates.map(st =>
+        st.hasText ? st.plainText : ""
+    );
+
+    const newText = cleanedLines
+        .map((line, idx) => `---------${idx}\n${line}`)
+        .join("\n");
+
+    model.setValue(newText);
+
+    HIDE_TAG_STATE[fileId] = {
+        active: true,
+        lines: lineStates,
+        count: expectedCount
+    };
+
+    if (btn) {
+        btn.textContent = "🏷️ Hide Tags: ON";
+        btn.style.background = "#2a7a2a";
+    }
+}
+
+function disableHideTags(fileId, btn, expectedCount) {
+    const model = MONACO_MODELS[fileId];
+    if (!model) return;
+
+    const state = HIDE_TAG_STATE[fileId];
+    if (!state || !state.lines) return;
+
+    const raw = model.getValue();
+    const cleanLines = parseEditorBlocks(raw, expectedCount);
+
+    const mergedLines = cleanLines.map((plain, idx) => {
+        const st = state.lines[idx];
+        if (!st) return plain || "";
+
+        const plainText = plain != null ? plain : "";
  
-        state.originalLines = mergedLines;
-        state.mode = "full";
-        HIDE_TAG_STATE[fileId] = state;
-        updateHideTagButtonLabel(btn, fileId);
+        if (!st.segments.length || !st.hasText) {
+            if (!plainText) return st.original; 
+            return st.original + plainText;
+        }
+ 
+        const merged = mergePlainTextIntoSegments(
+            st.segments.map(s => ({ ...s })), 
+            plainText
+        );
+        return merged;
+    });
+
+    const newText = mergedLines
+        .map((line, idx) => `---------${idx}\n${line}`)
+        .join("\n");
+
+    model.setValue(newText);
+ 
+    delete HIDE_TAG_STATE[fileId];
+
+    if (btn) {
+        btn.textContent = "🏷️ Hide Tags: OFF";
+        btn.style.background = "#181818";
     }
 }
