@@ -11,6 +11,7 @@ const MONACO_MODELS = {};
 let MONACO_READY = false; 
 
 const HIDE_TAGS = {};
+const HIDE_TAG_STATE = {};
 
 // ================================
 // TEXT HELPERS
@@ -202,6 +203,10 @@ function closeTab(id) {
     }
 
     delete OPEN_FILES[id];
+
+    if (HIDE_TAG_STATE[id]) {
+        delete HIDE_TAG_STATE[id];
+    }
  
     if (ACTIVE_FILE_ID === id) {
         const remaining = document.querySelectorAll(".tab");
@@ -410,7 +415,6 @@ function renderButtons(fileData) {
         const hideBtn = document.createElement("button");
         hideBtn.className = "save-btn";
         hideBtn.style.marginLeft = "8px";
-        hideBtn.title = "Hide tags, keep only dialog text for machine translation";
 
         updateHideTagButtonLabel(hideBtn, fileData.id);
 
@@ -430,6 +434,10 @@ function renderButtons(fileData) {
 async function reloadFile(id) {
     const file = OPEN_FILES[id];
     if (!file) return;
+
+    if (HIDE_TAG_STATE[id]) {
+        delete HIDE_TAG_STATE[id];
+    }
  
     const fileData = OPEN_FILES[id];
     if (!fileData.lines) return;
@@ -463,6 +471,11 @@ async function saveTextList(id) {
         return;
     }
 
+    if (isHideTagsOn(id)) {
+        alert("Hide Tag is on.\nTurn off Hide Tag to restore the tag, then Save (so the JSON keeps the tag correctly).");
+        return;
+    }
+
     let raw = model.getValue();
 
     let parts = raw.split(/---------\d+\s*\n/);
@@ -491,42 +504,175 @@ async function saveTextList(id) {
     URL.revokeObjectURL(url);
 }
 
+// ===================================
+// HIDE TAGS (FOR MACHINE TRANSLATION) RPGM
+// ===================================
+ 
+function stripSpeakerPrefixClient(text) {
+    if (typeof text !== "string") return text;
+    return text.replace(/^\s*(?:[A-Za-z]{2,8}|NPC|Npc|npc)\.\s*/, "");
+}
+ 
+function stripTagsForMachineTranslation(line) {
+    if (line == null) return "";
+    let text = String(line);
+ 
+    text = stripSpeakerPrefixClient(text);
+ 
+    text = text
+        .replace(/\\c\[\d+]/gi, "")
+        .replace(/\\v\[\d+]/gi, "")
+        .replace(/\\n\[\d+]/gi, "")
+        .replace(/\\i\[\d+]/gi, "")
+        .replace(/\\fs\[\d+]/gi, "")
+        .replace(/\\ow\[\d+]/gi, "")
+        .replace(/\\fn<[^>]+>/gi, "")
+        .replace(/\\fb/gi, "")
+        .replace(/\\{|\}/g, "") 
+        .replace(/\\[A-Za-z]+\[[^\]]*]/g, "")
+        .replace(/\\[A-Za-z]+/g, "");
+ 
+    text = text
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<\/?center>/gi, " ")
+        .replace(/<\/?b>/gi, "")
+        .replace(/<\/?i>/gi, "")
+        .replace(/<\/?font[^>]*>/gi, "");
+
+    return text.trim();
+}
+
+function isHideTagsOn(fileId) {
+    return HIDE_TAG_STATE[fileId]?.mode === "hidden";
+}
+
 function updateHideTagButtonLabel(btn, fileId) {
     if (isHideTagsOn(fileId)) {
         btn.textContent = "🏷️ Hide Tags: ON";
-        btn.style.background = "#2a7a2a";
+        btn.style.background = "#b35c00";
+        btn.style.color = "#fff";
     } else {
         btn.textContent = "🏷️ Hide Tags: OFF";
         btn.style.background = "#181818";
+        btn.style.color = "";
     }
 }
+ 
+function getLogicalLinesFromEditor(model) {
+    const raw = model.getValue();
+    const parts = raw.split(/---------\d+\s*\n/);
+    const lines = parts
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+    return lines;
+}
+ 
+function mergeCleanIntoOriginal(original, editedClean) {
+    if (!original) return editedClean || "";
+    if (editedClean == null) editedClean = "";
+ 
+    const origClean = stripTagsForMachineTranslation(original);
+    if (origClean === editedClean) return original;
+ 
+    const tagRegex = /(\\c\[\d+]|\\v\[\d+]|\\n\[\d+]|\\i\[\d+]|\\fs\[\d+]|\\ow\[\d+]|\\fn<[^>]+>|\\fb|\\[A-Za-z]+\[[^\]]*]|\\[A-Za-z]+|<br\s*\/?>|<\/?center>|<\/?b>|<\/?i>|<\/?font[^>]*>)/gi;
+    const segments = [];
+    let lastIndex = 0;
+    let m;
+    while ((m = tagRegex.exec(original)) !== null) {
+        if (m.index > lastIndex) {
+            segments.push({ type: "text", value: original.slice(lastIndex, m.index) });
+        }
+        segments.push({ type: "tag", value: m[0] });
+        lastIndex = m.index + m[0].length;
+    }
+    if (lastIndex < original.length) {
+        segments.push({ type: "text", value: original.slice(lastIndex) });
+    }
 
+    const textSegmentsIdx = [];
+    segments.forEach((seg, idx) => {
+        if (seg.type === "text" && seg.value.trim() !== "") {
+            textSegmentsIdx.push(idx);
+        }
+    });
+
+    if (textSegmentsIdx.length === 0) { 
+        return original;
+    }
+ 
+    if (textSegmentsIdx.length === 1) {
+        const idx = textSegmentsIdx[0];
+        const origText = segments[idx].value;
+        const leadingMatch = origText.match(/^\s*/);
+        const trailingMatch = origText.match(/\s*$/);
+        const leading = leadingMatch ? leadingMatch[0] : "";
+        const trailing = trailingMatch ? trailingMatch[0] : "";
+        segments[idx].value = leading + editedClean + trailing;
+        return segments.map(s => s.value).join("");
+    }
+ 
+    const firstIdx = textSegmentsIdx[0];
+    const firstOrigText = segments[firstIdx].value;
+    const leadMatch = firstOrigText.match(/^\s*/);
+    const trailMatch = firstOrigText.match(/\s*$/);
+    const leading = leadMatch ? leadMatch[0] : "";
+    const trailing = trailMatch ? trailMatch[0] : "";
+
+    segments.forEach((seg, idx) => {
+        if (seg.type === "text") {
+            if (idx === firstIdx) {
+                seg.value = leading + editedClean + trailing;
+            } else {
+                seg.value = "";
+            }
+        }
+    });
+
+    return segments.map(s => s.value).join("");
+}
+ 
 function toggleHideTags(fileId, btn) {
     const model = MONACO_MODELS[fileId];
     if (!model) return;
 
-    const current = HIDE_TAGS[fileId] || { on: false, originalRaw: "" };
+    let state = HIDE_TAG_STATE[fileId] || { mode: "full", originalLines: null };
 
-    if (!current.on) { 
-        const raw = model.getValue();
-        current.originalRaw = raw;
+    if (state.mode === "full") { 
+        const originalLines = getLogicalLinesFromEditor(model);
+        state.originalLines = originalLines;
 
-        const lines = parseEditorLines(raw);
-        const cleaned = lines.map(stripTagsForMachineTranslation);
-        const newRaw = buildEditorTextFromLines(cleaned);
+        const cleanLines = originalLines.map(line => stripTagsForMachineTranslation(line));
 
-        model.setValue(newRaw);
+        const newText = cleanLines
+            .map((line, i) => `---------${i}\n${line}`)
+            .join("\n");
 
-        current.on = true;
-        HIDE_TAGS[fileId] = current;
+        model.setValue(newText);
+
+        state.mode = "hidden";
+        HIDE_TAG_STATE[fileId] = state;
+        updateHideTagButtonLabel(btn, fileId);
     } else { 
-        if (current.originalRaw) {
-            model.setValue(current.originalRaw);
+        const editedCleanLines = getLogicalLinesFromEditor(model);
+        const originalLines = state.originalLines || [];
+        const maxLen = Math.max(originalLines.length, editedCleanLines.length);
+        const mergedLines = [];
+
+        for (let i = 0; i < maxLen; i++) {
+            const orig = originalLines[i] || "";
+            const clean = editedCleanLines[i] || "";
+            mergedLines.push(mergeCleanIntoOriginal(orig, clean));
         }
-        current.on = false;
-        HIDE_TAGS[fileId] = current;
+
+        const finalText = mergedLines
+            .map((line, i) => `---------${i}\n${line}`)
+            .join("\n");
+
+        model.setValue(finalText);
+ 
+        state.originalLines = mergedLines;
+        state.mode = "full";
+        HIDE_TAG_STATE[fileId] = state;
+        updateHideTagButtonLabel(btn, fileId);
     }
-
-    if (btn) updateHideTagButtonLabel(btn, fileId);
 }
-
