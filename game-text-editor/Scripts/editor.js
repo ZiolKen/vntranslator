@@ -8,7 +8,63 @@ let ACTIVE_FILE_ID = null;
 // Monaco system
 let MONACO_EDITOR = null;  
 const MONACO_MODELS = {};  
-let MONACO_READY = false;  
+let MONACO_READY = false; 
+
+const HIDE_TAGS = {};
+
+// ================================
+// TEXT HELPERS
+// ================================
+
+function stripSpeakerPrefix(text) {
+    if (typeof text !== "string") return text; 
+    return text.replace(/^\s*(?:[A-Za-z]{2,8}|NPC|Npc|npc)\.\s*/, "");
+}
+ 
+function stripTagsForMachineTranslation(text) {
+    if (typeof text !== "string") return text;
+
+    let s = text;
+ 
+    s = stripSpeakerPrefix(s);
+ 
+    s = s.replace(/\\n/g, " ");
+ 
+    s = s.replace(/\\fn<[^>]*>/gi, "");
+    s = s.replace(/\\[Cc]\[\d+]/g, "");     
+    s = s.replace(/\\[a-zA-Z]+\[[^\]]*]/g, "");   
+ 
+    s = s.replace(/\\[a-zA-Z]+/g, "");
+ 
+    s = s.replace(/<[^>]+>/g, "");
+ 
+    s = s.replace(/\[[^\]]+]/g, "");
+ 
+    s = s.replace(/\s+/g, " ").trim();
+
+    return s;
+}
+
+function parseEditorLines(raw) {
+    if (!raw) return [];
+    const parts = raw.split(/---------\d+\s*\n/);
+    return parts
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+}
+
+function buildEditorTextFromLines(lines) {
+    if (!Array.isArray(lines) || lines.length === 0) {
+        return "(No dialog extracted)";
+    }
+    return lines
+        .map((line, i) => `---------${i}\n${line}`)
+        .join("\n");
+}
+
+function isHideTagsOn(fileId) {
+    return !!(HIDE_TAGS[fileId] && HIDE_TAGS[fileId].on);
+}
 
 // ===================================
 // DOM READY
@@ -215,15 +271,7 @@ function renderEditor(fileData) {
     }
  
     if (!MONACO_MODELS[fileData.id]) {
-        let txt = "";
-        if (!fileData.lines || fileData.lines.length === 0) {
-            txt = "(No dialog extracted)";
-        } else {
-            txt = fileData.lines
-                .map((line, i) => `---------${i}\n${line}`)
-                .join("\n");
-        }
-
+        const txt = buildEditorTextFromLines(fileData.lines || []);
         MONACO_MODELS[fileData.id] = monaco.editor.createModel(txt, "plaintext");
     }
 
@@ -357,6 +405,20 @@ function renderButtons(fileData) {
 
     bar.appendChild(wrapBtn);
 
+    // HIDE TAG (for machine translation)
+    const hideBtn = document.createElement("button");
+    hideBtn.className = "save-btn";
+    hideBtn.style.marginLeft = "8px";
+    hideBtn.title = "Hide tags, keep only dialog text for machine translation";
+
+    updateHideTagButtonLabel(hideBtn, fileData.id);
+
+    hideBtn.onclick = () => {
+        toggleHideTags(fileData.id, hideBtn);
+    };
+
+    bar.appendChild(hideBtn);
+
 }
 
 // ===================================
@@ -370,15 +432,15 @@ async function reloadFile(id) {
     const fileData = OPEN_FILES[id];
     if (!fileData.lines) return;
 
-    let txt = fileData.lines
-        .map((line, i) => `---------${i}\n${line}`)
-        .join("\n");
+    let txt = buildEditorTextFromLines(fileData.lines || []);
 
     if (MONACO_MODELS[id]) {
         MONACO_MODELS[id].setValue(txt);
     } else {
         MONACO_MODELS[id] = monaco.editor.createModel(txt, "plaintext");
     }
+
+    HIDE_TAGS[id] = { on: false, originalRaw: "" };
 
     if (ACTIVE_FILE_ID === id) {
         MONACO_EDITOR.setModel(MONACO_MODELS[id]);
@@ -427,4 +489,41 @@ async function saveTextList(id) {
     URL.revokeObjectURL(url);
 }
 
+function updateHideTagButtonLabel(btn, fileId) {
+    if (isHideTagsOn(fileId)) {
+        btn.textContent = "🏷️ Hide Tags: ON";
+        btn.style.background = "#2a7a2a";
+    } else {
+        btn.textContent = "🏷️ Hide Tags: OFF";
+        btn.style.background = "#181818";
+    }
+}
 
+function toggleHideTags(fileId, btn) {
+    const model = MONACO_MODELS[fileId];
+    if (!model) return;
+
+    const current = HIDE_TAGS[fileId] || { on: false, originalRaw: "" };
+
+    if (!current.on) { 
+        const raw = model.getValue();
+        current.originalRaw = raw;
+
+        const lines = parseEditorLines(raw);
+        const cleaned = lines.map(stripTagsForMachineTranslation);
+        const newRaw = buildEditorTextFromLines(cleaned);
+
+        model.setValue(newRaw);
+
+        current.on = true;
+        HIDE_TAGS[fileId] = current;
+    } else { 
+        if (current.originalRaw) {
+            model.setValue(current.originalRaw);
+        }
+        current.on = false;
+        HIDE_TAGS[fileId] = current;
+    }
+
+    if (btn) updateHideTagButtonLabel(btn, fileId);
+}
