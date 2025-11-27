@@ -220,10 +220,6 @@
     white-space: nowrap;
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(121, 121, 121, 0); border-radius: 2px; }
- 
 #tabBar::-webkit-scrollbar,
 textarea::-webkit-scrollbar {
     width: 14px;
@@ -232,12 +228,12 @@ textarea::-webkit-scrollbar {
  
 #tabBar::-webkit-scrollbar-track,
 textarea::-webkit-scrollbar-track {
-    background: transparent;
+    background: #1F1F1F;
 }
  
 #tabBar::-webkit-scrollbar-thumb,
 textarea::-webkit-scrollbar-thumb {
-    background: rgba(121, 121, 121, 0);
+    background: #1F1F1F;
     border-radius: 10px;
     border: 4px solid transparent;
     background-clip: padding-box;
@@ -246,19 +242,19 @@ textarea::-webkit-scrollbar-thumb {
  
 #tabBar:hover::-webkit-scrollbar-thumb,
 textarea:hover::-webkit-scrollbar-thumb {
-    background: rgba(121, 121, 121, 0.4);
+    background: #1F1F1F;
     background-clip: padding-box;
 }
  
 #tabBar::-webkit-scrollbar-thumb:hover,
 textarea::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 100, 100, 0.7);
+    background: #1F1F1F;
     background-clip: padding-box;
 }
  
 #tabBar::-webkit-scrollbar-thumb:active,
 textarea::-webkit-scrollbar-thumb:active {
-    background: rgba(85, 85, 85, 0.8);
+    background: #1F1F1F;
     background-clip: padding-box;
 }
  
@@ -269,11 +265,11 @@ textarea::-webkit-scrollbar-corner {
  
 #tabBar {
     scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
+    scrollbar-color: #1F1F1F #1F1F1F;
 }
 
 #tabBar:hover {
-    scrollbar-color: rgba(121, 121, 121, 0.4) transparent;
+    scrollbar-color: #1F1F1F #1F1F1F;
 }
  
 #tabBar,
@@ -347,3 +343,4 @@ textarea {
 .wrapeditor:hover {
     border-color: rgba(168, 85, 247, 0.3);
 }
+
