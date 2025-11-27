@@ -17,6 +17,16 @@ let MONACO_READY = false;
 document.addEventListener("DOMContentLoaded", function () {
     const fileupload = document.getElementById("fileupload");
 
+    function mapEngineName(type) {
+        switch (type) {
+            case "kag-ks": return "KIRIKIRI-KAG";
+            case "tyrano-ks": return "TYRANOBUILD";
+            case "renpy-script": return "RENPY";
+            case "rpgmv-json": return "RPGM";
+            default: return "UNKNOWN";
+        }
+    }
+
     // ================================
     // INIT MONACO 
     // ================================
@@ -73,8 +83,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const lang = monaco.languages.getEncodedLanguageId(model.getLanguageId());
             const langName = model.getLanguageId();
-            document.getElementById("langInfo").textContent =
-                langName ? langName.toUpperCase() : "PLAIN TEXT";
+            if (ACTIVE_FILE_ID && OPEN_FILES[ACTIVE_FILE_ID]) {
+                const rawType = OPEN_FILES[ACTIVE_FILE_ID].type || "unknown";
+                const displayType = mapEngineName(rawType);
+            
+                document.getElementById("langInfo").textContent = displayType;
+            } else {
+                document.getElementById("langInfo").textContent = "UNKNOWN";
+            }
         }
  
         if (ACTIVE_FILE_ID && OPEN_FILES[ACTIVE_FILE_ID]) {
@@ -410,4 +426,5 @@ async function saveTextList(id) {
     a.click();
     URL.revokeObjectURL(url);
 }
+
 
