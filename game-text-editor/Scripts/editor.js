@@ -405,19 +405,21 @@ function renderButtons(fileData) {
 
     bar.appendChild(wrapBtn);
 
-    // HIDE TAG (for machine translation)
-    const hideBtn = document.createElement("button");
-    hideBtn.className = "save-btn";
-    hideBtn.style.marginLeft = "8px";
-    hideBtn.title = "Hide tags, keep only dialog text for machine translation";
+    // HIDE TAGS (for machine translation) - RPGM ONLY
+    if (fileData.type === "rpgmv-json") {
+        const hideBtn = document.createElement("button");
+        hideBtn.className = "save-btn";
+        hideBtn.style.marginLeft = "8px";
+        hideBtn.title = "Hide tags, keep only dialog text for machine translation";
 
-    updateHideTagButtonLabel(hideBtn, fileData.id);
+        updateHideTagButtonLabel(hideBtn, fileData.id);
 
-    hideBtn.onclick = () => {
-        toggleHideTags(fileData.id, hideBtn);
-    };
+        hideBtn.onclick = () => {
+            toggleHideTags(fileData.id, hideBtn);
+        };
 
-    bar.appendChild(hideBtn);
+        bar.appendChild(hideBtn);
+    }
 
 }
 
@@ -527,3 +529,4 @@ function toggleHideTags(fileId, btn) {
 
     if (btn) updateHideTagButtonLabel(btn, fileId);
 }
+
