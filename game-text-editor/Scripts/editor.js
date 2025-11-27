@@ -49,6 +49,15 @@ function setEditorLinesForFile(id, lines) {
     }
 }
 
+function buildEditorTextFromLines(lines) {
+    if (!Array.isArray(lines) || lines.length === 0) {
+        return "(No dialog extracted)";
+    }
+    return lines
+        .map((line, i) => `---------${i}\n${line}`)
+        .join("\n");
+}
+
 // ===================================
 // DOM READY
 // ===================================
@@ -425,7 +434,7 @@ async function reloadFile(id) {
     const file = OPEN_FILES[id];
     if (!file) return;
 
-    delete HIDE_TAG_STATE[id];
+    delete RPGM_TAG_STATE[id];
  
     const fileData = OPEN_FILES[id];
     if (!fileData.lines) return;
@@ -437,8 +446,6 @@ async function reloadFile(id) {
     } else {
         MONACO_MODELS[id] = monaco.editor.createModel(txt, "plaintext");
     }
-
-    HIDE_TAGS[id] = { on: false, originalRaw: "" };
 
     if (ACTIVE_FILE_ID === id) {
         MONACO_EDITOR.setModel(MONACO_MODELS[id]);
@@ -496,21 +503,40 @@ async function saveTextList(id) {
 
     const expectedCount = (file.lines && file.lines.length) || 0;
  
-    const st = HIDE_TAG_STATE[id];
-    if (st && st.active && expectedCount > 0) {
-        disableHideTags(id, null, expectedCount);
-    }
-
-    const raw = MONACO_MODELS[id].getValue();
-    const lines = expectedCount > 0
+    const raw = model.getValue();
+    const editedLines = expectedCount > 0
         ? parseEditorBlocks(raw, expectedCount)
         : [];
+
+    let linesToSend = editedLines;
+
+    const tagState = RPGM_TAG_STATE[id];
+
+    if (file.type === "rpgmv-json" && tagState) {
+        if (tagState.hidden) { 
+            linesToSend = editedLines.map((plain, idx) => {
+                const info = tagState.lines[idx];
+                if (!info) return plain; 
+
+                const full = reapplyTagsToLine(info, plain);
+ 
+                tagState.lines[idx] = parseRpgmLineForTags(full);
+                return full;
+            });
+        } else { 
+            tagState.lines = editedLines.map(parseRpgmLineForTags);
+        }
+
+        file.lines = linesToSend.slice();
+    } else { 
+        file.lines = editedLines.slice();
+    }
 
     PreLoadOn();
     const res = await apiFetch("/Edit/" + id, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines })
+        body: JSON.stringify({ lines: linesToSend })
     });
     PreLoadOff();
 
@@ -518,8 +544,6 @@ async function saveTextList(id) {
         alert("Save failed: " + res.status);
         return;
     }
- 
-    file.lines = lines;
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -795,3 +819,4 @@ function disableHideTagsRpgm(fileId) {
         OPEN_FILES[fileId].lines = restored;
     }
 }
+
