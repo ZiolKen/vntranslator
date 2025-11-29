@@ -420,7 +420,7 @@
       if (/^[\w\s]*=[^"]/.test(trimmed)) return false;
       if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff|woff2|eot|svg)["']?/i.test(trimmed)) return false;
       if (/["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i.test(trimmed)) return false;
-      const keywords = ["screen", "background", "outlines", "outline_scaling", "easeout", "hovered", "unhovered", "font", "text", "text_font", "style", "key", "if", "else", "at", "def", "config", "size", "add", "action", "show", "play", "image", "sound", "align", "import", "with", "move"];
+      const keywords = ["screen", "$", "background", "outlines", "outline_scaling", "easeout", "hovered", "unhovered", "font", "text", "text_font", "style", "key", "elif", "==", "=", "else", "at", "def", "config", "size", "add", "action", "show", "play", "image", "sound", "align", "import", "with", "move"];
       const outsideQuotes = trimmed.replace(/"[^"]*"|'[^']*'/g, "");
       if (keywords.some(kw => new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes))) return false;
       if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
