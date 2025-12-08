@@ -360,11 +360,11 @@
                             spellCheck="false"
                         />
                             <div className="button-group" style={{
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "20px",
-    textAlign: "center"
-}}>
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: "20px",
+                                textAlign: "center"
+                            }}>
                                 <button onClick={handleDownloadTxt} className="p-2 hover:bg-purple-100 text-gray-600 hover:text-purple-700 rounded transition" title="1. Export to TXT for translation">
                                     <i className="fas fa-file-export fa-lg"></i>
                                 </button>
@@ -379,10 +379,11 @@
                     {/* Footer Controls */}
                     <div className="form-group">
                         <div className="form-group">
-                            <span>{status || "Waiting file..."}</span>
-                            <label className="form-group">
-                                <input type="checkbox" checked={isWordWrap} onChange={(e) => setIsWordWrap(e.target.checked)} className="rounded text-blue-500" />
-                                Word Wrap
+                            <span className="log-container" style={{textAlign: "center", marginBottom: "12px", display: "block"}}>{status || "Waiting file..."}</span>
+                            <label className="custom-checkbox">
+                                <input type="checkbox" checked={isWordWrap} onChange={(e) => setIsWordWrap(e.target.checked)} />
+                                <span class="checkmark"></span>
+                                <span>Word Wrap</span>
                             </label>
                         </div>
                         <button 
