@@ -379,7 +379,7 @@
                     {/* Footer Controls */}
                     <div className="form-group">
                         <div className="form-group">
-                            <textarea style={{height: "50px",}} readOnly>{status || "Waiting file..."}</textarea>
+                            <span>{status || "Waiting file..."}</span>
                             <label className="form-group">
                                 <input type="checkbox" checked={isWordWrap} onChange={(e) => setIsWordWrap(e.target.checked)} className="rounded text-blue-500" />
                                 Word Wrap
