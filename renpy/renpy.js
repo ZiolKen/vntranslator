@@ -70,32 +70,33 @@
             const maxLines = options.maxLines ?? 64;
             const maxTokens = options.maxTokens ?? 2000;
             const batches = [];
-        
+
             let currentBatch = [];
             let currentTokens = 0;
-        
-            for (const dialog of dialogs) {
+
+            for (let i = 0; i < dialogs.length; i++) {
+              const dialog = dialogs[i];
               const text = dialog.maskedQuote || dialog.quote || '';
               const tokens = estimateTokens(text) + 8; 
-        
+
               if (currentBatch.length > 0 &&
                   (currentBatch.length >= maxLines || currentTokens + tokens > maxTokens)) {
                 batches.push(currentBatch);
                 currentBatch = [];
                 currentTokens = 0;
               }
-        
+
               currentBatch.push(dialog);
               currentTokens += tokens;
             }
-        
+
             if (currentBatch.length > 0) {
               batches.push(currentBatch);
             }
-        
+
             return batches;
           }
-        
+
           function log(message, level = 'info') {
             const entryText = message;
         
@@ -120,6 +121,93 @@
             }
             el.logBox.appendChild(p);
             el.logBox.scrollTop = el.logBox.scrollHeight;
+          }
+        
+          function maskTagsInText(text) {
+            if (!text) {
+              return { masked: text, map: {} };
+            }
+
+            const map = {};
+            let counter = 0;
+            let result = '';
+            let lastIndex = 0;
+
+            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+            let m;
+
+            while ((m = re.exec(text)) !== null) {
+              const originalTag = m[0];
+              const placeholder = '__RENPLH_' + (counter++) + '__';
+
+              result += text.slice(lastIndex, m.index) + placeholder;
+              lastIndex = m.index + originalTag.length;
+
+              map[placeholder] = originalTag;
+            }
+
+            result += text.slice(lastIndex);
+
+            return { masked: result, map: map };
+          }
+
+          function unmaskTagsInText(text, map) {
+            if (!text || !map) return text;
+
+            let result = text;
+            for (const placeholder in map) {
+              if (!Object.prototype.hasOwnProperty.call(map, placeholder)) continue;
+              const originalTag = map[placeholder];
+              if (!placeholder) continue;
+              result = result.split(placeholder).join(originalTag);
+            }
+            return result;
+          }
+
+          function countTagsByType(text) {
+            const result = { square: 0, curly: 0 };
+            if (!text) return result;
+
+            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+            const matches = text.match(re);
+            if (!matches) return result;
+
+            for (let i = 0; i < matches.length; i++) {
+              const m = matches[i];
+              if (m[0] === '[') result.square++;
+              else if (m[0] === '{') result.curly++;
+            }
+
+            return result;
+          }
+
+          function validateTagConsistency(originalText, translatedText, lineNumber) {
+            const src = countTagsByType(originalText);
+            const tgt = countTagsByType(translatedText);
+
+            if (/__RENPLH_\d+__/.test(translatedText)) {
+              log(
+                '*️⃣ [Line ' + lineNumber + '] Placeholder __RENPLH_*__ still appears in translation. ' +
+                'The translation may have interfered with the placeholder, need to check again manually.',
+                'warn'
+              );
+            }
+
+            if (src.square !== tgt.square) {
+              log(
+                '*️⃣ [Line ' + lineNumber + '] Square tag mismatch: original has ' + src.square +
+                ' [tags], translation has ' + tgt.square + '.',
+                'warn'
+              );
+            }
+
+            if (src.curly !== tgt.curly) {
+              log(
+                '*️⃣ [Line ' + lineNumber + '] Curly tag mismatch: original has ' + src.curly +
+                ' {tags}, translation has ' + tgt.curly + '.',
+                'warn'
+              );
+            }
           }
         
           function setTranslateButtonBusy(isBusy, labelWhenBusy = '🔁 Translating...') {
@@ -173,90 +261,6 @@
             el.stopBtn.disabled = state.isPaused;
             el.resumeBtn.disabled = !state.isPaused;
           }
-
-          function maskTagsInText(text) {
-            if (!text) {
-              return { masked: text, map: {} };
-            }
-
-            const map = {};
-            let counter = 0;
-            let result = '';
-            let lastIndex = 0;
-
-            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
-            let m;
-
-            while ((m = re.exec(text)) !== null) {
-              const originalTag = m[0];
-              const placeholder = `__RENPLH_${counter++}__`;
-
-              result += text.slice(lastIndex, m.index) + placeholder;
-              lastIndex = m.index + originalTag.length;
-
-              map[placeholder] = originalTag;
-            }
-
-            result += text.slice(lastIndex);
-
-            return { masked: result, map };
-          }
-
-          function unmaskTagsInText(text, map) {
-            if (!text || !map) return text;
-
-            let result = text;
-            for (const [placeholder, originalTag] of Object.entries(map)) {
-              if (!placeholder) continue;
-              result = result.split(placeholder).join(originalTag);
-            }
-            return result;
-          }
-        
-          function countTagsByType(text) {
-            const result = { square: 0, curly: 0 };
-            if (!text) return result;
-
-            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
-            const matches = text.match(re);
-            if (!matches) return result;
-
-            for (const m of matches) {
-              if (m[0] === '[') result.square++;
-              else if (m[0] === '{') result.curly++;
-            }
-
-            return result;
-          }
-
-          function validateTagConsistency(originalText, translatedText, lineNumber) {
-            const src = countTagsByType(originalText);
-            const tgt = countTagsByType(translatedText);
-
-            if (/__RENPLH_\d+__/.test(translatedText)) {
-              log(
-                `*️⃣ [Line ${lineNumber}] Placeholder __RENPLH_*__ still appears in translation. ` +
-                `The translation may have interfered with the placeholder, need to check again manually.`,
-                'warn'
-              );
-            }
-
-            if (src.square !== tgt.square) {
-              log(
-                `*️⃣ [Line ${lineNumber}] Square tag mismatch: original has ${src.square} [tags], ` +
-                `translation has ${tgt.square}.`,
-                'warn'
-              );
-            }
-
-            if (src.curly !== tgt.curly) {
-              log(
-                `*️⃣ [Line ${lineNumber}] Curly tag mismatch: original has ${src.curly} {tags}, ` +
-                `translation has ${tgt.curly}.`,
-                'warn'
-              );
-            }
-          }
         
           function isDialogLine(line) {
               const trimmed = line.trim();
@@ -283,41 +287,41 @@
             
           function extractDialogsFromLines(lines) {
             const dialogs = [];
-        
+
             lines.forEach((line, index) => {
               if (!isDialogLine(line)) return;
-        
+
               const match = line.match(/"((?:\\.|[^"\\])*)"/);
               if (!match) return;
-        
+
               const dialogText = match[1];
-              if (dialogText.trim() === "" || /^[.\s]+$/.test(dialogText)) return;
-        
+              if (dialogText.trim() === '' || /^[.\s]+$/.test(dialogText)) return;
+
               const maskedInfo = maskTagsInText(dialogText);
-        
+
               dialogs.push({
-                index,
+                index: index,
                 originalLine: line,
-                quote: dialogText,
-                maskedQuote: maskedInfo.masked,
-                placeholderMap: maskedInfo.map,
-                translated: null,
+                quote: dialogText,               
+                maskedQuote: maskedInfo.masked,    
+                placeholderMap: maskedInfo.map,    
+                translated: null
               });
             });
-        
+
             return dialogs;
           }
         
           async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
             const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
             const languageName = languageLabel(targetLang);
-        
+
             const userPromptLines = [
               `Translate the following Ren'Py dialogue lines to ${languageName} (language code: ${targetLang}).`,
               '',
               'Rules:',
-              '- Preserve Ren\'Py syntax, variables, and tags (e.g. {color}, {size}, [variable], etc.).',
               '- Some parts are placeholders like __RENPLH_0__. Keep them EXACTLY as-is and do NOT translate them.',
+              '- Preserve Ren\'Py syntax, variables, and tags (e.g. {color}, {size}, [variable], etc.).',
               '- Do NOT change placeholders or variables.',
               '- Do NOT reorder, merge, or split lines.',
               '- Return ONLY the translated lines, one per line, in the same order.',
@@ -325,9 +329,9 @@
               '',
               'Lines:'
             ];
-        
+
             const prompt = userPromptLines.concat(lines).join('\n');
-        
+
             const body = {
               model: 'deepseek-chat',
               messages: [
@@ -341,7 +345,7 @@
                 }
               ]
             };
-        
+
             const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -350,12 +354,12 @@
               },
               body: JSON.stringify(body)
             });
-        
+
             if (!response.ok) {
               const text = await response.text();
               throw new Error(`*️⃣ DeepSeek API error ${response.status}: ${text}`);
             }
-        
+
             const data = await response.json();
             const content =
               data &&
@@ -363,23 +367,23 @@
               data.choices[0] &&
               data.choices[0].message &&
               data.choices[0].message.content;
-        
+
             if (!content) {
               throw new Error('*️⃣ DeepSeek response did not contain any content.');
             }
-        
+
             const outLines = content
               .split(/\r?\n/)
               .map(l => l.trim())
               .filter(l => l !== '');
-        
+
             if (outLines.length !== lines.length) {
               log(
                 `*️⃣ Warning: expected ${lines.length} lines from DeepSeek but got ${outLines.length}. Mapping by order anyway.`,
                 'warn'
               );
             }
-        
+
             return outLines;
           }
           
@@ -458,14 +462,15 @@
         
           async function translateBatchLingva(batchDialogs, targetLang) {
             const results = [];
-        
-            for (const dialog of batchDialogs) {
+
+            for (let i = 0; i < batchDialogs.length; i++) {
+              const dialog = batchDialogs[i];
               const text = dialog.maskedQuote || dialog.quote || '';
               if (!text.trim()) {
                 results.push(text);
                 continue;
               }
-        
+
               const langCode = getLingvaLangCode(targetLang);
               
               const path =
@@ -473,29 +478,29 @@
                 encodeURIComponent(langCode) +
                 '/' +
                 encodeURIComponent(text);
-        
+
               const response = await lingvaFetch(path);
               if (!response.ok) {
                 const t = await response.text();
                 throw new Error(`*️⃣ Lingva error ${response.status}: ${t}`);
               }
-        
+
               const data = await response.json();
               const translated =
                 data.translation ||
                 data.translatedText ||
                 data.result ||
                 '';
-        
+
               if (!translated) {
                 throw new Error('*️⃣ Lingva response did not contain a translation string.');
               }
-        
+
               results.push(translated);
-        
+
               await delay(100);
             }
-        
+
             return results;
           }
         
@@ -509,9 +514,9 @@
             const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
             const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
             const targetLang = el.langTarget ? el.langTarget.value : 'id';
-        
+
             updateControlButtons();
-        
+
             while (
               state.currentBatchIndex < state.batches.length &&
               state.isTranslating
@@ -525,16 +530,16 @@
                 }
                 log('▶️ Resuming translation...', 'info');
               }
-        
+
               const batchNum = state.currentBatchIndex + 1;
               const totalBatches = state.batches.length;
               const batchDialogs = state.batches[state.currentBatchIndex];
-        
+
               log(
                 `🔄 Translating batch ${batchNum}/${totalBatches} (${batchDialogs.length} lines)...`,
                 'info'
               );
-        
+
               let translatedLines;
               try {
                 if (model === 'deepseek') {
@@ -556,7 +561,7 @@
                 );
                 throw err;
               }
-        
+
               for (let i = 0; i < batchDialogs.length; i++) {
                 const dialog = batchDialogs[i];
                 const translatedMasked = translatedLines[i];
@@ -565,7 +570,7 @@
                 if (translatedMasked) {
                   const fixed =
                     unmaskTagsInText(translatedMasked, dialog.placeholderMap) || translatedMasked;
-                
+
                   validateTagConsistency(dialog.quote, fixed, realIndex);
 
                   dialog.translated = fixed;
@@ -578,17 +583,17 @@
                   log(`*️⃣ [${realIndex}] Cannot translate`, 'warn');
                 }
               }
-        
+
               state.currentBatchIndex++;
               updateProgress();
             }
-        
+
             if (state.currentBatchIndex >= state.batches.length) {
               log('✅ Translation complete. You can now download the result.', 'success');
               if (el.downloadFinal) el.downloadFinal.disabled = false;
               if (el.previewBtn) el.previewBtn.disabled = false;
             }
-        
+
             resetTranslateUIAfterFinish();
           }
         
