@@ -1,0 +1,198 @@
+        <!DOCTYPE html>
+ 
+        <html lang="en">
+ 
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta content="ie=edge" http-equiv="X-UA-Compatible">
+            <title>RPGM Ultimate Tool (Editor + Translator)</title>
+            <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+            <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+            <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <meta name="theme-color" content="#000000">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="rpgmu.css">
+            <!-- Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+ 
+                function gtag() {
+                    dataLayer.push(arguments);
+                }
+                gtag('js', new Date());
+ 
+                gtag('config', 'G-BXTNE3VPWH');
+            </script>
+ 
+        </head>
+ 
+        <body>
+            <div id="particles-js"></div>
+            <div class="grid-bg"></div>
+            <h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">RPGM Ultimate <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool</span>
+            </h1>
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <div id="react-root" style="margin-bottom: 40px;"></div>
+ 
+                <hr style="border:0; border-top:2px dashed #ccc; margin: 40px 0;">
+ 
+                <div class="card">
+                    <h2>STEP 2: AUTO TRANSLATION</h2>
+                    <div style="text-align:center; font-size:13px; color:#666; margin-bottom:20px">
+                        Use this section to translate the .txt file exported from the step above.
+                    </div>
+ 
+                    <div class="form-group">
+                        <div class="form-group">
+                            <div class="form-group" style="flex: 2;">
+                                <label>1. Select TXT File:</label>
+                                <input id="fileInput" type="file" accept=".txt" />
+                            </div>
+ 
+                            <div class="form-group">
+                                <label>2. Translation Mode:</label>
+                                <select id="transMode">
+                                    <option value="auto_vi">🌐 Auto (All ➔ 🇻🇳 VI)</option>
+                                    <option value="en_vi">🇬🇧 EN ➔ 🇻🇳 VI</option>
+                                    <option value="ja_vi">🇯🇵 JP ➔ 🇻🇳 VI</option>
+                                    <option value="zh_vi">🇨🇳 CN ➔ 🇻🇳 VI</option>
+                                    <option value="ko_vi">🇰🇷 KO ➔ 🇻🇳 VI</option>
+                                    <option value="ja_en_vi">🇯🇵 JP ➔ 🇬🇧 EN ➔ 🇻🇳 VI</option>
+                                </select>
+                            </div>
+ 
+                            <div class="form-group" style="flex:0.5">
+                                <label>Batch:</label>
+                                <input id="batchSize" type="number" value="20" title="Number of lines processed at the same time." />
+                            </div>
+                        </div>
+ 
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <label title="If any line has Vietnamese characters, it will not be translated again. Use to continue running the unfinished translated file.">
+                                    <input type="checkbox" id="skipVietnamese">
+                                    <span>Skip Vietnamese line (Continue)</span>
+                                </label>
+                            </div>
+                        </div>
+ 
+                        <div class="button-group">
+                            <button id="startBtn" disabled style="flex:2">▶️ Start translation</button>
+                            <button id="stopBtn" class="btn-secondary" disabled style="flex:1">⏹ Stop</button>
+                            <button id="copyBtn" class="btn-success" disabled style="flex:1">📋 Copy</button>
+                            <button id="downloadBtn" class="btn-success" disabled style="flex:1">⬇ Download results</button>
+                        </div>
+                        <div class="progress-wrapper">
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBar"></div>
+                            </div>
+                            <div class="progress-text" id="progressText">Ready</div>
+                        </div>
+ 
+                        <div class="log-container" id="logConsole">
+                            <div style="color:#666; font-style:italic">Select .txt file to start translating...</div>
+                        </div>
+                    </div>
+                </div>
+ 
+                <div class="card" style="margin-top: 25px;">
+                    <h2>Preview translation results:</h2>
+                    <textarea style="height: 256px;" id="outputArea" readonly></textarea>
+                </div>
+            </div>
+    </div>
+    <footer class="footer-note">
+        ⚠️ By using this tool, you agree to accept all kinds of risks.
+    </footer>
+
+  <div style="text-align: center; margin: 40px 0 20px;">
+  <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
+  </div>
+ 
+    <script
+        src="./rpgmu.js">
+    </script>
+
+    <script type="text/babel"
+        src="./rpgmux.js">
+    </script>
+
+<script>
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const particleCount = isMobile ? 55 : 111;
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {
+                    "value": particleCount,
+                    "density": {
+                        "enable": true,
+                        "value_area": 800
+                    }
+                },
+                "color": { "value": "#a855f7" },
+                "shape": {
+                    "type": "circle",
+                    "stroke": { "width": 0, "color": "#000" }
+                },
+                "opacity": {
+                    "value": 0.7,
+                    "random": true,
+                    "anim": {
+                        "enable": true,
+                        "speed": 0.5,
+                        "opacity_min": 0.3,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": {
+                        "enable": true,
+                        "speed": 2,
+                        "size_min": 0.3,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#a855f7",
+                    "opacity": 0.3,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 1.5,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": { "enable": true, "mode": "repulse" },
+                    "onclick": { "enable": false },
+                    "resize": true
+                },
+                "modes": {
+                    "repulse": { "distance": 100, "duration": 0.4 }
+                }
+            },
+            "retina_detect": true
+        });
+</script>
+ 
+</body>
+ 
+</html>
