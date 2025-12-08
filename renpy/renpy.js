@@ -75,7 +75,7 @@
             let currentTokens = 0;
         
             for (const dialog of dialogs) {
-              const text = dialog.quote || '';
+              const text = dialog.maskedQuote || dialog.quote || '';
               const tokens = estimateTokens(text) + 8; 
         
               if (currentBatch.length > 0 &&
@@ -173,6 +173,90 @@
             el.stopBtn.disabled = state.isPaused;
             el.resumeBtn.disabled = !state.isPaused;
           }
+
+          function maskTagsInText(text) {
+            if (!text) {
+              return { masked: text, map: {} };
+            }
+
+            const map = {};
+            let counter = 0;
+            let result = '';
+            let lastIndex = 0;
+
+            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+            let m;
+
+            while ((m = re.exec(text)) !== null) {
+              const originalTag = m[0];
+              const placeholder = `__RENPLH_${counter++}__`;
+
+              result += text.slice(lastIndex, m.index) + placeholder;
+              lastIndex = m.index + originalTag.length;
+
+              map[placeholder] = originalTag;
+            }
+
+            result += text.slice(lastIndex);
+
+            return { masked: result, map };
+          }
+
+          function unmaskTagsInText(text, map) {
+            if (!text || !map) return text;
+
+            let result = text;
+            for (const [placeholder, originalTag] of Object.entries(map)) {
+              if (!placeholder) continue;
+              result = result.split(placeholder).join(originalTag);
+            }
+            return result;
+          }
+        
+          function countTagsByType(text) {
+            const result = { square: 0, curly: 0 };
+            if (!text) return result;
+
+            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+            const matches = text.match(re);
+            if (!matches) return result;
+
+            for (const m of matches) {
+              if (m[0] === '[') result.square++;
+              else if (m[0] === '{') result.curly++;
+            }
+
+            return result;
+          }
+
+          function validateTagConsistency(originalText, translatedText, lineNumber) {
+            const src = countTagsByType(originalText);
+            const tgt = countTagsByType(translatedText);
+
+            if (/__RENPLH_\d+__/.test(translatedText)) {
+              log(
+                `*️⃣ [Line ${lineNumber}] Placeholder __RENPLH_*__ still appears in translation. ` +
+                `The translation may have interfered with the placeholder, need to check again manually.`,
+                'warn'
+              );
+            }
+
+            if (src.square !== tgt.square) {
+              log(
+                `*️⃣ [Line ${lineNumber}] Square tag mismatch: original has ${src.square} [tags], ` +
+                `translation has ${tgt.square}.`,
+                'warn'
+              );
+            }
+
+            if (src.curly !== tgt.curly) {
+              log(
+                `*️⃣ [Line ${lineNumber}] Curly tag mismatch: original has ${src.curly} {tags}, ` +
+                `translation has ${tgt.curly}.`,
+                'warn'
+              );
+            }
+          }
         
           function isDialogLine(line) {
               const trimmed = line.trim();
@@ -209,10 +293,14 @@
               const dialogText = match[1];
               if (dialogText.trim() === "" || /^[.\s]+$/.test(dialogText)) return;
         
+              const maskedInfo = maskTagsInText(dialogText);
+        
               dialogs.push({
                 index,
                 originalLine: line,
                 quote: dialogText,
+                maskedQuote: maskedInfo.masked,
+                placeholderMap: maskedInfo.map,
                 translated: null,
               });
             });
@@ -221,7 +309,7 @@
           }
         
           async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
-            const lines = batchDialogs.map(d => d.quote);
+            const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
             const languageName = languageLabel(targetLang);
         
             const userPromptLines = [
@@ -229,6 +317,7 @@
               '',
               'Rules:',
               '- Preserve Ren\'Py syntax, variables, and tags (e.g. {color}, {size}, [variable], etc.).',
+              '- Some parts are placeholders like __RENPLH_0__. Keep them EXACTLY as-is and do NOT translate them.',
               '- Do NOT change placeholders or variables.',
               '- Do NOT reorder, merge, or split lines.',
               '- Return ONLY the translated lines, one per line, in the same order.',
@@ -371,7 +460,7 @@
             const results = [];
         
             for (const dialog of batchDialogs) {
-              const text = dialog.quote || '';
+              const text = dialog.maskedQuote || dialog.quote || '';
               if (!text.trim()) {
                 results.push(text);
                 continue;
@@ -470,18 +559,23 @@
         
               for (let i = 0; i < batchDialogs.length; i++) {
                 const dialog = batchDialogs[i];
-                const translated = translatedLines[i];
+                const translatedMasked = translatedLines[i];
                 const realIndex = dialog.index + 1;
-               
-                if (translated) {
-                  dialog.translated = translated;
-        
+
+                if (translatedMasked) {
+                  const fixed =
+                    unmaskTagsInText(translatedMasked, dialog.placeholderMap) || translatedMasked;
+                
+                  validateTagConsistency(dialog.quote, fixed, realIndex);
+
+                  dialog.translated = fixed;
+
                   const original = state.dialogs.find(x => x.index === dialog.index);
-                  if (original) original.translated = translated;
-        
-                  log(`✅ [${realIndex}] ${translated}`, "success");
+                  if (original) original.translated = fixed;
+
+                  log(`✅ [${realIndex}] ${fixed}`, 'success');
                 } else {
-                  log(`*️⃣ [${realIndex}] Cannot translate`, "warn");
+                  log(`*️⃣ [${realIndex}] Cannot translate`, 'warn');
                 }
               }
         
