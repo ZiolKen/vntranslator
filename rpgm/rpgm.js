@@ -613,30 +613,52 @@ function updateRawView() {
 /* ------------------------------------------------------------
    Preview
 ------------------------------------------------------------ */
+function buildPathForDialog(d) {
+
+  const file = d.fileName || "Unknown.json";
+
+  return [
+    file,
+    "events",
+    String(d.eventId || 0),
+    "list",
+    String(d.listIndex || 0),
+    "parameters",
+    String(d.index)
+  ];
+}
+
 el.previewResultBtn.addEventListener("click", () => {
   if (!state.dialogs.length) {
     alert("⚠️ No translated data.");
     return;
   }
 
-  const items = state.dialogs.map(d => ({
-    original: d.text,
-    translated: d.translated || "",
-    hasIssue: false,
-    warnings: []
+  const texts = state.dialogs.map((d, idx) => ({
+    text: d.text,
+    path: buildPathForDialog(d),
+    fieldName: "parameters[" + d.index + "]",
+    index: idx
   }));
 
-  const data = {
-    items,
-    settings: {
-      path: state.fileName || "",
-      model: el.translationModel.value,
-      targetLang: el.targetLanguage.value
+  const translatedTree = structuredClone(state.json);
+
+  state.dialogs.forEach(d => {
+    if (d.ref && typeof d.index === "number") {
+      d.ref[d.index] = d.translated || d.text;
     }
+  });
+
+  const data = {
+    texts,
+    translated: translatedTree,
+    model: el.translationModel.value,
+    targetLanguage: el.targetLanguage.value,
+    apiKey: el.apiKey?.value || el.chatgptKey?.value || ""
   };
 
   try {
-    localStorage.setItem("translationData", JSON.stringify(data));
+    localStorage.setItem("translationPreviewData", JSON.stringify(data));
   } catch (err) {
     console.error(err);
     alert("⚠️ Cannot write to localStorage.");
