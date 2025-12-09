@@ -76,7 +76,7 @@ function createPlaceholder() {
 /* ------------------------------------------------------------
    RPGM Placeholder
 ------------------------------------------------------------ */
-const RPGM_CODE_RE = /\\[a-zA-Z]+\[?[^\]]*\]?|\\n|\\\.|\\\||\\\!|\\\^|\\\$/g;
+const RPGM_CODE_RE = /\\[a-zA-Z]+\[?[^\]]*\]?|\\n|\\\.|\\\||\\\!|\\\^|\\\$|%[0-9]+/g;
 
 function protectRPGMCodes(str) {
   if (!str) return { text: str, map: {} };
@@ -129,6 +129,36 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
   if (lowerName === "items.json") {
     dialogs = dialogs.concat(
       extractDialogsFromItems(jsonObj, fileIndex, fileName)
+    );
+  }
+
+  if (lowerName === "weapons.json") {
+    dialogs = dialogs.concat(
+      extractDialogsFromWeapons(jsonObj, fileIndex, fileName)
+    );
+  }
+
+  if (lowerName === "armors.json") {
+    dialogs = dialogs.concat(
+      extractDialogsFromArmors(jsonObj, fileIndex, fileName)
+    );
+  }
+
+  if (lowerName === "skills.json") {
+    dialogs = dialogs.concat(
+      extractDialogsFromSkills(jsonObj, fileIndex, fileName)
+    );
+  }
+
+  if (lowerName === "states.json") {
+    dialogs = dialogs.concat(
+      extractDialogsFromStates(jsonObj, fileIndex, fileName)
+    );
+  }
+
+  if (lowerName === "enemies.json") {
+    dialogs = dialogs.concat(
+      extractDialogsFromEnemies(jsonObj, fileIndex, fileName)
     );
   }
 
@@ -317,6 +347,165 @@ function extractDialogsFromItems(items, fileIndex = 0, fileName = "") {
         index: "description",
         text: it.description,
         code: "ITEM_DESC"
+      });
+    }
+  }
+
+  return dialogs;
+}
+
+function extractDialogsFromWeapons(weapons, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+  if (!Array.isArray(weapons)) return dialogs;
+
+  for (let i = 0; i < weapons.length; i++) {
+    const w = weapons[i];
+    if (!w || typeof w !== "object") continue;
+
+    if (typeof w.name === "string" && w.name.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: w,
+        index: "name",
+        text: w.name,
+        code: "WEAPON_NAME"
+      });
+    }
+
+    if (typeof w.description === "string" && w.description.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: w,
+        index: "description",
+        text: w.description,
+        code: "WEAPON_DESC"
+      });
+    }
+  }
+
+  return dialogs;
+}
+
+function extractDialogsFromArmors(armors, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+  if (!Array.isArray(armors)) return dialogs;
+
+  for (let i = 0; i < armors.length; i++) {
+    const a = armors[i];
+    if (!a || typeof a !== "object") continue;
+
+    if (typeof a.name === "string" && a.name.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: a,
+        index: "name",
+        text: a.name,
+        code: "ARMOR_NAME"
+      });
+    }
+
+    if (typeof a.description === "string" && a.description.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: a,
+        index: "description",
+        text: a.description,
+        code: "ARMOR_DESC"
+      });
+    }
+  }
+
+  return dialogs;
+}
+
+function extractDialogsFromSkills(skills, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+  if (!Array.isArray(skills)) return dialogs;
+
+  for (let i = 0; i < skills.length; i++) {
+    const s = skills[i];
+    if (!s || typeof s !== "object") continue;
+
+    if (typeof s.name === "string" && s.name.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: s,
+        index: "name",
+        text: s.name,
+        code: "SKILL_NAME"
+      });
+    }
+
+    if (typeof s.description === "string" && s.description.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: s,
+        index: "description",
+        text: s.description,
+        code: "SKILL_DESC"
+      });
+    }
+  }
+
+  return dialogs;
+}
+
+function extractDialogsFromStates(states, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+  if (!Array.isArray(states)) return dialogs;
+
+  for (let i = 0; i < states.length; i++) {
+    const st = states[i];
+    if (!st || typeof st !== "object") continue;
+
+    if (typeof st.name === "string" && st.name.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: st,
+        index: "name",
+        text: st.name,
+        code: "STATE_NAME"
+      });
+    }
+
+    if (typeof st.description === "string" && st.description.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: st,
+        index: "description",
+        text: st.description,
+        code: "STATE_DESC"
+      });
+    }
+  }
+
+  return dialogs;
+}
+
+function extractDialogsFromEnemies(enemies, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+  if (!Array.isArray(enemies)) return dialogs;
+
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    if (!e || typeof e !== "object") continue;
+
+    if (typeof e.name === "string" && e.name.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: e,
+        index: "name",
+        text: e.name,
+        code: "ENEMY_NAME"
       });
     }
   }
@@ -525,6 +714,8 @@ function prepareDialogs() {
 function applyTranslations() {
   for (let i = 0; i < state.dialogs.length; i++) {
     const d = state.dialogs[i];
+    if (!d.translated) continue;
+
     const restored = restoreRPGMCodes(d.translated, d.phMap);
 
     if (Array.isArray(d.ref)) {
@@ -578,14 +769,25 @@ async function translationLoop() {
 
     for (let i = 0; i < batch.length; i++) {
       const dlg = batch[i];
+    
       dlg.translated = translatedLines[i] || dlg.protectedText;
       const restored = restoreRPGMCodes(dlg.translated, dlg.phMap);
       dlg.translated = restored;
 
+      if (Array.isArray(dlg.ref)) {
+        dlg.ref[dlg.index] = restored;
+      } else if (dlg.ref && typeof dlg.ref === "object") {
+        dlg.ref[dlg.index] = restored;
+      }
+    
       log(`✅ [${dlg.fileName}] ${restored}`, "success");
-
+    
       state.currentIndex++;
       updateProgress();
+    
+      el.downloadResultBtn.disabled = false;
+      el.previewResultBtn.disabled = false;
+    
       await delay(20);
     }
   }
