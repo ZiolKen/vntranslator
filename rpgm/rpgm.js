@@ -290,6 +290,40 @@ function extractDialogsFromSystem(sys, fileIndex = 0, fileName = "") {
   return dialogs;
 }
 
+function extractDialogsFromItems(items, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+  if (!Array.isArray(items)) return dialogs;
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (!it || typeof it !== "object") continue;
+
+    if (typeof it.name === "string" && it.name.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: it,
+        index: "name",
+        text: it.name,
+        code: "ITEM_NAME"
+      });
+    }
+
+    if (typeof it.description === "string" && it.description.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: it,
+        index: "description",
+        text: it.description,
+        code: "ITEM_DESC"
+      });
+    }
+  }
+
+  return dialogs;
+}
+
 /* ------------------------------------------------------------
    Batch Creation
 ------------------------------------------------------------ */
