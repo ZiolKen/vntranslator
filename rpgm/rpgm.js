@@ -614,26 +614,28 @@ function updateRawView() {
    Preview
 ------------------------------------------------------------ */
 el.previewResultBtn.addEventListener("click", () => {
-  if (!state.json) {
-    alert("⚠️ No translated JSON available.");
+  if (!state.dialogs.length) {
+    alert("⚠️ No translated data.");
     return;
   }
+
+  const data = {
+    texts: state.dialogs.map(d => d.translated || d.text),
+    original: state.dialogs.map(d => d.text),
+    path: state.fileName || "",
+    model: el.translationModel.value,
+    targetLang: el.targetLanguage.value
+  };
 
   try {
-    localStorage.setItem("translationData", JSON.stringify({
-        texts: state.dialogs.map(d => d.translated || d.text),
-        original: state.dialogs.map(d => d.text),
-        path: state.fileName || "",
-        model: el.translationModel.value,
-        targetLang: el.targetLanguage.value
-    }));
-
-    window.location.href = "preview.html";
+    localStorage.setItem("translationData", JSON.stringify(data));
   } catch (err) {
-    console.error("Preview save failed:", err);
-    alert("⚠️ Failed to save translated data to localStorage.");
+    console.error(err);
+    alert("⚠️ Cannot write to localStorage.");
     return;
   }
+
+  window.location.href = "preview.html";
 });
 
 function escapeHtml(str) {
