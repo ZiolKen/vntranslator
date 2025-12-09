@@ -106,15 +106,31 @@ function restoreRPGMCodes(str, map) {
 /* ------------------------------------------------------------
    Extract dialogs
 ------------------------------------------------------------ */
-
 const COMMAND_TEXT   = [101,105];
 const COMMAND_LINE   = [401,408,405];
 const COMMAND_CHOICE = [102];
 const COMMAND_BRANCH = [402,403];
 const COMMAND_COMMENT= [108];
 
-function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
+function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
   let dialogs = [];
+
+  const lowerName = (fileName || "").toLowerCase();
+
+  if (
+    lowerName === "system.json" ||
+    (jsonObj && jsonObj.terms && jsonObj.terms.messages)
+  ) {
+    dialogs = dialogs.concat(
+      extractDialogsFromSystem(jsonObj, fileIndex, fileName)
+    );
+  }
+
+  if (lowerName === "items.json") {
+    dialogs = dialogs.concat(
+      extractDialogsFromItems(jsonObj, fileIndex, fileName)
+    );
+  }
 
   function walk(node) {
     if (!node) return;
@@ -131,8 +147,8 @@ function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
 
       if (COMMAND_TEXT.includes(code)) {
         const arr = node.parameters[0] || [];
-        arr.forEach((t,i)=>{
-          if (typeof t==="string" && t.trim() !== "") {
+        arr.forEach((t, i) => {
+          if (typeof t === "string" && t.trim() !== "") {
             dialogs.push({
               fileIndex,
               fileName,
@@ -143,10 +159,9 @@ function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
             });
           }
         });
-      }
-      else if (COMMAND_LINE.includes(code)) {
+      } else if (COMMAND_LINE.includes(code)) {
         const t = node.parameters[0];
-        if (typeof t==="string" && t.trim() !== "") {
+        if (typeof t === "string" && t.trim() !== "") {
           dialogs.push({
             fileIndex,
             fileName,
@@ -156,10 +171,9 @@ function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
             code
           });
         }
-      }
-      else if (COMMAND_COMMENT.includes(code)) {
+      } else if (COMMAND_COMMENT.includes(code)) {
         const t = node.parameters[0];
-        if (typeof t==="string" && t.trim() !== "") {
+        if (typeof t === "string" && t.trim() !== "") {
           dialogs.push({
             fileIndex,
             fileName,
@@ -169,11 +183,10 @@ function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
             code
           });
         }
-      }
-      else if (COMMAND_CHOICE.includes(code)) {
+      } else if (COMMAND_CHOICE.includes(code)) {
         const arr = node.parameters[0] || [];
-        arr.forEach((t,i)=>{
-          if (typeof t==="string" && t.trim() !== "") {
+        arr.forEach((t, i) => {
+          if (typeof t === "string" && t.trim() !== "") {
             dialogs.push({
               fileIndex,
               fileName,
@@ -184,10 +197,9 @@ function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
             });
           }
         });
-      }
-      else if (COMMAND_BRANCH.includes(code)) {
+      } else if (COMMAND_BRANCH.includes(code)) {
         const t = node.parameters[1];
-        if (typeof t==="string" && t.trim() !== "") {
+        if (typeof t === "string" && t.trim() !== "") {
           dialogs.push({
             fileIndex,
             fileName,
@@ -204,6 +216,77 @@ function extractDialogsFromJson(jsonObj, fileIndex=0, fileName="") {
   }
 
   walk(jsonObj);
+  return dialogs;
+}
+
+function extractDialogsFromSystem(sys, fileIndex = 0, fileName = "") {
+  const dialogs = [];
+
+  function pushArray(arr, codeLabel) {
+    if (!Array.isArray(arr)) return;
+    arr.forEach((t, i) => {
+      if (typeof t === "string" && t.trim() !== "") {
+        dialogs.push({
+          fileIndex,
+          fileName,
+          ref: arr,
+          index: i,
+          text: t,
+          code: codeLabel
+        });
+      }
+    });
+  }
+
+  if (typeof sys.gameTitle === "string" && sys.gameTitle.trim() !== "") {
+    dialogs.push({
+      fileIndex,
+      fileName,
+      ref: sys,
+      index: "gameTitle",
+      text: sys.gameTitle,
+      code: "SYS_TITLE"
+    });
+  }
+
+  if (typeof sys.currencyUnit === "string" && sys.currencyUnit.trim() !== "") {
+    dialogs.push({
+      fileIndex,
+      fileName,
+      ref: sys,
+      index: "currencyUnit",
+      text: sys.currencyUnit,
+      code: "SYS_CURRENCY"
+    });
+  }
+
+  const terms = sys.terms || {};
+
+  pushArray(terms.basic, "SYS_BASIC");
+  pushArray(terms.commands, "SYS_COMMANDS");
+  pushArray(terms.params, "SYS_PARAMS");
+
+  const msgs = terms.messages || {};
+  Object.keys(msgs).forEach((key) => {
+    const t = msgs[key];
+    if (typeof t === "string" && t.trim() !== "") {
+      dialogs.push({
+        fileIndex,
+        fileName,
+        ref: msgs,
+        index: key,
+        text: t,
+        code: "SYS_MSG"
+      });
+    }
+  });
+
+  pushArray(sys.elements, "SYS_ELEMENTS");
+  pushArray(sys.equipTypes, "SYS_EQUIP_TYPES");
+  pushArray(sys.skillTypes, "SYS_SKILL_TYPES");
+  pushArray(sys.armorTypes, "SYS_ARMOR_TYPES");
+  pushArray(sys.weaponTypes, "SYS_WEAPON_TYPES");
+
   return dialogs;
 }
 
@@ -410,7 +493,11 @@ function applyTranslations() {
     const d = state.dialogs[i];
     const restored = restoreRPGMCodes(d.translated, d.phMap);
 
-    d.ref[d.index] = restored;
+    if (Array.isArray(d.ref)) {
+      d.ref[d.index] = restored;
+    } else if (d.ref && typeof d.ref === "object") {
+      d.ref[d.index] = restored;
+    }
   }
   log("✅ All translated lines injected back into JSON.", "success");
 }
