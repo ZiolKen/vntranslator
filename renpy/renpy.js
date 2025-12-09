@@ -332,7 +332,8 @@
         
           const prompt = userPromptLines.concat(lines).join('\n');
         
-          const body = {
+          const bodyForProxy = {
+            apiKey: apiKey,
             model: 'deepseek-chat',
             messages: [
               {
@@ -349,33 +350,25 @@
         
           let response;
           try {
-            response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            response = await fetch('/api/deepseek-proxy', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + apiKey
               },
-              body: JSON.stringify(body)
+              body: JSON.stringify(bodyForProxy),
             });
           } catch (networkErr) {
-            console.error('DeepSeek network error:', networkErr);
-            throw new Error('*️⃣ Network error when calling DeepSeek: ' + networkErr.message);
+            console.error('DeepSeek proxy network error:', networkErr);
+            throw new Error('*️⃣ Network error when calling DeepSeek proxy: ' + networkErr.message);
           }
         
           if (!response.ok) {
             const text = await response.text().catch(() => '');
-            console.error('DeepSeek HTTP error:', response.status, text);
-            throw new Error(`*️⃣ DeepSeek API error ${response.status}: ${text}`);
+            console.error('DeepSeek proxy HTTP error:', response.status, text);
+            throw new Error(`*️⃣ DeepSeek/proxy error ${response.status}: ${text}`);
           }
         
-          const raw = await response.text();
-          let data;
-          try {
-            data = JSON.parse(raw);
-          } catch (e) {
-            console.error('DeepSeek raw response:', raw);
-            throw new Error('*️⃣ Cannot parse DeepSeek JSON: ' + e.message);
-          }
+          const data = await response.json();
         
           const content =
             data &&
@@ -385,7 +378,7 @@
             data.choices[0].message.content;
         
           if (!content) {
-            console.error('DeepSeek full JSON:', data);
+            console.error('DeepSeek proxy full JSON:', data);
             throw new Error('*️⃣ DeepSeek response did not contain any content.');
           }
         
