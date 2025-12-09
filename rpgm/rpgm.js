@@ -620,7 +620,13 @@ el.previewResultBtn.addEventListener("click", () => {
   }
 
   try {
-    localStorage.setItem("translated_json", JSON.stringify(state.json));
+    localStorage.setItem("translationData", JSON.stringify({
+        texts: state.dialogs.map(d => d.translated || d.text),
+        original: state.dialogs.map(d => d.text),
+        path: state.fileName || "",
+        model: el.translationModel.value,
+        targetLang: el.targetLanguage.value
+    }));
 
     window.location.href = "preview.html";
   } catch (err) {
