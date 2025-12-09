@@ -619,9 +619,15 @@ el.previewResultBtn.addEventListener("click", () => {
     return;
   }
 
+  const items = state.dialogs.map(d => ({
+    original: d.text,
+    translated: d.translated || "",
+    hasIssue: false,
+    warnings: []
+  }));
+
   const data = {
-    translatedTexts: state.dialogs.map(d => d.translated || d.text),
-    originalTexts: state.dialogs.map(d => d.text),
+    items,
     settings: {
       path: state.fileName || "",
       model: el.translationModel.value,
@@ -632,9 +638,8 @@ el.previewResultBtn.addEventListener("click", () => {
   try {
     localStorage.setItem("translationData", JSON.stringify(data));
   } catch (err) {
-    console.error("Save failed:", err);
+    console.error(err);
     alert("⚠️ Cannot write to localStorage.");
-    return;
   }
 
   window.location.href = "preview.html";
