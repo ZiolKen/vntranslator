@@ -312,41 +312,44 @@
             return dialogs;
           }
         
-          async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
-            const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
-            const languageName = languageLabel(targetLang);
-
-            const userPromptLines = [
-              `Translate the following Ren'Py dialogue lines to ${languageName} (language code: ${targetLang}).`,
-              '',
-              'Rules:',
-              '- Some parts are placeholders like __RENPLH_0__. Keep them EXACTLY as-is and do NOT translate them.',
-              '- Preserve Ren\'Py syntax, variables, and tags (e.g. {color}, {size}, [variable], etc.).',
-              '- Do NOT change placeholders or variables.',
-              '- Do NOT reorder, merge, or split lines.',
-              '- Return ONLY the translated lines, one per line, in the same order.',
-              '- Do NOT add numbering, quotes, prefixes, or extra commentary.',
-              '',
-              'Lines:'
-            ];
-
-            const prompt = userPromptLines.concat(lines).join('\n');
-
-            const body = {
-              model: 'deepseek-chat',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a professional game localization translator specializing in Ren\'Py visual novels.'
-                },
-                {
-                  role: 'user',
-                  content: prompt
-                }
-              ]
-            };
-
-            const response = await fetch('https://api.deepseek.com/chat/completions', {
+        async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
+          const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+          const languageName = languageLabel(targetLang);
+        
+          const userPromptLines = [
+            `Translate the following Ren'Py dialogue lines to ${languageName} (language code: ${targetLang}).`,
+            '',
+            'Rules:',
+            '- Some parts are placeholders like __RENPLH_0__. Keep them EXACTLY as-is and do NOT translate them.',
+            '- Preserve Ren\'Py syntax, variables, and tags (e.g. {color}, {size}, [variable], etc.).',
+            '- Do NOT change placeholders or variables.',
+            '- Do NOT reorder, merge, or split lines.',
+            '- Return ONLY the translated lines, one per line, in the same order.',
+            '- Do NOT add numbering, quotes, prefixes, or extra commentary.',
+            '',
+            'Lines:'
+          ];
+        
+          const prompt = userPromptLines.concat(lines).join('\n');
+        
+          const body = {
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a professional game localization translator specializing in Ren\'Py visual novels.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            stream: false,
+          };
+        
+          let response;
+          try {
+            response = await fetch('https://api.deepseek.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -354,38 +357,52 @@
               },
               body: JSON.stringify(body)
             });
-
-            if (!response.ok) {
-              const text = await response.text();
-              throw new Error(`*️⃣ DeepSeek API error ${response.status}: ${text}`);
-            }
-
-            const data = await response.json();
-            const content =
-              data &&
-              data.choices &&
-              data.choices[0] &&
-              data.choices[0].message &&
-              data.choices[0].message.content;
-
-            if (!content) {
-              throw new Error('*️⃣ DeepSeek response did not contain any content.');
-            }
-
-            const outLines = content
-              .split(/\r?\n/)
-              .map(l => l.trim())
-              .filter(l => l !== '');
-
-            if (outLines.length !== lines.length) {
-              log(
-                `*️⃣ Warning: expected ${lines.length} lines from DeepSeek but got ${outLines.length}. Mapping by order anyway.`,
-                'warn'
-              );
-            }
-
-            return outLines;
+          } catch (networkErr) {
+            console.error('DeepSeek network error:', networkErr);
+            throw new Error('*️⃣ Network error when calling DeepSeek: ' + networkErr.message);
           }
+        
+          if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            console.error('DeepSeek HTTP error:', response.status, text);
+            throw new Error(`*️⃣ DeepSeek API error ${response.status}: ${text}`);
+          }
+        
+          const raw = await response.text();
+          let data;
+          try {
+            data = JSON.parse(raw);
+          } catch (e) {
+            console.error('DeepSeek raw response:', raw);
+            throw new Error('*️⃣ Cannot parse DeepSeek JSON: ' + e.message);
+          }
+        
+          const content =
+            data &&
+            data.choices &&
+            data.choices[0] &&
+            data.choices[0].message &&
+            data.choices[0].message.content;
+        
+          if (!content) {
+            console.error('DeepSeek full JSON:', data);
+            throw new Error('*️⃣ DeepSeek response did not contain any content.');
+          }
+        
+          const outLines = content
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l !== '');
+        
+          if (outLines.length !== lines.length) {
+            log(
+              `*️⃣ Warning: expected ${lines.length} lines from DeepSeek but got ${outLines.length}. Mapping by order anyway.`,
+              'warn'
+            );
+          }
+        
+          return outLines;
+        }
           
           const LINGVA_LANG_MAP = {
             'Bahasa Indonesia': 'id',
