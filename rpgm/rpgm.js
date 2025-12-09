@@ -636,25 +636,18 @@ el.previewResultBtn.addEventListener("click", () => {
 
   const texts = state.dialogs.map((d, idx) => ({
     text: d.text,
-    path: buildPathForDialog(d),
-    fieldName: "parameters[" + d.index + "]",
+    path: [idx],
+    fieldName: "text",
     index: idx
   }));
 
-  const translatedTree = structuredClone(state.json);
-
-  state.dialogs.forEach(d => {
-    if (d.ref && typeof d.index === "number") {
-      d.ref[d.index] = d.translated || d.text;
-    }
-  });
+  const translated = state.dialogs.map(d => d.translated || d.text);
 
   const data = {
     texts,
-    translated: translatedTree,
+    translated,
     model: el.translationModel.value,
-    targetLanguage: el.targetLanguage.value,
-    apiKey: el.apiKey?.value || el.chatgptKey?.value || ""
+    targetLanguage: el.targetLanguage.value
   };
 
   try {
@@ -662,6 +655,7 @@ el.previewResultBtn.addEventListener("click", () => {
   } catch (err) {
     console.error(err);
     alert("⚠️ Cannot write to localStorage.");
+    return;
   }
 
   window.location.href = "preview.html";
