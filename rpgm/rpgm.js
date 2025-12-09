@@ -418,7 +418,6 @@ function applyTranslations() {
 /* ------------------------------------------------------------
    Translation Loop (Pause / Resume Safe)
 ------------------------------------------------------------ */
-
 async function translationLoop() {
   const model = el.translationModel.value;
   const targetLang = el.targetLanguage.value;
@@ -440,7 +439,6 @@ async function translationLoop() {
     if (!state.isRunning) break;
 
     while (state.isPaused && state.isRunning) {
-      log("⏸️ Translation paused...", "warn");
       await delay(300);
     }
     if (!state.isRunning) break;
@@ -507,10 +505,12 @@ el.stopBtn.addEventListener("click", () => {
   state.isPaused = true;
   el.stopBtn.disabled = true;
   el.resumeBtn.disabled = false;
+  log("⏸️ Translation paused...", "warn");
 });
 
 el.resumeBtn.addEventListener("click", () => {
   if (!state.isRunning) return;
+  log("▶️ Resuming translation...", "info");
   state.isPaused = false;
   el.stopBtn.disabled = false;
   el.resumeBtn.disabled = true;
@@ -615,26 +615,19 @@ function updateRawView() {
 ------------------------------------------------------------ */
 el.previewResultBtn.addEventListener("click", () => {
   if (!state.json) {
-    alert("No JSON loaded.");
+    alert("⚠️ No translated JSON available.");
     return;
   }
 
-  const previewWindow = window.open("", "_blank");
-  previewWindow.document.write(`
-    <html>
-    <head>
-      <title>Preview Translated JSON</title>
-      <style>
-        body { background:#111; color:#0f0; font-family: monospace; padding:20px; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
-      </style>
-    </head>
-    <body>
-      <h1>Translated JSON Preview</h1>
-      <pre>${escapeHtml(JSON.stringify(state.json, null, 2))}</pre>
-    </body>
-    </html>
-  `);
+  try {
+    localStorage.setItem("translated_json", JSON.stringify(state.json));
+
+    window.location.href = "preview.html";
+  } catch (err) {
+    console.error("Preview save failed:", err);
+    alert("⚠️ Failed to save translated data to localStorage.");
+    return;
+  }
 });
 
 function escapeHtml(str) {
