@@ -620,17 +620,19 @@ el.previewResultBtn.addEventListener("click", () => {
   }
 
   const data = {
-    texts: state.dialogs.map(d => d.translated || d.text),
-    original: state.dialogs.map(d => d.text),
-    path: state.fileName || "",
-    model: el.translationModel.value,
-    targetLang: el.targetLanguage.value
+    translatedTexts: state.dialogs.map(d => d.translated || d.text),
+    originalTexts: state.dialogs.map(d => d.text),
+    settings: {
+      path: state.fileName || "",
+      model: el.translationModel.value,
+      targetLang: el.targetLanguage.value
+    }
   };
 
   try {
     localStorage.setItem("translationData", JSON.stringify(data));
   } catch (err) {
-    console.error(err);
+    console.error("Save failed:", err);
     alert("⚠️ Cannot write to localStorage.");
     return;
   }
