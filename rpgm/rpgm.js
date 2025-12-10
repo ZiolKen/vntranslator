@@ -115,7 +115,7 @@ function protectRPGMCodes(str) {
   while (i < str.length) {
     
     if (str.startsWith("__RPGPH_", i)) {
-      const end = str.indexOf("__", i + 8); 
+      const end = str.indexOf("__", i + 9);
       if (end !== -1) {
         const fullPh = str.slice(i, end + 2);
         out += fullPh;
