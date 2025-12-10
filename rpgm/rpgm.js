@@ -98,9 +98,8 @@ function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 const ESCAPE_START = "\\";
 
 function createPlaceholder(counter) {
-  const randomNum = Math.floor(Math.random() * 100);
-  const randomStr = randomNum.toString().padStart(2, '0');
-  return `__RPGPLH_${counter}${randomStr}__`;
+  const random = Math.floor(Math.random() * 100);
+  return `__RPGPLH_${counter}${random}__`;
 }
 
 function protectRPGMCodes(str) {
@@ -112,75 +111,46 @@ function protectRPGMCodes(str) {
   let counter = 0;
 
   while (i < str.length) {
-    if (str.startsWith('__RPGPLH_', i)) {
-      const end = str.indexOf('__', i + 10);
-      if (end !== -1) {
-        const fullPh = str.slice(i, end + 2);
-        out += fullPh;
-        i = end + 2;
-        continue;
-      }
+    const phMatch = /^(__RPGPLH_\d{1,5}__)/.exec(str.slice(i));
+    if (phMatch) {
+      const fullPh = phMatch[1];
+      out += fullPh;
+      i += fullPh.length;
+      continue;
     }
 
     const ch = str[i];
 
-    if (ch === '\\') {
-      let j = i + 1;
-      let block = '\\';
-      while (j < str.length && /[A-Za-z{}<>]/.test(str[j])) {
-        block += str[j];
+    if (ch === '\\' || ch === '<' || ch === '[' || ch === '{') {
+      let j = i;
+      let block = '';
+
+      if (ch === '\\') {
+        block = '\\';
         j++;
-      }
-      if (str[j] === '[') {
-        block += '[';
-        j++;
-        while (j < str.length && str[j] !== ']') {
-          block += str[j];
+        while (j < str.length && /[A-Za-z{}<>]/.test(str[j])) {
+          block += str[j++];
+        }
+        if (str[j] === '[') {
+          block += '[';
+          j++;
+          while (j < str.length && str[j] !== ']') block += str[j++];
+          if (str[j] === ']') block += ']';
           j++;
         }
-        if (str[j] === ']') {
-          block += ']';
-          j++;
-        }
-      }
-
-      const ph = createPlaceholder(counter++);
-      map[ph] = block;
-      out += ph;
-      i = j;
-      continue;
-    }
-
-    if (ch === '<') {
-      let j = i + 1;
-      let block = '<';
-      while (j < str.length && str[j] !== '>') {
-        block += str[j];
+      } else if (ch === '<') {
+        block = '<';
         j++;
-      }
-      if (str[j] === '>') {
-        block += '>';
+        while (j < str.length && str[j] !== '>') block += str[j++];
+        if (str[j] === '>') block += '>';
         j++;
-      }
-
-      const ph = createPlaceholder(counter++);
-      map[ph] = block;
-      out += ph;
-      i = j;
-      continue;
-    }
-
-    if (ch === '[' || ch === '{') {
-      const open = ch;
-      const close = ch === '[' ? ']' : '}';
-      let j = i + 1;
-      let block = open;
-      while (j < str.length && str[j] !== close) {
-        block += str[j];
+      } else if (ch === '[' || ch === '{') {
+        const open = ch;
+        const close = ch === '[' ? ']' : '}';
+        block = open;
         j++;
-      }
-      if (str[j] === close) {
-        block += close;
+        while (j < str.length && str[j] !== close) block += str[j++];
+        if (str[j] === close) block += close;
         j++;
       }
 
@@ -200,14 +170,16 @@ function protectRPGMCodes(str) {
 
 function restoreRPGMCodes(str, map) {
   if (!str || !map) return str;
-
   let out = str;
+
   for (const ph of Object.keys(map)) {
     if (!out.includes(ph)) {
-      log(`⚠️ Warning: placeholder missing after translation: ${ph}`, 'warn');
+      console.warn(`⚠️ Warning: placeholder missing after translation: ${ph}`);
     }
+    
     out = out.split(ph).join(map[ph]);
   }
+
   return out;
 }
 
