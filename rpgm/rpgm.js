@@ -93,8 +93,11 @@ function log(msg, type="info") {
 function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 function createPlaceholder() {
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `__PH_${state.placeholderCounter++}_${rand}__`;
+  const id = state.placeholderCounter++;
+  const rand = Math.floor(Math.random() * 100)
+    .toString()
+    .padStart(2, "0");
+  return `__RPGPH_${id}-${rand}__`;
 }
 
 /* ------------------------------------------------------------
@@ -110,6 +113,17 @@ function protectRPGMCodes(str) {
   let i = 0;
 
   while (i < str.length) {
+    
+    if (str.startsWith("__RPGPH_", i)) {
+      const end = str.indexOf("__", i + 8); 
+      if (end !== -1) {
+        const fullPh = str.slice(i, end + 2);
+        out += fullPh;
+        i = end + 2;
+        continue;
+      }
+    }
+
     const ch = str[i];
 
     if (ch === ESCAPE_START) {
@@ -171,12 +185,12 @@ function restoreRPGMCodes(str, map) {
   if (!str || !map) return str;
   let out = str;
 
-  for (const ph of Object.keys(map)) {
-
+  for (const ph of Object.keys(map).sort((a,b) => b.length - a.length)) {
+  
     if (!out.includes(ph)) {
       log(`⚠️ Warning: placeholder missing after translation: ${ph}`, "warn");
     }
-
+  
     out = out.replaceAll(ph, map[ph]);
   }
 
