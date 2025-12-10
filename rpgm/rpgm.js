@@ -92,30 +92,28 @@ function log(msg, type="info") {
 
 function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-function createPlaceholder() {
-  const id = state.placeholderCounter++;
-  const rand = Math.floor(Math.random() * 100)
-    .toString()
-    .padStart(2, "0");
-  return `__RPGPH_${id}-${rand}__`;
-}
-
 /* ------------------------------------------------------------
    RPGM Placeholder
 ------------------------------------------------------------ */
 const ESCAPE_START = "\\";
 
+function createPlaceholder(counter) {
+  const randomNum = Math.floor(Math.random() * 100);
+  const randomStr = randomNum.toString().padStart(2, '0');
+  return `__RPGPLH_${counter}${randomStr}__`;
+}
+
 function protectRPGMCodes(str) {
   if (!str) return { text: str, map: {} };
 
   const map = {};
-  let out = "";
+  let out = '';
   let i = 0;
+  let counter = 0;
 
   while (i < str.length) {
-    
-    if (str.startsWith("__RPGPH_", i)) {
-      const end = str.indexOf("__", i + 9);
+    if (str.startsWith('__RPGPLH_', i)) {
+      const end = str.indexOf('__', i + 10);
       if (end !== -1) {
         const fullPh = str.slice(i, end + 2);
         out += fullPh;
@@ -126,48 +124,67 @@ function protectRPGMCodes(str) {
 
     const ch = str[i];
 
-    if (ch === ESCAPE_START) {
+    if (ch === '\\') {
       let j = i + 1;
-      let block = "\\";
-
+      let block = '\\';
       while (j < str.length && /[A-Za-z{}<>]/.test(str[j])) {
         block += str[j];
         j++;
       }
-
-      if (str[j] === "[") {
-        block += "[";
+      if (str[j] === '[') {
+        block += '[';
         j++;
-        while (j < str.length && str[j] !== "]") {
+        while (j < str.length && str[j] !== ']') {
           block += str[j];
           j++;
         }
-        if (str[j] === "]") {
-          block += "]";
+        if (str[j] === ']') {
+          block += ']';
           j++;
         }
       }
 
-      const ph = createPlaceholder();
+      const ph = createPlaceholder(counter++);
       map[ph] = block;
       out += ph;
       i = j;
       continue;
     }
 
-    if (ch === "<") {
+    if (ch === '<') {
       let j = i + 1;
-      let block = "<";
-      while (j < str.length && str[j] !== ">") {
+      let block = '<';
+      while (j < str.length && str[j] !== '>') {
         block += str[j];
         j++;
       }
-      if (str[j] === ">") {
-        block += ">";
+      if (str[j] === '>') {
+        block += '>';
         j++;
       }
 
-      const ph = createPlaceholder();
+      const ph = createPlaceholder(counter++);
+      map[ph] = block;
+      out += ph;
+      i = j;
+      continue;
+    }
+
+    if (ch === '[' || ch === '{') {
+      const open = ch;
+      const close = ch === '[' ? ']' : '}';
+      let j = i + 1;
+      let block = open;
+      while (j < str.length && str[j] !== close) {
+        block += str[j];
+        j++;
+      }
+      if (str[j] === close) {
+        block += close;
+        j++;
+      }
+
+      const ph = createPlaceholder(counter++);
       map[ph] = block;
       out += ph;
       i = j;
@@ -183,17 +200,14 @@ function protectRPGMCodes(str) {
 
 function restoreRPGMCodes(str, map) {
   if (!str || !map) return str;
+
   let out = str;
-
-  for (const ph of Object.keys(map).sort((a,b) => b.length - a.length)) {
-  
+  for (const ph of Object.keys(map)) {
     if (!out.includes(ph)) {
-      log(`⚠️ Warning: placeholder missing after translation: ${ph}`, "warn");
+      log(`⚠️ Warning: placeholder missing after translation: ${ph}`, 'warn');
     }
-  
-    out = out.replaceAll(ph, map[ph]);
+    out = out.split(ph).join(map[ph]);
   }
-
   return out;
 }
 
