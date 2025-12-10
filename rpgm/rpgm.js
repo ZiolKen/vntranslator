@@ -48,58 +48,138 @@ const state = {
 };
 
 /* ------------------------------------------------------------
-   Logger
+   Buffered Logger
 ------------------------------------------------------------ */
-function log(msg, type="info") {
-  const p = document.createElement("div");
+class BufferLog {
+  constructor(container, interval = 120) {
+    this.container = container;
+    this.buffer = [];
+    this.interval = interval;
+    setInterval(() => this.flush(), this.interval);
+  }
 
-  let color = "#00ffff";
-  if (type==="error") color="#ff4444";
-  else if (type==="warn") color="#ffdd55";
-  else if (type==="success") color="#00ff88";
+  push(msg, type="info") {
+    const div = document.createElement("div");
+    let color = "#00ffff";
+    if (type === "error") color = "#ff4444";
+    else if (type === "warn") color = "#ffdd55";
+    else if (type === "success") color = "#00ff88";
 
-  p.style.color = color;
-  p.textContent = msg;
+    div.style.color = color;
+    div.textContent = msg;
 
-  el.logContainer.appendChild(p);
-  el.logContainer.scrollTop = el.logContainer.scrollHeight;
+    this.buffer.push(div);
+    state.progressLog.push(`[${type}] ${msg}`);
+  }
 
-  state.progressLog.push(`[${type}] ${msg}`);
+  flush() {
+    if (this.buffer.length === 0) return;
+    const frag = document.createDocumentFragment();
+    for (const item of this.buffer) frag.appendChild(item);
+
+    this.container.appendChild(frag);
+    this.container.scrollTop = this.container.scrollHeight;
+
+    this.buffer = [];
+  }
+}
+
+const logger = new BufferLog(el.logContainer);
+
+function log(msg, type="info") { 
+  logger.push(msg, type);
 }
 
 function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 function createPlaceholder() {
-  return `__PH${state.placeholderCounter++}__`;
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `__PH_${state.placeholderCounter++}_${rand}__`;
 }
 
 /* ------------------------------------------------------------
    RPGM Placeholder
 ------------------------------------------------------------ */
-const RPGM_CODE_RE = /\\[a-zA-Z]+\[?[^\]]*\]?|\\n|\\\.|\\\||\\\!|\\\^|\\\$|%[0-9]+/g;
+const ESCAPE_START = "\\";
 
 function protectRPGMCodes(str) {
   if (!str) return { text: str, map: {} };
 
   const map = {};
-  let result = str;
+  let out = "";
+  let i = 0;
 
-  result = result.replace(RPGM_CODE_RE, (m)=>{
-    const ph = createPlaceholder();
-    map[ph] = m;
-    return ph;
-  });
+  while (i < str.length) {
+    const ch = str[i];
 
-  return { text: result, map };
+    if (ch === ESCAPE_START) {
+      let j = i + 1;
+      let block = "\\";
+
+      while (j < str.length && /[A-Za-z{}<>]/.test(str[j])) {
+        block += str[j];
+        j++;
+      }
+
+      if (str[j] === "[") {
+        block += "[";
+        j++;
+        while (j < str.length && str[j] !== "]") {
+          block += str[j];
+          j++;
+        }
+        if (str[j] === "]") {
+          block += "]";
+          j++;
+        }
+      }
+
+      const ph = createPlaceholder();
+      map[ph] = block;
+      out += ph;
+      i = j;
+      continue;
+    }
+
+    if (ch === "<") {
+      let j = i + 1;
+      let block = "<";
+      while (j < str.length && str[j] !== ">") {
+        block += str[j];
+        j++;
+      }
+      if (str[j] === ">") {
+        block += ">";
+        j++;
+      }
+
+      const ph = createPlaceholder();
+      map[ph] = block;
+      out += ph;
+      i = j;
+      continue;
+    }
+
+    out += ch;
+    i++;
+  }
+
+  return { text: out, map };
 }
 
 function restoreRPGMCodes(str, map) {
   if (!str || !map) return str;
-
   let out = str;
-  for (const ph in map) {
+
+  for (const ph of Object.keys(map)) {
+
+    if (!out.includes(ph)) {
+      log(`⚠️ Warning: placeholder missing after translation: ${ph}`, "warn");
+    }
+
     out = out.replaceAll(ph, map[ph]);
   }
+
   return out;
 }
 
@@ -111,6 +191,19 @@ const COMMAND_LINE   = [401,408,405];
 const COMMAND_CHOICE = [102];
 const COMMAND_BRANCH = [402,403];
 const COMMAND_COMMENT= [108];
+
+function isValidDialogText(s) {
+  if (typeof s !== "string") return false;
+  const t = s.trim();
+  if (t.length < 2) return false;
+
+  if (!/[A-Za-zÀ-ỹ一-龯ぁ-んァ-ン]/.test(t)) return false;
+
+  const tagRatio = (t.match(/<[^>]+>/g) || []).join("").length / t.length;
+  if (tagRatio > 0.40) return false;
+
+  return true;
+}
 
 function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
   let dialogs = [];
@@ -178,7 +271,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
       if (COMMAND_TEXT.includes(code)) {
         const arr = node.parameters[0] || [];
         arr.forEach((t, i) => {
-          if (typeof t === "string" && t.trim() !== "") {
+          if (isValidDialogText(t)) {
             dialogs.push({
               fileIndex,
               fileName,
@@ -191,7 +284,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
         });
       } else if (COMMAND_LINE.includes(code)) {
         const t = node.parameters[0];
-        if (typeof t === "string" && t.trim() !== "") {
+        if (isValidDialogText(t)) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -203,7 +296,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
         }
       } else if (COMMAND_COMMENT.includes(code)) {
         const t = node.parameters[0];
-        if (typeof t === "string" && t.trim() !== "") {
+        if (isValidDialogText(t)) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -216,7 +309,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
       } else if (COMMAND_CHOICE.includes(code)) {
         const arr = node.parameters[0] || [];
         arr.forEach((t, i) => {
-          if (typeof t === "string" && t.trim() !== "") {
+          if (isValidDialogText(t)) {
             dialogs.push({
               fileIndex,
               fileName,
@@ -229,7 +322,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
         });
       } else if (COMMAND_BRANCH.includes(code)) {
         const t = node.parameters[1];
-        if (typeof t === "string" && t.trim() !== "") {
+        if (isValidDialogText(t)) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -255,7 +348,7 @@ function extractDialogsFromSystem(sys, fileIndex = 0, fileName = "") {
   function pushArray(arr, codeLabel) {
     if (!Array.isArray(arr)) return;
     arr.forEach((t, i) => {
-      if (typeof t === "string" && t.trim() !== "") {
+      if (isValidDialogText(t)) {
         dialogs.push({
           fileIndex,
           fileName,
@@ -299,7 +392,7 @@ function extractDialogsFromSystem(sys, fileIndex = 0, fileName = "") {
   const msgs = terms.messages || {};
   Object.keys(msgs).forEach((key) => {
     const t = msgs[key];
-    if (typeof t === "string" && t.trim() !== "") {
+    if (isValidDialogText(t)) {
       dialogs.push({
         fileIndex,
         fileName,
@@ -788,7 +881,7 @@ async function translationLoop() {
       el.downloadResultBtn.disabled = false;
       el.previewResultBtn.disabled = false;
     
-      await delay(20);
+      await new Promise(r => requestAnimationFrame(r));
     }
   }
 
