@@ -57,17 +57,29 @@
                             </div>
  
                             <div class="form-group">
-                                <label>2. Translation Mode:</label>
+                                <label>2. Translation Language:</label>
                                 <select id="transMode">
-                                    <option value="auto_vi">🌐 Auto (All ➔ 🇻🇳 VI)</option>
-                                    <option value="en_vi">🇬🇧 EN ➔ 🇻🇳 VI</option>
-                                    <option value="ja_vi">🇯🇵 JP ➔ 🇻🇳 VI</option>
-                                    <option value="zh_vi">🇨🇳 CN ➔ 🇻🇳 VI</option>
-                                    <option value="ko_vi">🇰🇷 KO ➔ 🇻🇳 VI</option>
-                                    <option value="ja_en_vi">🇯🇵 JP ➔ 🇬🇧 EN ➔ 🇻🇳 VI</option>
+                                    <option value="id">Indonesia</option>
+                                    <option value="vi">Vietnamese</option>
+                                    <option value="en">English</option>
+                                    <option value="ms">Malaysia</option>
+                                    <option value="tl">Filipino</option>
                                 </select>
                             </div>
- 
+ <div class="form-group">
+    <label>3. Translation Model:</label>
+    <select id="transModel">
+        <option value="deepseek">🔥 DeepSeek API (Paid)</option>
+        <option value="lingva">🌐 Lingva (Free – Stable)</option>
+        <option value="google">💠 Google Translate (Free API)</option>
+    </select>
+</div>
+
+            <div class="form-group" id="apiKeyGroup">
+                <label for="apiKey">DeepSeek API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key">
+            </div>
+
                             <div class="form-group" style="flex:0.5">
                                 <label>Batch:</label>
                                 <input id="batchSize" type="number" value="20" title="Number of lines processed at the same time." />
@@ -116,6 +128,23 @@
   <div style="text-align: center; margin: 40px 0 20px;">
   <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
   </div>
+
+<div id="lingvaWarningModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Important Notice About Lingva/Google Translation</h3>
+    <p>You have selected Lingva/Google for translation. Please be aware that:</p>
+    <ul class="notice-list">
+      <li>Lingva/Google is a free service with limited quality control</li>
+      <li>Translation quality may be inconsistent or inaccurate</li>
+      <li>There is a risk of damaging RPG Maker game structure</li>
+    </ul>
+    <p>For professional results, we recommend using the DeepSeek API.</p>
+    <div class="modal-footer">
+      <button id="confirmLingvaBtn">OK</button>
+      <button id="cancelLingvaBtn">Cancel</button>
+    </div>
+  </div>
+</div>
  
     <script
         src="./rpgmu.js">
