@@ -268,7 +268,7 @@ async function translateBatchLingva(batch, targetLang) {
   for (const d of batch) {
     const translated = await lingvaRequest(d.protectedText, targetLang);
     out.push(translated);
-    await delay(100);
+    await delay(150);
   }
   return out;
 }
