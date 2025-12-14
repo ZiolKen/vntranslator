@@ -236,6 +236,43 @@ els.start.addEventListener('click', async () => {
   finish();
 });
 
+const LINGVA_HOSTS = [
+  "https://lingva.ml",
+  "https://translate.plausibility.cloud",
+  "https://lingva.vercel.app",
+  "https://lingva.garudalinux.org",
+  "https://lingva.lunar.icu"
+];
+
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function lingvaRequest(text, target) {
+  for (const host of LINGVA_HOSTS) {
+    try {
+      const res = await fetch(
+        host + "/api/v1/auto/" + target + "/" + encodeURIComponent(text)
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      return data.translation || data.translatedText || text;
+    } catch (e) {
+    }
+  }
+  throw new Error("Lingva: all endpoints failed");
+}
+
+async function translateBatchLingva(batch, targetLang) {
+  const out = [];
+  for (const d of batch) {
+    const translated = await lingvaRequest(d.protectedText, targetLang);
+    out.push(translated);
+    await delay(100);
+  }
+  return out;
+}
+
 // ================================
 // TRANSLATE BLOCK
 // ================================
@@ -325,9 +362,82 @@ async function translateBlock(block, targetLang, signal) {
     block.translated = result;
     return;
   }
+  
+  // =========================
+  // LINGVA
+  // =========================
+  
+  else if (model === "lingva") {
+    const isSkipVi = els.skipVi.checked;
+  
+    const batch = [];
+    const meta = [];
+  
+    for (let line of block.lines) {
+      if (!line.trim()) {
+        meta.push({ type: "raw", value: line });
+        continue;
+      }
+  
+      if (isSkipVi && VIETNAMESE_REGEX.test(line)) {
+        meta.push({ type: "raw", value: line });
+        addLog("exist", line, "SKIP");
+        continue;
+      }
+  
+      let nameTag = "";
+      let content = line;
+  
+      const nameMatch = line.match(RPGM_NAME_TAG_RE);
+      if (nameMatch) {
+        nameTag = nameMatch[1];
+        content = line.slice(nameTag.length);
+      }
+  
+      const ph = new Map();
+      let pid = 0;
+  
+      const safe = content.replace(RPGM_CODE_RE, m => {
+        const k = `__PH${pid++}__`;
+        ph.set(k, m);
+        return k;
+      });
+  
+      batch.push({ protectedText: safe });
+      meta.push({ type: "translated", nameTag, placeholders: ph });
+    }
+  
+    const translatedLines = await translateBatchLingva(batch, targetLang);
+  
+    let t = 0;
+    const result = [];
+  
+    for (const m of meta) {
+      if (m.type === "raw") {
+        result.push(m.value);
+        continue;
+      }
+  
+      let out = translatedLines[t++] || "";
+  
+      m.placeholders.forEach((v, k) => {
+        out = out.replace(k, v);
+      });
+  
+      if (m.nameTag) {
+        out = m.nameTag + (out.startsWith(" ") ? "" : " ") + out.trim();
+      }
+  
+      result.push(out);
+      addLog(`tag-${targetLang}`, "", out);
+    }
+  
+    block.translated = result;
+    return;
+  }
 
   // =========================
-  // GOOGLE / LINGVA
+  // GOOGLE
   // =========================
   const res = [];
 
