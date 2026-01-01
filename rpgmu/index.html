@@ -17,7 +17,7 @@
             <meta name="theme-color" content="#000000">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="rpgmu.css">
+            <link rel="stylesheet" href="./rpgmu.css">
             <!-- Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
             <script>
@@ -66,20 +66,20 @@
                                     <option value="tl">Filipino</option>
                                 </select>
                             </div>
- <div class="form-group">
-    <label>3. Translation Model:</label>
-    <select id="transModel">
-        <option value="deepseek">🔥 DeepSeek API (Paid)</option>
-        <option value="lingva">🌐 Lingva (Free – Stable)</option>
-        <option value="google">💠 Google Translate (Free API)</option>
-    </select>
-</div>
-
-            <div class="form-group" id="apiKeyGroup">
-                <label for="apiKey">DeepSeek API Key:</label>
-                <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key">
-            </div>
-
+                            <div class="form-group">
+                                <label>3. Translation Model:</label>
+                                <select id="transModel">
+                                    <option value="deepseek">🔥 DeepSeek API (Paid)</option>
+                                    <option value="lingva">🌐 Lingva (Free – Stable)</option>
+                                    <option value="google">💠 Google Translate (Free API)</option>
+                                </select>
+                            </div>
+ 
+                            <div class="form-group" id="apiKeyGroup">
+                                <label for="apiKey">DeepSeek API Key:</label>
+                                <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key">
+                            </div>
+ 
                             <div class="form-group" style="flex:0.5">
                                 <label>Batch:</label>
                                 <input id="batchSize" type="number" value="20" title="Number of lines processed at the same time." />
@@ -119,110 +119,141 @@
                     <h2>Preview translation results:</h2>
                     <textarea style="height: 256px;" id="outputArea" readonly></textarea>
                 </div>
+                <div class="card cyber-grid help-container">
+                    <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
+                        <div style="grid-column: 1 / -1;">
+                            <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px;">SUPPORT THIS PROJECT!</p>
+                                <a href="https://www.buymeacoffee.com/_zkn"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee!&emoji=☕&slug=_zkn&button_colour=ff00ff&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card usage-tips">
+                    <h2>Usage Tips</h2>
+                    <div class="notice-content">
+                        <p><strong>For best results:</strong></p>
+                        <ul class="notice-list">
+                            <li>Prioritize games with only one language, as the tool cannot manually select the source language and uses auto-detection</li>
+                            <li>All detected dialog will be translated, making the process much slower for multi-language games</li>
+                            <li>If the game uses separate files for each language, the process will be more efficient</li>
+                            <li>For professional translations, always use high-quality English source text</li>
+                        </ul>
+                        <p><strong>Note:</strong> The translation quality depends on the source text quality and the selected translation model.</p>
+                    </div>
+                </div>
+            <footer class="footer-note">
+                ⚠️ By using this tool, you agree to accept all kinds of risks.
+            </footer>
+ 
+            <div style="text-align: center; margin: 40px 0 20px;">
+                <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
             </div>
-    </div>
-    <footer class="footer-note">
-        ⚠️ By using this tool, you agree to accept all kinds of risks.
-    </footer>
-
-  <div style="text-align: center; margin: 40px 0 20px;">
-  <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
-  </div>
-
-<div id="lingvaWarningModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>Important Notice About Lingva/Google Translation</h3>
-    <p>You have selected Lingva/Google for translation. Please be aware that:</p>
-    <ul class="notice-list">
-      <li>Lingva/Google is a free service with limited quality control</li>
-      <li>Translation quality may be inconsistent or inaccurate</li>
-      <li>There is a risk of damaging RPG Maker game structure</li>
-    </ul>
-    <p>For professional results, we recommend using the DeepSeek API.</p>
-    <div class="modal-footer">
-      <button id="confirmLingvaBtn">OK</button>
-      <button id="cancelLingvaBtn">Cancel</button>
-    </div>
-  </div>
-</div>
+        </div>
  
-    <script
-        src="./rpgmu.js">
-    </script>
-
-    <script type="text/babel"
-        src="./rpgmux.js">
-    </script>
-
-<script>
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const particleCount = isMobile ? 25 : 80;
-        particlesJS("particles-js", {
-            "particles": {
-                "number": {
-                    "value": particleCount,
-                    "density": {
-                        "enable": true,
-                        "value_area": 800
-                    }
-                },
-                "color": { "value": "#a855f7" },
-                "shape": {
-                    "type": "circle",
-                    "stroke": { "width": 0, "color": "#000" }
-                },
-                "opacity": {
-                    "value": 0.7,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 0.5,
-                        "opacity_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "size": {
-                    "value": 3,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 2,
-                        "size_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "line_linked": {
-                    "enable": true,
-                    "distance": 150,
-                    "color": "#a855f7",
-                    "opacity": 0.3,
-                    "width": 1
-                },
-                "move": {
-                    "enable": true,
-                    "speed": 1.5,
-                    "direction": "none",
-                    "random": false,
-                    "straight": false,
-                    "out_mode": "out",
-                    "bounce": false
-                }
-            },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": {
-                    "onhover": { "enable": true, "mode": "repulse" },
-                    "onclick": { "enable": false },
-                    "resize": true
-                },
-                "modes": {
-                    "repulse": { "distance": 100, "duration": 0.4 }
-                }
-            },
-            "retina_detect": true
-        });
-</script>
+            <div id="lingvaWarningModal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Important Notice About Lingva/Google Translation</h3>
+                    <p>You have selected Lingva/Google for translation. Please be aware that:</p>
+                    <ul class="notice-list">
+                        <li>Lingva/Google is a free service with limited quality control</li>
+                        <li>Translation quality may be inconsistent or inaccurate</li>
+                        <li>There is a risk of damaging RPG Maker game structure</li>
+                    </ul>
+                    <p>For professional results, we recommend using the DeepSeek API.</p>
+                    <div class="modal-footer">
+                        <button id="confirmLingvaBtn">OK</button>
+                        <button id="cancelLingvaBtn">Cancel</button>
+                    </div>
+                </div>
+            </div>
  
-</body>
+            <script src="./rpgmu.js">
+            </script>
  
-</html>
+            <script type="text/babel" src="./rpgmux.js">
+            </script>
+ 
+            <script>
+                const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const particleCount = isMobile ? 25 : 80;
+                particlesJS("particles-js", {
+                    "particles": {
+                        "number": {
+                            "value": particleCount,
+                            "density": {
+                                "enable": true,
+                                "value_area": 800
+                            }
+                        },
+                        "color": {
+                            "value": "#a855f7"
+                        },
+                        "shape": {
+                            "type": "circle",
+                            "stroke": {
+                                "width": 0,
+                                "color": "#000"
+                            }
+                        },
+                        "opacity": {
+                            "value": 0.7,
+                            "random": true,
+                            "anim": {
+                                "enable": true,
+                                "speed": 0.5,
+                                "opacity_min": 0.3,
+                                "sync": false
+                            }
+                        },
+                        "size": {
+                            "value": 3,
+                            "random": true,
+                            "anim": {
+                                "enable": true,
+                                "speed": 2,
+                                "size_min": 0.3,
+                                "sync": false
+                            }
+                        },
+                        "line_linked": {
+                            "enable": true,
+                            "distance": 150,
+                            "color": "#a855f7",
+                            "opacity": 0.3,
+                            "width": 1
+                        },
+                        "move": {
+                            "enable": true,
+                            "speed": 1.5,
+                            "direction": "none",
+                            "random": false,
+                            "straight": false,
+                            "out_mode": "out",
+                            "bounce": false
+                        }
+                    },
+                    "interactivity": {
+                        "detect_on": "canvas",
+                        "events": {
+                            "onhover": {
+                                "enable": true,
+                                "mode": "repulse"
+                            },
+                            "onclick": {
+                                "enable": false
+                            },
+                            "resize": true
+                        },
+                        "modes": {
+                            "repulse": {
+                                "distance": 100,
+                                "duration": 0.4
+                            }
+                        }
+                    },
+                    "retina_detect": true
+                });
+            </script>
+ 
+        </body>
+ 
+        </html>
