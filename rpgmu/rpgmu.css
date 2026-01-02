@@ -14,6 +14,28 @@
                     margin: 0;
                     padding: 20px;
                 }
+                
+        .BG {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #13233d;
+            background: linear-gradient(
+                145deg,
+                rgba(18, 37, 60, 1) 0%,
+                rgba(36, 10, 56, 1) 25%,
+                rgba(63, 16, 88, 1) 45%,
+                rgba(47, 25, 82, 1) 60%,
+                rgba(22, 42, 72, 1) 80%,
+                rgba(14, 32, 54, 1) 100%
+            );
+            background-blend-mode: screen;
+            background-size: cover;
+            background-attachment: fixed;
+            z-index: -10;
+        }
  
                 .translator-section h2 {
                     font-size: 1.5rem;
