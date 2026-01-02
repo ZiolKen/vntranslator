@@ -1,4 +1,25 @@
-
+        .BG {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #13233d;
+            background: linear-gradient(
+                145deg,
+                rgba(18, 37, 60, 1) 0%,
+                rgba(36, 10, 56, 1) 25%,
+                rgba(63, 16, 88, 1) 45%,
+                rgba(47, 25, 82, 1) 60%,
+                rgba(22, 42, 72, 1) 80%,
+                rgba(14, 32, 54, 1) 100%
+            );
+            background-blend-mode: screen;
+            background-size: cover;
+            background-attachment: fixed;
+            z-index: -10;
+        }
+        
         .card {
             border-radius: 16px;
             padding: 25px;
@@ -130,157 +151,157 @@
             transition: all 0.2s;
         }
 
-#dropZone {
-    width: 100%;
-    padding: 40px;
-    border: 2px dashed #8b5cf6;
-    border-radius: 15px;
-    text-align: center;
-    color: #fff;
-    font-size: 1.2rem;
-    transition: 0.25s;
-    background: rgba(255,255,255,0.03);
-    cursor: pointer;
-    position: relative;
-    z-index: 10;
-}
-
-#dropZone.dragover {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: #c084fc;
-}
-
-#fileupload {
-    display: none;
-}
-
-#tabBar {
-    display: flex;
-    overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: thin;
-}
-
-.tab {
-    padding: 6px 14px;
-    background: #181818;
-    color: #fff;
-    cursor: pointer;
-    font-size: 14px;
-	border: 1px solid #2B2B2B;
-    user-select: none;
-    transition: 0.2s;
-}
-
-.tab:hover {
-    background: #1F1F1F;
-}
-
-.tab.active {
-    background: #1F1F1F;
-    font-weight: bold;
-    border: none;
-	border-top: 1px solid #0078D4;
-	border-left: 1px solid #2B2B2B;
-	border-right: 1px solid #2B2B2B;
-}
-
-#editorContainer {
-	flex-direction: column;
-}
-
-.save-btn {
-    padding: 10px 16px;
-    background: #181818; 
-    color: #fff;
-    font-size: 1rem;
-    border: 1px solid var(--border-color);
-    cursor: pointer; 
-    align-items: center;
-    justify-content: center;
-	transition: 0.3s;
-}
-
-.save-btn:hover {
-    background: #1F1F1F;
-    border-color: rgba(168, 85, 247, 0.3);
-}
-
-.border {
-    display: flex;
-    gap: 6px;
-    padding: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-.border2 {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 15px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-#tabBar::-webkit-scrollbar,
-textarea::-webkit-scrollbar {
-    width: 14px;
-    height: 14px;
-}
- 
-#tabBar::-webkit-scrollbar-track,
-textarea::-webkit-scrollbar-track {
-    background: #1F1F1F;
-}
- 
-#tabBar::-webkit-scrollbar-thumb,
-textarea::-webkit-scrollbar-thumb {
-    background: #1F1F1F;
-    border-radius: 10px;
-    border: 4px solid transparent;
-    background-clip: padding-box;
-    transition: 0.3s ease;
-}
- 
-#tabBar:hover::-webkit-scrollbar-thumb,
-textarea:hover::-webkit-scrollbar-thumb {
-    background: #1F1F1F;
-    background-clip: padding-box;
-}
- 
-#tabBar::-webkit-scrollbar-thumb:hover,
-textarea::-webkit-scrollbar-thumb:hover {
-    background: #1F1F1F;
-    background-clip: padding-box;
-}
- 
-#tabBar::-webkit-scrollbar-thumb:active,
-textarea::-webkit-scrollbar-thumb:active {
-    background: #1F1F1F;
-    background-clip: padding-box;
-}
- 
-#tabBar::-webkit-scrollbar-corner,
-textarea::-webkit-scrollbar-corner {
-    background: transparent;
-}
- 
-#tabBar {
-    scrollbar-width: thin;
-    scrollbar-color: #1F1F1F #1F1F1F;
-}
-
-#tabBar:hover {
-    scrollbar-color: #1F1F1F #1F1F1F;
-}
- 
-#tabBar,
-textarea {
-    scroll-behavior: smooth;
-    scrollbar-width: thin;
-}
+        #dropZone {
+            width: 100%;
+            padding: 40px;
+            border: 2px dashed #8b5cf6;
+            border-radius: 15px;
+            text-align: center;
+            color: #fff;
+            font-size: 1.2rem;
+            transition: 0.25s;
+            background: rgba(255,255,255,0.03);
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+        
+        #dropZone.dragover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #c084fc;
+        }
+        
+        #fileupload {
+            display: none;
+        }
+        
+        #tabBar {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+        }
+        
+        .tab {
+            padding: 6px 14px;
+            background: #181818;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        	border: 1px solid #2B2B2B;
+            user-select: none;
+            transition: 0.2s;
+        }
+        
+        .tab:hover {
+            background: #1F1F1F;
+        }
+        
+        .tab.active {
+            background: #1F1F1F;
+            font-weight: bold;
+            border: none;
+        	border-top: 1px solid #0078D4;
+        	border-left: 1px solid #2B2B2B;
+        	border-right: 1px solid #2B2B2B;
+        }
+        
+        #editorContainer {
+        	flex-direction: column;
+        }
+        
+        .save-btn {
+            padding: 10px 16px;
+            background: #181818; 
+            color: #fff;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer; 
+            align-items: center;
+            justify-content: center;
+        	transition: 0.3s;
+        }
+        
+        .save-btn:hover {
+            background: #1F1F1F;
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+        
+        .border {
+            display: flex;
+            gap: 6px;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .border2 {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        #tabBar::-webkit-scrollbar,
+        textarea::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+        }
+         
+        #tabBar::-webkit-scrollbar-track,
+        textarea::-webkit-scrollbar-track {
+            background: #1F1F1F;
+        }
+         
+        #tabBar::-webkit-scrollbar-thumb,
+        textarea::-webkit-scrollbar-thumb {
+            background: #1F1F1F;
+            border-radius: 10px;
+            border: 4px solid transparent;
+            background-clip: padding-box;
+            transition: 0.3s ease;
+        }
+         
+        #tabBar:hover::-webkit-scrollbar-thumb,
+        textarea:hover::-webkit-scrollbar-thumb {
+            background: #1F1F1F;
+            background-clip: padding-box;
+        }
+         
+        #tabBar::-webkit-scrollbar-thumb:hover,
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #1F1F1F;
+            background-clip: padding-box;
+        }
+         
+        #tabBar::-webkit-scrollbar-thumb:active,
+        textarea::-webkit-scrollbar-thumb:active {
+            background: #1F1F1F;
+            background-clip: padding-box;
+        }
+         
+        #tabBar::-webkit-scrollbar-corner,
+        textarea::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+         
+        #tabBar {
+            scrollbar-width: thin;
+            scrollbar-color: #1F1F1F #1F1F1F;
+        }
+        
+        #tabBar:hover {
+            scrollbar-color: #1F1F1F #1F1F1F;
+        }
+         
+        #tabBar,
+        textarea {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+        }
 
         .container {
             max-width: 1000px;
@@ -295,61 +316,61 @@ textarea {
             margin-top: 20px;
         }
 
-.tab-close {
-  margin-left: 5px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.tab-close:hover {
-  opacity: 1.2;
-  pointer-events: auto;
-}
-
-.tab:hover .tab-close,
-.tab.active .tab-close {
-    opacity: 0.8;
-    pointer-events: auto;
-}
-
-.tab.dragging {
-  opacity: 0.5;
-}
-
-.tab-bar {
-    background: #181818;
-    border-bottom: 1px solid #333;
-    position: relative;
-    z-index: 10;
-}
-
-#editorContainer {
-    width: 100%;
-    height: 600px;  
-    position: relative;
-    z-index: 1;
-}
-
-.button-bar {
-    margin-top: 8px;
-    display: flex; 
-}
-
-.status-bar {
-    display: flex;
-    justify-content: flex-end;
-    gap: 16px;
-    padding: 4px 10px;
-    background: #181818;
-    color: #cccccc;
-    font-size: 12px;
-    border-top: 1px solid #333;
-    user-select: none;
-}
-
-.wrapeditor {
-    border: 1px solid var(--border-color);
-}
-.wrapeditor:hover {
-    border-color: rgba(168, 85, 247, 0.3);
-}
+        .tab-close {
+          margin-left: 5px;
+          opacity: 0;
+          pointer-events: none;
+        }
+        
+        .tab-close:hover {
+          opacity: 1.2;
+          pointer-events: auto;
+        }
+        
+        .tab:hover .tab-close,
+        .tab.active .tab-close {
+            opacity: 0.8;
+            pointer-events: auto;
+        }
+        
+        .tab.dragging {
+          opacity: 0.5;
+        }
+        
+        .tab-bar {
+            background: #181818;
+            border-bottom: 1px solid #333;
+            position: relative;
+            z-index: 10;
+        }
+        
+        #editorContainer {
+            width: 100%;
+            height: 600px;  
+            position: relative;
+            z-index: 1;
+        }
+        
+        .button-bar {
+            margin-top: 8px;
+            display: flex; 
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            padding: 4px 10px;
+            background: #181818;
+            color: #cccccc;
+            font-size: 12px;
+            border-top: 1px solid #333;
+            user-select: none;
+        }
+        
+        .wrapeditor {
+            border: 1px solid var(--border-color);
+        }
+        .wrapeditor:hover {
+            border-color: rgba(168, 85, 247, 0.3);
+        }
