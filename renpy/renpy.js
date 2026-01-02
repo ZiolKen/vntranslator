@@ -36,6 +36,9 @@
             logEntries: [],
           };
         
+          const TRANSLATOR_CREDIT =
+            '# Translated by VNsTranslator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+        
           function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
           }
@@ -728,8 +731,14 @@
                 lines[idx] = newLine;
             }
         
-            const blob = new Blob([lines.join("\n")], {
-                type: "text/plain;charset=utf-8"
+            const outputText =
+              lines.join("\n") +
+              "\n\n" +
+              TRANSLATOR_CREDIT +
+              "\n";
+        
+            const blob = new Blob([outputText], {
+              type: "text/plain;charset=utf-8"
             });
         
             const a = document.createElement("a");
