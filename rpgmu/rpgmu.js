@@ -1,16 +1,5 @@
-/* rpgmu.js
- * STEP 2: AUTO TRANSLATION (Optimized + Safer)
- * - Real batch for DeepSeek (1 request for many lines)
- * - Strong placeholders: ⟦PH0⟧, restore with regex (global)
- * - Retry/backoff for transient errors (429/5xx)
- * - Concurrency pool (do NOT “bypass blocks”, just stabilize)
- */
-
 "use strict";
 
-/** =========================
- *  DOM
- *  ========================= */
 const els = {
   input: document.getElementById("fileInput"),
   start: document.getElementById("startBtn"),
@@ -33,9 +22,6 @@ const els = {
 const SEPARATOR_RE = /^---------\d+\s*$/;
 const VIETNAMESE_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 
-/** =========================
- *  Model select / warning modal (keep your existing behavior)
- *  ========================= */
 els.model.addEventListener("change", () => {
   const m = els.model.value;
   els.apiKeyGroup.style.display = m === "deepseek" ? "block" : "none";
@@ -58,9 +44,6 @@ cancelLingvaBtn.onclick = () => {
   els.apiKeyGroup.style.display = "block";
 };
 
-/** =========================
- *  State
- *  ========================= */
 const state = {
   blocks: [],
   total: 0,
@@ -71,9 +54,6 @@ const state = {
   abortCtrl: null,
 };
 
-/** =========================
- *  Logging (lighter)
- *  ========================= */
 function addLog(type, left, right = "") {
   const div = document.createElement("div");
   div.className = "log-item";
@@ -95,24 +75,12 @@ function addLog(type, left, right = "") {
   while (els.log.children.length > 120) els.log.lastChild.remove();
 }
 
-/** =========================
- *  Progress
- *  ========================= */
 function updateUI() {
   const pct = state.totalLines ? Math.round((state.doneLines / state.totalLines) * 100) : 0;
   els.bar.style.width = pct + "%";
   els.pt.textContent = `${pct}% (${state.doneLines}/${state.totalLines})`;
 }
 
-/** =========================
- *  Placeholders: Strong & Stable
- *  =========================
- * We protect:
- * - RPG Maker escape codes like \V[1], \N[2], \c[3], \I[5], \., \|, \!, \^, \$, \>, \<, \{, \}, \\ (literal backslash)
- * - Format placeholders like %1, %2, {0}, {1}
- *
- * Token format: ⟦PH0⟧ ⟦PH1⟧ ...
- */
 const RPGM_ESCAPE_RE = /\\\\|\\(?:[A-Za-z]+(?:\[[^\]]*])?(?:<[^>]*>)?|[{}|!^$<>.])/g;
 const FORMAT_PLACEHOLDER_RE = /%\d+|\{\d+\}/g;
 const PH_TOKEN_RE = /⟦\s*PH(\d+)\s*⟧/gi;
@@ -138,17 +106,12 @@ function restoreText(text, placeholders) {
   return text.replace(PH_TOKEN_RE, (_, n) => placeholders[Number(n)] ?? `⟦PH${n}⟧`);
 }
 
-/** If placeholders are lost/changed -> fallback original to avoid breaking the game */
 function isPlaceholderSafe(originalSafe, translatedSafe) {
-  // Count PH tokens in originalSafe must be <= count in translatedSafe (should match)
   const orig = (originalSafe.match(PH_TOKEN_RE) || []).length;
   const trans = (translatedSafe.match(PH_TOKEN_RE) || []).length;
   return trans >= orig;
 }
 
-/** =========================
- *  Pool + Retry
- *  ========================= */
 function createPool(limit) {
   let active = 0;
   const q = [];
@@ -196,16 +159,12 @@ async function withRetry(fn, { retries = 4, baseDelay = 400, signal } = {}) {
       attempt++;
       if (attempt > retries) throw e;
 
-      // exponential backoff + jitter
       const delay = Math.round(baseDelay * Math.pow(2, attempt - 1) * (0.7 + Math.random() * 0.6));
       await sleep(delay);
     }
   }
 }
 
-/** =========================
- *  Providers
- *  ========================= */
 function languageLabel(code) {
   return {
     vi: "Vietnamese",
@@ -216,21 +175,23 @@ function languageLabel(code) {
   }[code] || code;
 }
 
-/** ---- DeepSeek (true batch) ---- */
-const deepseekPool = createPool(2); // safe default; raise if your proxy/server supports it
+const deepseekPool = createPool(2);
 
 async function translateDeepSeekBatch(linesSafe, targetLang, apiKey, signal) {
-  // Prefix each line with an ID marker to parse safely.
   const marked = linesSafe.map((t, i) => `⟦L${i}⟧ ${t}`);
 
   const prompt =
 `Translate the following RPG Maker dialogue lines to ${languageLabel(targetLang)} (code: ${targetLang}).
 
-STRICT RULES:
-- Keep ALL placeholders EXACTLY: tokens like ⟦PH0⟧, ⟦PH1⟧ must remain unchanged.
-- Keep the line markers EXACTLY: ⟦L0⟧, ⟦L1⟧ ... do NOT remove or edit them.
-- DO NOT reorder, merge, or split lines.
-- Return ONLY the translated lines, one per line, preserving the same ⟦Lx⟧ prefix.
+RULES:
+- Keep ALL placeholders EXACTLY as-is and do NOT translate them: tokens like ⟦PH0⟧, ⟦PH1⟧ must remain unchanged.
+- Keep the line markers EXACTLY as-is and do NOT translate them: ⟦L0⟧, ⟦L1⟧ ... do NOT remove or edit them.
+- Preserve RPGM syntax, variables, and tags.
+- DO NOT remove or add \\n or any RPGM escape codes.
+- Do NOT reorder, merge, or split lines.
+- Do NOT change placeholders or variables.
+- Do NOT add numbering, quotes, prefixes, or extra commentary.
+- Return ONLY the translated lines, one per line, preserving the same ⟦Lx⟧ prefix, in the same order.
 
 LINES:
 ${marked.join("\n")}`;
@@ -261,7 +222,6 @@ ${marked.join("\n")}`;
     .map((l) => l.trim())
     .filter(Boolean);
 
-  // Map by marker ⟦Lx⟧
   const map = new Map();
   for (const l of outLines) {
     const m = l.match(/^⟦L(\d+)⟧\s*(.*)$/);
@@ -276,7 +236,6 @@ ${marked.join("\n")}`;
   return results;
 }
 
-/** ---- Lingva (fallback endpoints; stable but slow; keep low concurrency) ---- */
 const LINGVA_HOSTS = [
   "https://lingva.ml",
   "https://translate.plausibility.cloud",
@@ -288,7 +247,6 @@ const LINGVA_HOSTS = [
 const lingvaPool = createPool(3);
 
 async function lingvaRequest(text, target, signal) {
-  // randomize hosts each request for reliability (not for bypassing)
   const hosts = [...LINGVA_HOSTS].sort(() => Math.random() - 0.5);
 
   for (const host of hosts) {
@@ -305,7 +263,6 @@ async function lingvaRequest(text, target, signal) {
   throw new Error("Lingva: all endpoints failed");
 }
 
-/** ---- Google (unofficial endpoint - not guaranteed) ---- */
 const googlePool = createPool(6);
 const translateCache = new Map();
 
@@ -326,9 +283,6 @@ async function googleTranslate(text, sl, tl, signal) {
   return out;
 }
 
-/** =========================
- *  TXT Load -> blocks
- *  ========================= */
 els.input.addEventListener("change", async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -354,7 +308,6 @@ els.input.addEventListener("change", async (e) => {
   state.doneBlocks = 0;
   state.doneLines = 0;
 
-  // totalLines = count of all non-header lines in blocks
   state.totalLines = state.blocks.reduce((sum, b) => sum + b.lines.length, 0);
 
   els.out.value = "";
@@ -369,9 +322,6 @@ els.input.addEventListener("change", async (e) => {
   addLog("ok", "File loaded", `${state.total} blocks / ${state.totalLines} lines`);
 });
 
-/** =========================
- *  Build output
- *  ========================= */
 function buildResultText() {
   return state.blocks.map(b =>
     (b.header ? b.header + "\n" : "") +
@@ -389,11 +339,8 @@ function finish() {
   addLog("ok", "DONE", "All processed");
 }
 
-/** =========================
- *  Translate pipeline (true batching)
- *  ========================= */
 function shouldSkipLine(line, skipVi) {
-  if (!line || !line.trim()) return true; // treat as non-translatable
+  if (!line || !line.trim()) return true;
   if (skipVi && VIETNAMESE_REGEX.test(line)) return true;
   return false;
 }
@@ -418,11 +365,10 @@ els.start.addEventListener("click", async () => {
   els.copy.disabled = true;
   els.dl.disabled = true;
 
-  // Build tasks (flatten lines)
   const tasks = [];
   for (let bi = 0; bi < state.blocks.length; bi++) {
     const block = state.blocks[bi];
-    block.translated = block.lines.slice(); // start as original
+    block.translated = block.lines.slice();
     for (let li = 0; li < block.lines.length; li++) {
       const raw = block.lines[li];
       if (shouldSkipLine(raw, skipVi)) {
@@ -443,14 +389,10 @@ els.start.addEventListener("click", async () => {
   addLog("ok", "Start", `Model=${model}, target=${targetLang}, lines=${tasks.length}`);
 
   try {
-    // Batching parameter:
-    // - For DeepSeek: number of lines per request
-    // - For others: used as concurrency-ish guideline (still per line)
     const batchSize = Math.max(1, parseInt(els.batch.value, 10) || 20);
 
     if (model === "deepseek") {
-      // Build batches by line count + safety char limit
-      const MAX_CHARS = 9000; // adjust if your proxy/model allows more
+      const MAX_CHARS = 10000;
       const batches = [];
       let cur = [];
       let curChars = 0;
@@ -479,14 +421,11 @@ els.start.addEventListener("click", async () => {
           )
         );
 
-        // Apply
         for (let i = 0; i < batch.length; i++) {
           const t = batch[i];
           let outSafe = translatedSafe[i] || "";
 
-          // Validate placeholders
           if (!isPlaceholderSafe(t.safe, `⟦PH0⟧`.includes("PH") ? outSafe : outSafe)) {
-            // If model removed tokens -> fallback raw to avoid corruption
             state.blocks[t.bi].translated[t.li] = t.raw;
             addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
           } else {
@@ -503,13 +442,11 @@ els.start.addEventListener("click", async () => {
     }
 
     else if (model === "lingva") {
-      // Lingva is free: keep concurrency low to reduce failures
       const jobs = tasks.map((t) =>
         lingvaPool.run(() =>
           withRetry(async () => {
             const outSafe = await lingvaRequest(t.safe, targetLang, signal);
 
-            // If placeholders got broken -> fallback
             if (!isPlaceholderSafe(t.safe, outSafe)) {
               state.blocks[t.bi].translated[t.li] = t.raw;
               addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
@@ -530,7 +467,6 @@ els.start.addEventListener("click", async () => {
     }
 
     else {
-      // Google unofficial: concurrency limited; not guaranteed stable at high speed
       const jobs = tasks.map((t) =>
         googlePool.run(() =>
           withRetry(async () => {
@@ -562,9 +498,6 @@ els.start.addEventListener("click", async () => {
   }
 });
 
-/** =========================
- *  Stop / Copy / Download
- *  ========================= */
 els.stop.addEventListener("click", () => {
   state.isRunning = false;
   if (state.abortCtrl) state.abortCtrl.abort();
