@@ -1,3 +1,4 @@
+(() => {
 "use strict";
 
 const $ = (id) => document.getElementById(id);
@@ -544,3 +545,4 @@ ui.saveBtn.addEventListener("click", async () => {
     console.error(err);
   }
 });
+})();
