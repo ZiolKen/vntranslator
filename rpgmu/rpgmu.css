@@ -850,6 +850,7 @@
                     position: relative;
                     z-index: 10;
                     display: flex;
+                    overflow-y: show;
                     overflow-x: auto;
                     white-space: nowrap;
                     scrollbar-width: thin;
