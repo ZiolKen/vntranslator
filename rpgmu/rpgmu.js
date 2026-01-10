@@ -1,126 +1,239 @@
-// ================================
-// GOOGLE TRANSLATE SPEED BOOST
-// ================================
-const TRANSLATE_POOL_LIMIT = 10;
-let activeRequests = 0;
-const translateQueue = [];
-const translateCache = new Map();
+/* rpgmu.js
+ * STEP 2: AUTO TRANSLATION (Optimized + Safer)
+ * - Real batch for DeepSeek (1 request for many lines)
+ * - Strong placeholders: ⟦PH0⟧, restore with regex (global)
+ * - Retry/backoff for transient errors (429/5xx)
+ * - Concurrency pool (do NOT “bypass blocks”, just stabilize)
+ */
 
-function runTranslateTask(task) {
-  return new Promise((resolve, reject) => {
-    translateQueue.push({ task, resolve, reject });
-    processTranslateQueue();
-  });
-}
+"use strict";
 
-function processTranslateQueue() {
-  if (activeRequests >= TRANSLATE_POOL_LIMIT) return;
-  if (!translateQueue.length) return;
-
-  const { task, resolve, reject } = translateQueue.shift();
-  activeRequests++;
-
-  task()
-    .then(resolve)
-    .catch(reject)
-    .finally(() => {
-      activeRequests--;
-      processTranslateQueue();
-    });
-}
-
-// ================================
-// CONFIG
-// ================================
-const SEPARATOR_RE = /^---------\d+\s*$/; 
-const RPGM_NAME_TAG_RE = /^(\\n<.*?>)/; 
-const RPGM_CODE_RE = /(?:(?:\\\\N(?:\[(?:[0-9]{4})?\])?)|(?:\\N(?:\[(?:[0-9]{4})?\]|<(?:\\N\[(?:[0-9]{4})\])?>)?)|\\[a-zA-Z]+\[?[^\]]*\]?|\\n|\\\.|\\\||\\\!|\\\^|\\\$)/g;
-const VIETNAMESE_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
-
+/** =========================
+ *  DOM
+ *  ========================= */
 const els = {
-  input: document.getElementById('fileInput'),
-  start: document.getElementById('startBtn'),
-  stop: document.getElementById('stopBtn'),
-  copy: document.getElementById('copyBtn'),
-  dl: document.getElementById('downloadBtn'),
-  out: document.getElementById('outputArea'),
-  bar: document.getElementById('progressBar'),
-  pt: document.getElementById('progressText'),
-  log: document.getElementById('logConsole'),
-  batch: document.getElementById('batchSize'),
-  mode: document.getElementById('transMode'),
-  skipVi: document.getElementById('skipVietnamese')
+  input: document.getElementById("fileInput"),
+  start: document.getElementById("startBtn"),
+  stop: document.getElementById("stopBtn"),
+  copy: document.getElementById("copyBtn"),
+  dl: document.getElementById("downloadBtn"),
+  out: document.getElementById("outputArea"),
+  bar: document.getElementById("progressBar"),
+  pt: document.getElementById("progressText"),
+  log: document.getElementById("logConsole"),
+  batch: document.getElementById("batchSize"),
+  mode: document.getElementById("transMode"),
+  skipVi: document.getElementById("skipVietnamese"),
+
+  model: document.getElementById("transModel"),
+  apiKey: document.getElementById("apiKey"),
+  apiKeyGroup: document.getElementById("apiKeyGroup"),
 };
 
-els.model = document.getElementById('transModel');
-els.apiKey = document.getElementById('apiKey');
-els.apiKeyGroup = document.getElementById('apiKeyGroup');
+const SEPARATOR_RE = /^---------\d+\s*$/;
+const VIETNAMESE_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 
-els.model.addEventListener('change', () => {
+/** =========================
+ *  Model select / warning modal (keep your existing behavior)
+ *  ========================= */
+els.model.addEventListener("change", () => {
   const m = els.model.value;
-  els.apiKeyGroup.style.display = m === 'deepseek' ? 'block' : 'none';
-
-  if (m === 'lingva' || m === 'google') {
+  els.apiKeyGroup.style.display = m === "deepseek" ? "block" : "none";
+  if (m === "lingva" || m === "google") {
     showLingvaWarning();
   }
 });
 
-const lingvaModal = document.getElementById('lingvaWarningModal');
-const confirmLingvaBtn = document.getElementById('confirmLingvaBtn');
-const cancelLingvaBtn = document.getElementById('cancelLingvaBtn');
-
-let pendingModel = null;
+const lingvaModal = document.getElementById("lingvaWarningModal");
+const confirmLingvaBtn = document.getElementById("confirmLingvaBtn");
+const cancelLingvaBtn = document.getElementById("cancelLingvaBtn");
 
 function showLingvaWarning() {
-  pendingModel = els.model.value;
-  lingvaModal.classList.remove('hidden');
+  lingvaModal.classList.remove("hidden");
 }
-
-confirmLingvaBtn.onclick = () => {
-  lingvaModal.classList.add('hidden');
-};
-
+confirmLingvaBtn.onclick = () => lingvaModal.classList.add("hidden");
 cancelLingvaBtn.onclick = () => {
-  lingvaModal.classList.add('hidden');
-  els.model.value = 'deepseek';
-  els.apiKeyGroup.style.display = 'block';
+  lingvaModal.classList.add("hidden");
+  els.model.value = "deepseek";
+  els.apiKeyGroup.style.display = "block";
 };
 
-let state = {
+/** =========================
+ *  State
+ *  ========================= */
+const state = {
   blocks: [],
   total: 0,
-  processed: 0,
+  doneBlocks: 0,
+  doneLines: 0,
+  totalLines: 0,
   isRunning: false,
-  abortCtrl: null
+  abortCtrl: null,
 };
 
+/** =========================
+ *  Logging (lighter)
+ *  ========================= */
+function addLog(type, left, right = "") {
+  const div = document.createElement("div");
+  div.className = "log-item";
+
+  let badge = `<span class="tag tag-skip">LOG</span>`;
+  if (type === "ok") badge = `<span class="tag tag-ok">OK</span>`;
+  else if (type === "exist") badge = `<span class="tag tag-exist">EXIST</span>`;
+  else if (type.startsWith("tag-")) badge = `<span class="tag ${type}">${type.replace("tag-", "").toUpperCase()}</span>`;
+  else if (type === "err") badge = `<span class="tag tag-skip">ERR</span>`;
+
+  div.innerHTML = `
+    ${badge}
+    <span style="color:#aaa">${(left || "").slice(0, 60)}</span>
+    <span style="margin:0 5px;color:#555">➔</span>
+    <span style="color:#fff">${(right || "").slice(0, 60)}</span>
+  `;
+
+  els.log.prepend(div);
+  while (els.log.children.length > 120) els.log.lastChild.remove();
+}
+
+/** =========================
+ *  Progress
+ *  ========================= */
+function updateUI() {
+  const pct = state.totalLines ? Math.round((state.doneLines / state.totalLines) * 100) : 0;
+  els.bar.style.width = pct + "%";
+  els.pt.textContent = `${pct}% (${state.doneLines}/${state.totalLines})`;
+}
+
+/** =========================
+ *  Placeholders: Strong & Stable
+ *  =========================
+ * We protect:
+ * - RPG Maker escape codes like \V[1], \N[2], \c[3], \I[5], \., \|, \!, \^, \$, \>, \<, \{, \}, \\ (literal backslash)
+ * - Format placeholders like %1, %2, {0}, {1}
+ *
+ * Token format: ⟦PH0⟧ ⟦PH1⟧ ...
+ */
+const RPGM_ESCAPE_RE = /\\\\|\\(?:[A-Za-z]+(?:\[[^\]]*])?(?:<[^>]*>)?|[{}|!^$<>.])/g;
+const FORMAT_PLACEHOLDER_RE = /%\d+|\{\d+\}/g;
+const PH_TOKEN_RE = /⟦\s*PH(\d+)\s*⟧/gi;
+
+function protectText(text) {
+  const placeholders = [];
+
+  const protectBy = (re) => {
+    text = text.replace(re, (m) => {
+      const id = placeholders.length;
+      placeholders.push(m);
+      return `⟦PH${id}⟧`;
+    });
+  };
+
+  protectBy(RPGM_ESCAPE_RE);
+  protectBy(FORMAT_PLACEHOLDER_RE);
+
+  return { safe: text, placeholders };
+}
+
+function restoreText(text, placeholders) {
+  return text.replace(PH_TOKEN_RE, (_, n) => placeholders[Number(n)] ?? `⟦PH${n}⟧`);
+}
+
+/** If placeholders are lost/changed -> fallback original to avoid breaking the game */
+function isPlaceholderSafe(originalSafe, translatedSafe) {
+  // Count PH tokens in originalSafe must be <= count in translatedSafe (should match)
+  const orig = (originalSafe.match(PH_TOKEN_RE) || []).length;
+  const trans = (translatedSafe.match(PH_TOKEN_RE) || []).length;
+  return trans >= orig;
+}
+
+/** =========================
+ *  Pool + Retry
+ *  ========================= */
+function createPool(limit) {
+  let active = 0;
+  const q = [];
+  const runNext = () => {
+    if (active >= limit) return;
+    const job = q.shift();
+    if (!job) return;
+    active++;
+    job()
+      .catch(() => {})
+      .finally(() => {
+        active--;
+        runNext();
+      });
+  };
+
+  return {
+    run(task) {
+      return new Promise((resolve, reject) => {
+        q.push(async () => {
+          try {
+            const res = await task();
+            resolve(res);
+          } catch (e) {
+            reject(e);
+          }
+        });
+        runNext();
+      });
+    },
+  };
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function withRetry(fn, { retries = 4, baseDelay = 400, signal } = {}) {
+  let attempt = 0;
+  while (true) {
+    if (signal?.aborted) throw new Error("Aborted");
+    try {
+      return await fn();
+    } catch (e) {
+      attempt++;
+      if (attempt > retries) throw e;
+
+      // exponential backoff + jitter
+      const delay = Math.round(baseDelay * Math.pow(2, attempt - 1) * (0.7 + Math.random() * 0.6));
+      await sleep(delay);
+    }
+  }
+}
+
+/** =========================
+ *  Providers
+ *  ========================= */
 function languageLabel(code) {
   return {
     vi: "Vietnamese",
     en: "English",
     id: "Indonesian",
     ms: "Malay",
-    tl: "Filipino"
+    tl: "Filipino",
   }[code] || code;
 }
 
-async function translateBatchDeepSeek(batch, targetLang, apiKey) {
-  const lines = batch.map(d => d.protectedText);
+/** ---- DeepSeek (true batch) ---- */
+const deepseekPool = createPool(2); // safe default; raise if your proxy/server supports it
+
+async function translateDeepSeekBatch(linesSafe, targetLang, apiKey, signal) {
+  // Prefix each line with an ID marker to parse safely.
+  const marked = linesSafe.map((t, i) => `⟦L${i}⟧ ${t}`);
 
   const prompt =
 `Translate the following RPG Maker dialogue lines to ${languageLabel(targetLang)} (code: ${targetLang}).
 
-RULES:
-- Some parts are placeholders like __PH0__, __PH1__. Keep them EXACTLY as-is and do NOT translate them.
-- Preserve RPGM syntax, variables, and tags.
-- DO NOT remove or add \\n or any RPGM escape codes.
-- Do NOT reorder, merge, or split lines.
-- Do NOT change placeholders or variables.
-- Return ONLY the translated lines, one per line, in the same order.
-- Do NOT add numbering, quotes, prefixes, or extra commentary.
+STRICT RULES:
+- Keep ALL placeholders EXACTLY: tokens like ⟦PH0⟧, ⟦PH1⟧ must remain unchanged.
+- Keep the line markers EXACTLY: ⟦L0⟧, ⟦L1⟧ ... do NOT remove or edit them.
+- DO NOT reorder, merge, or split lines.
+- Return ONLY the translated lines, one per line, preserving the same ⟦Lx⟧ prefix.
 
 LINES:
-${lines.join("\n")}`;
+${marked.join("\n")}`;
 
   const body = {
     apiKey,
@@ -135,51 +248,89 @@ ${lines.join("\n")}`;
   const res = await fetch("/api/deepseek-proxy", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal,
   });
 
   if (!res.ok) throw new Error("DeepSeek error " + res.status);
-
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content || "";
 
   const outLines = content
     .split(/\r?\n/)
-    .map(l => l.trim())
+    .map((l) => l.trim())
     .filter(Boolean);
 
-  return outLines;
+  // Map by marker ⟦Lx⟧
+  const map = new Map();
+  for (const l of outLines) {
+    const m = l.match(/^⟦L(\d+)⟧\s*(.*)$/);
+    if (!m) continue;
+    map.set(Number(m[1]), m[2]);
+  }
+
+  const results = [];
+  for (let i = 0; i < linesSafe.length; i++) {
+    results.push(map.get(i) ?? "");
+  }
+  return results;
 }
 
-// ================================
-// LOG
-// ================================
-function addLog(type, line, extra = "") {
-  const div = document.createElement('div');
-  div.className = 'log-item';
+/** ---- Lingva (fallback endpoints; stable but slow; keep low concurrency) ---- */
+const LINGVA_HOSTS = [
+  "https://lingva.ml",
+  "https://translate.plausibility.cloud",
+  "https://lingva.vercel.app",
+  "https://lingva.garudalinux.org",
+  "https://lingva.lunar.icu",
+];
 
-  let badge = `<span class="tag tag-skip">LOG</span>`;
-  if (type === 'ok') badge = `<span class="tag tag-ok">OK</span>`;
-  else if (type === 'exist') badge = `<span class="tag tag-exist">EXIST</span>`;
-  else if (type.startsWith('tag-'))
-    badge = `<span class="tag ${type}">${type.replace('tag-','').toUpperCase()}</span>`;
+const lingvaPool = createPool(3);
 
-  div.innerHTML = `
-    ${badge}
-    <span style="color:#aaa">${line.slice(0,40)}</span>
-    <span style="margin:0 5px;color:#555">➔</span>
-    <span style="color:#fff">${extra.slice(0,40)}</span>
-  `;
+async function lingvaRequest(text, target, signal) {
+  // randomize hosts each request for reliability (not for bypassing)
+  const hosts = [...LINGVA_HOSTS].sort(() => Math.random() - 0.5);
 
-  els.log.prepend(div);
-  if (els.log.children.length > 60) els.log.lastChild.remove();
+  for (const host of hosts) {
+    try {
+      const res = await fetch(
+        host + "/api/v1/auto/" + target + "/" + encodeURIComponent(text),
+        { signal }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      return data.translation || data.translatedText || text;
+    } catch (_) {}
+  }
+  throw new Error("Lingva: all endpoints failed");
 }
 
-// ================================
-// LOAD FILE
-// ================================
-els.input.addEventListener('change', async e => {
-  const file = e.target.files[0];
+/** ---- Google (unofficial endpoint - not guaranteed) ---- */
+const googlePool = createPool(6);
+const translateCache = new Map();
+
+async function googleTranslate(text, sl, tl, signal) {
+  if (!text.trim()) return text;
+
+  const cacheKey = `${sl}->${tl}::${text}`;
+  if (translateCache.has(cacheKey)) return translateCache.get(cacheKey);
+
+  const url =
+    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error("Google error " + res.status);
+  const data = await res.json();
+  const out = (data?.[0] || []).map(x => x?.[0] || "").join("");
+  translateCache.set(cacheKey, out);
+  return out;
+}
+
+/** =========================
+ *  TXT Load -> blocks
+ *  ========================= */
+els.input.addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
   if (!file) return;
 
   const text = await file.text();
@@ -188,350 +339,39 @@ els.input.addEventListener('change', async e => {
   state.blocks = [];
   let current = null;
 
-  for (let line of lines) {
+  for (const line of lines) {
     if (SEPARATOR_RE.test(line)) {
       if (current) state.blocks.push(current);
       current = { header: line.trim(), lines: [], translated: [] };
     } else {
-      if (!current) current = { header: '', lines: [], translated: [] };
+      if (!current) current = { header: "", lines: [], translated: [] };
       current.lines.push(line);
     }
   }
   if (current) state.blocks.push(current);
 
   state.total = state.blocks.length;
+  state.doneBlocks = 0;
+  state.doneLines = 0;
+
+  // totalLines = count of all non-header lines in blocks
+  state.totalLines = state.blocks.reduce((sum, b) => sum + b.lines.length, 0);
+
   els.out.value = "";
   els.log.innerHTML = "";
-  els.pt.textContent = "0%";
+  els.pt.textContent = "Ready";
+  els.bar.style.width = "0%";
   els.start.disabled = false;
+  els.stop.disabled = true;
+  els.copy.disabled = true;
+  els.dl.disabled = true;
 
-  addLog("ok", "File loaded", `${state.total} blocks`);
+  addLog("ok", "File loaded", `${state.total} blocks / ${state.totalLines} lines`);
 });
 
-// ================================
-// START TRANSLATE
-// ================================
-els.start.addEventListener('click', async () => {
-  state.isRunning = true;
-  state.abortCtrl = new AbortController();
-  state.processed = 0;
-
-  els.start.disabled = true;
-  els.stop.disabled = false;
-
-  const batchSize = parseInt(els.batch.value) || 200;
-  const targetLang = els.mode.value;
-
-  for (let i = 0; i < state.blocks.length; i += batchSize) {
-    if (!state.isRunning) break;
-
-    const chunk = state.blocks.slice(i, i + batchSize);
-    await Promise.all(chunk.map(b =>
-      translateBlock(b, targetLang, state.abortCtrl.signal)
-    ));
-
-    state.processed += chunk.length;
-    updateUI();
-  }
-  finish();
-});
-
-const LINGVA_HOSTS = [
-  "https://lingva.ml",
-  "https://translate.plausibility.cloud",
-  "https://lingva.vercel.app",
-  "https://lingva.garudalinux.org",
-  "https://lingva.lunar.icu"
-];
-
-function delay(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-async function lingvaRequest(text, target) {
-  for (const host of LINGVA_HOSTS) {
-    try {
-      const res = await fetch(
-        host + "/api/v1/auto/" + target + "/" + encodeURIComponent(text)
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      return data.translation || data.translatedText || text;
-    } catch (e) {
-    }
-  }
-  throw new Error("Lingva: all endpoints failed");
-}
-
-async function translateBatchLingva(batch, targetLang) {
-  const out = [];
-  for (const d of batch) {
-    const translated = await lingvaRequest(d.protectedText, targetLang);
-    out.push(translated);
-    await delay(150);
-  }
-  return out;
-}
-
-// ================================
-// TRANSLATE BLOCK
-// ================================
-async function translateBlock(block, targetLang, signal) {
-  const model = els.model.value;
-  const apiKey = els.apiKey?.value || "";
-  const isSkipVi = els.skipVi.checked;
-
-  // =========================
-  // DEEPSEEK MODE
-  // =========================
-  if (model === "deepseek") {
-    if (!apiKey) throw new Error("DeepSeek API key is required");
-
-    const batch = [];
-    const meta = [];
-
-    for (let line of block.lines) {
-      if (!line.trim()) {
-        meta.push({ type: "empty", raw: line });
-        continue;
-      }
-
-      if (isSkipVi && VIETNAMESE_REGEX.test(line)) {
-        meta.push({ type: "skip", raw: line });
-        continue;
-      }
-
-      let nameTag = "";
-      let content = line;
-
-      const nameMatch = line.match(RPGM_NAME_TAG_RE);
-      if (nameMatch) {
-        nameTag = nameMatch[1];
-        content = line.slice(nameTag.length);
-      }
-
-      const ph = new Map();
-      let pid = 0;
-
-      const safe = content.replace(RPGM_CODE_RE, m => {
-        const k = `__PH${pid++}__`;
-        ph.set(k, m);
-        return k;
-      });
-
-      batch.push({ protectedText: safe });
-      meta.push({ type: "translated", nameTag, placeholders: ph });
-    }
-
-    if (batch.length === 0) {
-      block.translated = block.lines.slice();
-      return;
-    }
-
-    const translatedLines = await translateBatchDeepSeek(
-      batch,
-      targetLang,
-      apiKey
-    );
-
-    let tIndex = 0;
-    const result = [];
-
-    for (let i = 0; i < meta.length; i++) {
-      const m = meta[i];
-
-      if (m.type === "empty" || m.type === "skip") {
-        result.push(m.raw);
-        continue;
-      }
-
-      let out = translatedLines[tIndex++] || "";
-
-      m.placeholders.forEach((v, k) => {
-        out = out.replace(k, v);
-      });
-
-      if (m.nameTag) {
-        out = m.nameTag + (out.startsWith(" ") ? "" : " ") + out.trim();
-      }
-
-      result.push(out);
-      addLog(`tag-${targetLang}`, "", out);
-    }
-
-    block.translated = result;
-    return;
-  }
-  
-  // =========================
-  // LINGVA
-  // =========================
-  
-  else if (model === "lingva") {
-    const isSkipVi = els.skipVi.checked;
-  
-    const batch = [];
-    const meta = [];
-  
-    for (let line of block.lines) {
-      if (!line.trim()) {
-        meta.push({ type: "raw", value: line });
-        continue;
-      }
-  
-      if (isSkipVi && VIETNAMESE_REGEX.test(line)) {
-        meta.push({ type: "raw", value: line });
-        addLog("exist", line, "SKIP");
-        continue;
-      }
-  
-      let nameTag = "";
-      let content = line;
-  
-      const nameMatch = line.match(RPGM_NAME_TAG_RE);
-      if (nameMatch) {
-        nameTag = nameMatch[1];
-        content = line.slice(nameTag.length);
-      }
-  
-      const ph = new Map();
-      let pid = 0;
-  
-      const safe = content.replace(RPGM_CODE_RE, m => {
-        const k = `__PH${pid++}__`;
-        ph.set(k, m);
-        return k;
-      });
-  
-      batch.push({ protectedText: safe });
-      meta.push({ type: "translated", nameTag, placeholders: ph });
-    }
-  
-    const translatedLines = await translateBatchLingva(batch, targetLang);
-  
-    let t = 0;
-    const result = [];
-  
-    for (const m of meta) {
-      if (m.type === "raw") {
-        result.push(m.value);
-        continue;
-      }
-  
-      let out = translatedLines[t++] || "";
-  
-      m.placeholders.forEach((v, k) => {
-        out = out.replace(k, v);
-      });
-  
-      if (m.nameTag) {
-        out = m.nameTag + (out.startsWith(" ") ? "" : " ") + out.trim();
-      }
-  
-      result.push(out);
-      addLog(`tag-${targetLang}`, "", out);
-    }
-  
-    block.translated = result;
-    return;
-  }
-
-  // =========================
-  // GOOGLE
-  // =========================
-  const res = [];
-
-  for (let line of block.lines) {
-    if (!line.trim()) {
-      res.push(line);
-      continue;
-    }
-
-    let nameTag = "";
-    let content = line;
-
-    const nameMatch = line.match(RPGM_NAME_TAG_RE);
-    if (nameMatch) {
-      nameTag = nameMatch[1];
-      content = line.slice(nameTag.length);
-    }
-
-    if (!content.trim()) {
-      res.push(line);
-      continue;
-    }
-
-    if (isSkipVi && VIETNAMESE_REGEX.test(content)) {
-      res.push(line);
-      addLog("exist", content, "SKIP");
-      continue;
-    }
-
-    const ph = new Map();
-    let pid = 0;
-
-    const safe = content.replace(RPGM_CODE_RE, m => {
-      const k = `__PH${pid++}__`;
-      ph.set(k, m);
-      return k;
-    });
-
-    try {
-      const trans = await googleTranslate(
-        safe,
-        "auto",
-        targetLang,
-        signal
-      );
-
-      let final = trans;
-      ph.forEach((v, k) => {
-        final = final.replace(k, v);
-      });
-
-      if (nameTag)
-        final = nameTag + (content.startsWith(" ") ? " " : "") + final.trim();
-
-      res.push(final);
-      addLog(`tag-${targetLang}`, content, final);
-    } catch {
-      res.push(line);
-    }
-  }
-
-  block.translated = res;
-}
-
-// ================================
-// GOOGLE TRANSLATE
-// ================================
-async function googleTranslate(text, sl, tl, signal) {
-  if (!text.trim()) return text;
-
-  const cacheKey = `${sl}->${tl}::${text}`;
-  if (translateCache.has(cacheKey))
-    return translateCache.get(cacheKey);
-
-  return runTranslateTask(async () => {
-    const url =
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url, { signal });
-    const data = await res.json();
-    const out = data[0].map(x => x[0]).join('');
-    translateCache.set(cacheKey, out);
-    return out;
-  });
-}
-
-// ================================
-// UI / FINISH
-// ================================
-function updateUI() {
-  const pct = Math.round((state.processed / state.total) * 100);
-  els.bar.style.width = pct + "%";
-  els.pt.textContent = pct + "%";
-}
-
+/** =========================
+ *  Build output
+ *  ========================= */
 function buildResultText() {
   return state.blocks.map(b =>
     (b.header ? b.header + "\n" : "") +
@@ -546,30 +386,205 @@ function finish() {
   els.stop.disabled = true;
   els.copy.disabled = false;
   els.dl.disabled = false;
-  addLog("ok", "DONE", "All files processed");
+  addLog("ok", "DONE", "All processed");
 }
 
-// ================================
-// BUTTONS
-// ================================
-els.stop.addEventListener('click', () => {
+/** =========================
+ *  Translate pipeline (true batching)
+ *  ========================= */
+function shouldSkipLine(line, skipVi) {
+  if (!line || !line.trim()) return true; // treat as non-translatable
+  if (skipVi && VIETNAMESE_REGEX.test(line)) return true;
+  return false;
+}
+
+els.start.addEventListener("click", async () => {
+  const model = els.model.value;
+  const targetLang = els.mode.value;
+  const apiKey = (els.apiKey && els.apiKey.value) ? els.apiKey.value.trim() : "";
+  const skipVi = !!els.skipVi.checked;
+
+  if (model === "deepseek" && !apiKey) {
+    alert("DeepSeek API key is required.");
+    return;
+  }
+
+  state.isRunning = true;
+  state.abortCtrl = new AbortController();
+  const signal = state.abortCtrl.signal;
+
+  els.start.disabled = true;
+  els.stop.disabled = false;
+  els.copy.disabled = true;
+  els.dl.disabled = true;
+
+  // Build tasks (flatten lines)
+  const tasks = [];
+  for (let bi = 0; bi < state.blocks.length; bi++) {
+    const block = state.blocks[bi];
+    block.translated = block.lines.slice(); // start as original
+    for (let li = 0; li < block.lines.length; li++) {
+      const raw = block.lines[li];
+      if (shouldSkipLine(raw, skipVi)) {
+        if (skipVi && raw && VIETNAMESE_REGEX.test(raw)) addLog("exist", raw, "SKIP");
+        continue;
+      }
+      const { safe, placeholders } = protectText(raw);
+      tasks.push({ bi, li, raw, safe, placeholders });
+    }
+  }
+
+  if (!tasks.length) {
+    addLog("ok", "Nothing to translate", "All lines skipped/empty");
+    finish();
+    return;
+  }
+
+  addLog("ok", "Start", `Model=${model}, target=${targetLang}, lines=${tasks.length}`);
+
+  try {
+    // Batching parameter:
+    // - For DeepSeek: number of lines per request
+    // - For others: used as concurrency-ish guideline (still per line)
+    const batchSize = Math.max(1, parseInt(els.batch.value, 10) || 20);
+
+    if (model === "deepseek") {
+      // Build batches by line count + safety char limit
+      const MAX_CHARS = 9000; // adjust if your proxy/model allows more
+      const batches = [];
+      let cur = [];
+      let curChars = 0;
+
+      for (const t of tasks) {
+        const add = t.safe.length + 12;
+        if (cur.length >= batchSize || (curChars + add) > MAX_CHARS) {
+          batches.push(cur);
+          cur = [];
+          curChars = 0;
+        }
+        cur.push(t);
+        curChars += add;
+      }
+      if (cur.length) batches.push(cur);
+
+      for (const batch of batches) {
+        if (!state.isRunning) break;
+
+        const safeLines = batch.map(x => x.safe);
+
+        const translatedSafe = await deepseekPool.run(() =>
+          withRetry(
+            () => translateDeepSeekBatch(safeLines, targetLang, apiKey, signal),
+            { retries: 4, baseDelay: 500, signal }
+          )
+        );
+
+        // Apply
+        for (let i = 0; i < batch.length; i++) {
+          const t = batch[i];
+          let outSafe = translatedSafe[i] || "";
+
+          // Validate placeholders
+          if (!isPlaceholderSafe(t.safe, `⟦PH0⟧`.includes("PH") ? outSafe : outSafe)) {
+            // If model removed tokens -> fallback raw to avoid corruption
+            state.blocks[t.bi].translated[t.li] = t.raw;
+            addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
+          } else {
+            const restored = restoreText(outSafe, t.placeholders);
+            state.blocks[t.bi].translated[t.li] = restored;
+            addLog(`tag-${targetLang}`, t.raw, restored);
+          }
+
+          state.doneLines++;
+        }
+
+        updateUI();
+      }
+    }
+
+    else if (model === "lingva") {
+      // Lingva is free: keep concurrency low to reduce failures
+      const jobs = tasks.map((t) =>
+        lingvaPool.run(() =>
+          withRetry(async () => {
+            const outSafe = await lingvaRequest(t.safe, targetLang, signal);
+
+            // If placeholders got broken -> fallback
+            if (!isPlaceholderSafe(t.safe, outSafe)) {
+              state.blocks[t.bi].translated[t.li] = t.raw;
+              addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
+            } else {
+              const restored = restoreText(outSafe, t.placeholders);
+              state.blocks[t.bi].translated[t.li] = restored;
+              addLog(`tag-${targetLang}`, t.raw, restored);
+            }
+
+            state.doneLines++;
+            if (state.doneLines % 10 === 0) updateUI();
+          }, { retries: 3, baseDelay: 400, signal })
+        )
+      );
+
+      await Promise.all(jobs);
+      updateUI();
+    }
+
+    else {
+      // Google unofficial: concurrency limited; not guaranteed stable at high speed
+      const jobs = tasks.map((t) =>
+        googlePool.run(() =>
+          withRetry(async () => {
+            const outSafe = await googleTranslate(t.safe, "auto", targetLang, signal);
+
+            if (!isPlaceholderSafe(t.safe, outSafe)) {
+              state.blocks[t.bi].translated[t.li] = t.raw;
+              addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
+            } else {
+              const restored = restoreText(outSafe, t.placeholders);
+              state.blocks[t.bi].translated[t.li] = restored;
+              addLog(`tag-${targetLang}`, t.raw, restored);
+            }
+
+            state.doneLines++;
+            if (state.doneLines % 10 === 0) updateUI();
+          }, { retries: 3, baseDelay: 350, signal })
+        )
+      );
+
+      await Promise.all(jobs);
+      updateUI();
+    }
+
+    finish();
+  } catch (err) {
+    addLog("err", "Stopped/Error", err.message || String(err));
+    finish();
+  }
+});
+
+/** =========================
+ *  Stop / Copy / Download
+ *  ========================= */
+els.stop.addEventListener("click", () => {
+  state.isRunning = false;
   if (state.abortCtrl) state.abortCtrl.abort();
+  addLog("ok", "STOP", "User aborted");
   finish();
 });
 
-els.copy.addEventListener('click', async () => {
+els.copy.addEventListener("click", async () => {
   if (!els.out.value.trim()) return alert("There is no content to copy.");
   await navigator.clipboard.writeText(els.out.value);
   alert("Copied!");
 });
 
-els.dl.addEventListener('click', () => {
+els.dl.addEventListener("click", () => {
   const lang = els.mode.value;
   const blob = new Blob([els.out.value], { type: "text/plain;charset=utf-8" });
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = els.input.files[0]
-    ? els.input.files[0].name.replace('.txt', `_${lang}.txt`)
+    ? els.input.files[0].name.replace(".txt", `_${lang}.txt`)
     : `translated_${lang}.txt`;
   a.click();
 });
