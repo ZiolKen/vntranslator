@@ -1,5 +1,4 @@
         <!DOCTYPE html>
- 
         <html lang="en">
  
         <head>
@@ -7,9 +6,6 @@
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta content="ie=edge" http-equiv="X-UA-Compatible">
             <title>RPGM Ultimate Tool (Editor + Translator)</title>
-            <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-            <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-            <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
@@ -40,7 +36,74 @@
             <h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">RPGM Ultimate <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool</span>
             </h1>
             <div style="max-width: 1200px; margin: 0 auto;">
-                <div id="react-root" style="margin-bottom: 40px;"></div>
+                <div id="step1-root" style="margin-bottom: 40px;">
+                  <div class="card cyber-grid" id="step1Card">
+                    <div class="form-group">
+                      <div class="form-group">
+                        <h2>STEP 1: EXTRACTION & PACKAGING</h2>
+                      </div>
+                      <label class="label" id="fileCountLabel">0 file(s) is open.</label>
+                    </div>
+                
+                    <div class="form-group">
+                      <div class="form-group">
+                        <label for="json-upload" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full cursor-pointer inline-flex items-center gap-3 shadow-lg transition transform hover:-translate-y-1">
+                          <i class="fas fa-folder-open"></i>
+                          <span>SELECT ORIGINAL JSON FILE(s)</span>
+                        </label>
+                        <input id="json-upload" type="file" accept=".json" multiple style="display:none;" />
+                        <p style="text-align:center; font-size:13px; color:#666; margin-bottom:20px">
+                          Select multiple files (hold Ctrl) from the game data folder (Actors.json, Armors.json, Items.json, CommonEvents.json, MapXXX.json, Skills.json, System.json, ...)
+                        </p>
+                
+                        <div class="tab-bar" id="fileTabs" style="display:none;"></div>
+                      </div>
+                
+                      <div class="form-group">
+                        <div class="form-group">
+                          <textarea
+                            id="editorArea"
+                            class="editor-textarea w-full h-[500px] p-4 text-sm text-gray-800 bg-transparent focus:bg-white focus:outline-none transition wrap-off"
+                            placeholder="The JSON data will appear here..."
+                            spellcheck="false"
+                          ></textarea>
+                
+                          <div class="button-group" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; text-align:center">
+                            <button id="exportTxtBtn" class="p-2 hover:bg-purple-100 text-gray-600 hover:text-purple-700 rounded transition" title="1. Export to TXT for translation">
+                              <i class="fas fa-file-export fa-lg"></i>
+                            </button>
+                            <button id="importTxtBtn" class="p-2 hover:bg-green-100 text-gray-600 hover:text-green-700 rounded transition" title="2. Import translated TXT">
+                              <i class="fas fa-file-import fa-lg"></i>
+                            </button>
+                          </div>
+                
+                          <input id="txt-upload" type="file" accept=".txt" style="display:none;" />
+                        </div>
+                      </div>
+                
+                      <div class="form-group">
+                        <div class="form-group">
+                          <span class="log-container" style="text-align:center; margin-bottom:12px; display:block" id="step1Status">Waiting file...</span>
+                
+                          <label class="custom-checkbox">
+                            <input type="checkbox" id="wordWrapToggle" />
+                            <span class="checkmark"></span>
+                            <span>Word Wrap</span>
+                          </label>
+                        </div>
+                
+                        <button
+                          id="saveBtn"
+                          disabled
+                          class="font-bold py-2 px-6 rounded shadow flex items-center gap-2 bg-gray-300 text-gray-500 cursor-not-allowed"
+                        >
+                          <i class="fas fa-save"></i>
+                          <span id="saveBtnText">SAVE JSON (DONE)</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
  
                 <hr style="border:0; border-top:2px dashed #ccc; margin: 40px 0;">
  
