@@ -1,3 +1,4 @@
+(() => {
 "use strict";
 
 const els = {
@@ -521,3 +522,4 @@ els.dl.addEventListener("click", () => {
     : `translated_${lang}.txt`;
   a.click();
 });
+})();
