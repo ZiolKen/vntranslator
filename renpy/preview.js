@@ -128,39 +128,90 @@
     }
 
     async function translateWithDeepSeek(text) {
-      const prompt = `[REN'PY TRANSLATION]
-        Translate this to ${langTarget} while preserving all special formats:
-        - Keep {color=}, [tags], and \\n exactly as-is
-        - Only translate text outside these markers
-        - Return JUST the translated text with NO additional comments
-        
-        Text to translate: "${text}"`;
-        
-      const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: 'You are a precise Ren\'Py translator' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.1,
-          max_tokens: 2000
-        })
-      });
-      
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.error?.message || 'API error');
+      text = (text ?? '').toString();
+    
+      if (!text.trim()) return '';
+    
+      const prompt = [
+        "[REN'PY TRANSLATION - SINGLE LINE OUTPUT]",
+        `Target language: ${langTarget}`,
+        "",
+        "Rules (MUST follow exactly):",
+        "1) Output ONLY the translated text. No explanations, no quotes wrapping, no numbering, no prefixes like 'Translation:'",
+        "2) Output MUST be a SINGLE LINE. Do NOT insert newline characters.",
+        "3) Preserve EXACTLY these tokens if present: \\n, {color=...}, {…}, [tags], %(vars)s, [player], and any Ren'Py formatting markers.",
+        "4) Only translate human-readable text outside those markers.",
+        "5) Keep spacing natural in the target language.",
+        "",
+        "Text:",
+        text
+      ].join("\n");
+    
+      const bodyForProxy = {
+        apiKey: apiKey,
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a professional game localization translator specializing in Ren'Py visual novels. " +
+              "You follow formatting rules strictly and return only the final translated string."
+          },
+          { role: "user", content: prompt }
+        ],
+        stream: false,
+        temperature: 0.1,
+        max_tokens: 2000
+      };
+    
+      let response;
+      try {
+        response = await fetch("/api/deepseek-proxy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyForProxy)
+        });
+      } catch (networkErr) {
+        console.error("DeepSeek proxy network error:", networkErr);
+        throw new Error(
+          "Network error when calling DeepSeek proxy: " +
+            (networkErr?.message || String(networkErr))
+        );
       }
-
-      const data = await res.json();
-      const result = data.choices?.[0]?.message?.content;
-      return result ? result.replace(/^"+|"+$/g, '').trim() : text;
+    
+      if (!response.ok) {
+        const textErr = await response.text().catch(() => "");
+        console.error("DeepSeek proxy HTTP error:", response.status, textErr);
+        throw new Error(
+          `DeepSeek/proxy error ${response.status}: ${textErr || "Unknown error"}`
+        );
+      }
+    
+      const data = await response.json().catch(() => ({}));
+      let out = data?.choices?.[0]?.message?.content;
+    
+      if (!out || !String(out).trim()) {
+        console.error("DeepSeek proxy full JSON:", data);
+        throw new Error("DeepSeek response did not contain any content.");
+      }
+    
+      out = String(out);
+    
+      out = out.replace(/^\s*(translation|translated text|result)\s*:\s*/i, "");
+    
+      out = out.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").trim();
+    
+      out = out
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(Boolean)
+        .join(" ");
+    
+      out = out.replace(/[ \t]{2,}/g, " ").trim();
+    
+      if (!out) return text;
+    
+      return out;
     }
 
     async function translateWithLingva(text) {
