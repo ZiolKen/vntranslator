@@ -970,22 +970,28 @@
             el.libreWarningModal.style.display = 'none';
           }
         
-          function setupModelSelectBehavior() {
-            if (!el.modelSelect) return;
+        function setupModelSelectBehavior() {
+          if (!el.modelSelect) return;
         
-            const apply = () => {
-              const value = el.modelSelect.value;
-              if (value === 'deepseek') {
-                if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'block';
-              } else {
-                if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
-                showLibreModal();
-              }
-            };
+          const apply = () => {
+            const value = el.modelSelect.value;
         
-            el.modelSelect.addEventListener('change', apply);
-            apply();
-          }
+            if (value === 'deepseek') {
+              if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'block';
+              if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
+            } else if (value === 'deepl') {
+              if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
+              if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'block';
+            } else {
+              if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
+              if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
+              showLibreModal();
+            }
+          };
+        
+          el.modelSelect.addEventListener('change', apply);
+          apply();
+        }
         
           function setupModalBehavior() {
             if (el.libreWarningClose) {
