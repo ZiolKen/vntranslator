@@ -44,15 +44,15 @@
     };
 
     if (!ui.jsonUpload || !ui.editor || !ui.status || !ui.fileCountLabel || !ui.saveBtn) {
-      console.error("[Step1] Missing elements:", ui);
+      console.error("[Step 1] Missing elements:", ui);
       if (ui.status) {
         ui.status.textContent =
-          "❌ Step1 init failed: missing elements (check IDs/HTML). Open Console (F12) to see details.";
+          "❌ Init failed: missing elements.";
       }
       return;
     }
 
-    ui.status.textContent = "✅ READY - Select JSON file(s)…";
+    ui.status.textContent = "✅ READY - Awaiting file(s)…";
     console.log("[RPGMU]: Loaded");
 
     const state = {
