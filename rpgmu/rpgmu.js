@@ -18,18 +18,31 @@ const els = {
   model: document.getElementById("transModel"),
   apiKey: document.getElementById("apiKey"),
   apiKeyGroup: document.getElementById("apiKeyGroup"),
+  
+  deeplKey: document.getElementById("deeplApiKey"),
+  deeplKeyGroup: document.getElementById("deeplKeyGroup"),
 };
 
 const SEPARATOR_RE = /^---------\d+\s*$/;
 const VIETNAMESE_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 
-els.model.addEventListener("change", () => {
+function syncModelUI(showWarnings = false) {
   const m = els.model.value;
-  els.apiKeyGroup.style.display = m === "deepseek" ? "block" : "none";
-  if (m === "lingva" || m === "google") {
+
+  if (els.apiKeyGroup) {
+    els.apiKeyGroup.style.display = (m === "deepseek") ? "block" : "none";
+  }
+  if (els.deeplKeyGroup) {
+    els.deeplKeyGroup.style.display = (m === "deepl") ? "block" : "none";
+  }
+
+  if (showWarnings && (m === "lingva" || m === "google")) {
     showLingvaWarning();
   }
-});
+}
+
+els.model.addEventListener("change", () => syncModelUI(true));
+syncModelUI(false);
 
 const lingvaModal = document.getElementById("lingvaWarningModal");
 const confirmLingvaBtn = document.getElementById("confirmLingvaBtn");
@@ -186,6 +199,47 @@ function languageLabel(code) {
     ms: "Malay",
     tl: "Filipino",
   }[code] || code;
+}
+
+function toDeepLTargetLang(code) {
+  switch (code) {
+    case "vi": return "VI";
+    case "id": return "ID";
+    case "en": return "EN-US";
+    default: return null;
+  }
+}
+
+const deeplPool = createPool(2);
+
+async function translateDeepLBatch(linesSafe, targetLang, apiKey, signal) {
+  const dlTarget = toDeepLTargetLang(targetLang);
+  if (!dlTarget) {
+    throw new Error(`DeepL does not support target language "${targetLang}" in this tool.`);
+  }
+
+  const body = {
+    apiKey,
+    text: linesSafe,
+    target_lang: dlTarget,
+    preserve_formatting: true,
+  };
+
+  const res = await fetch("/api/deepl-trans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`DeepL error ${res.status}: ${errText || "Request failed"}`);
+  }
+
+  const data = await res.json();
+  const translations = Array.isArray(data?.translations) ? data.translations : [];
+  return translations.map((t) => t?.text || "");
 }
 
 const deepseekPool = createPool(2);
@@ -371,6 +425,21 @@ els.start.addEventListener("click", async () => {
     alert("DeepSeek API key is required.");
     return;
   }
+  
+  const deeplApiKey = (els.deeplKey && els.deeplKey.value) ? els.deeplKey.value.trim() : "";
+
+  if (model === "deepl" && !deeplApiKey) {
+    alert("DeepL API key is required.");
+    return;
+  }
+
+  if (model === "deepl" && !toDeepLTargetLang(targetLang)) {
+    alert(
+      `DeepL currently supports these targets in this tool: vi, id, en.\n` +
+      `You selected: ${targetLang}. Please change language or use another model.`
+    );
+    return;
+  }
 
   state.isRunning = true;
   state.abortCtrl = new AbortController();
@@ -445,6 +514,60 @@ els.start.addEventListener("click", async () => {
           let outSafe = translatedSafe[i] || "";
 
           if (!isPlaceholderSafe(t.safe, `⟦PH0⟧`.includes("PH") ? outSafe : outSafe)) {
+            state.blocks[t.bi].translated[t.li] = t.raw;
+            addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
+          } else {
+            const restored = restoreText(outSafe, t.placeholders);
+            state.blocks[t.bi].translated[t.li] = restored;
+            addLog(`tag-${targetLang}`, t.raw, restored);
+          }
+
+          state.doneLines++;
+        }
+
+        updateUI();
+      }
+    }
+    
+    else if (model === "deepl") {
+      const MAX_BYTES = 120 * 1024;
+      const batches = [];
+      let cur = [];
+      let curBytes = 0;
+
+      const batchSize = Math.max(1, parseInt(els.batch.value, 10) || 20);
+
+      for (const t of tasks) {
+        const add = (t.safe?.length || 0) + 64;
+
+        if (cur.length >= batchSize || (curBytes + add) > MAX_BYTES) {
+          if (cur.length) batches.push(cur);
+          cur = [];
+          curBytes = 0;
+        }
+
+        cur.push(t);
+        curBytes += add;
+      }
+      if (cur.length) batches.push(cur);
+
+      for (const batch of batches) {
+        if (!state.isRunning) break;
+
+        const safeLines = batch.map(x => x.safe);
+
+        const translatedSafe = await deeplPool.run(() =>
+          withRetry(
+            () => translateDeepLBatch(safeLines, targetLang, deeplApiKey, signal),
+            { retries: 3, baseDelay: 500, signal }
+          )
+        );
+
+        for (let i = 0; i < batch.length; i++) {
+          const t = batch[i];
+          const outSafe = translatedSafe[i] || "";
+
+          if (!isPlaceholderSafe(t.safe, outSafe)) {
             state.blocks[t.bi].translated[t.li] = t.raw;
             addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
           } else {
