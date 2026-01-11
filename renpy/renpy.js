@@ -22,6 +22,8 @@
             libreWarningClose: document.querySelector('#libreWarningModal .close-modal'),
             confirmLibre: document.getElementById('confirmLibre'),
             langTarget: document.getElementById('langTarget'),
+            deeplKeyContainer: document.getElementById('deeplKeyContainer'),
+            deeplApiKey: document.getElementById('deeplApiKey'),
           };
         
           const state = {
@@ -54,6 +56,31 @@
         
             return codeOrName || '';
           }
+        
+        function getDeepLLangCode(lang) {
+          if (!lang) return 'EN-US';
+        
+          const v = String(lang).trim();
+          const low = v.toLowerCase();
+        
+          if (low === 'bahasa indonesia' || low === 'indonesian' || low === 'id') return 'ID';
+          if (low === 'vietnamese' || low === 'vi') return 'VI';
+          if (low === 'malay' || low === 'ms') return 'MS';
+          if (low === 'filipino' || low === 'tl' || low === 'tagalog' || low === 'fil') return 'TL';
+        
+          if (low === 'english' || low === 'en') return 'EN-US';
+          if (low === 'en-us') return 'EN-US';
+          if (low === 'en-gb') return 'EN-GB';
+        
+          if (/^[a-z]{2}$/i.test(v)) return v.toUpperCase();
+          if (/^[a-z]{2}-[a-z]{2}$/i.test(v)) return v.toUpperCase();
+        
+          return 'EN-US';
+        }
+        
+        function needsDeepLQualityModel(targetCode) {
+          return targetCode === 'MS' || targetCode === 'TL';
+        }
         
           function escapeHtml(str) {
             const div = document.createElement('div');
@@ -399,7 +426,52 @@
         
           return outLines;
         }
-          
+        
+        async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
+          const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+          const targetCode = getDeepLLangCode(targetLang);
+        
+          const bodyForProxy = {
+            apiKey: apiKey,
+            text: lines,
+            target_lang: targetCode,
+            preserve_formatting: 1,
+            ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {}),
+          };
+        
+          let response;
+          try {
+            response = await fetch('/api/deepl-trans', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(bodyForProxy),
+            });
+          } catch (networkErr) {
+            console.error('DeepL proxy network error:', networkErr);
+            throw new Error('*️⃣ Network error when calling DeepL proxy: ' + networkErr.message);
+          }
+        
+          if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            console.error('DeepL proxy HTTP error:', response.status, text);
+            throw new Error(`*️⃣ DeepL/proxy error ${response.status}: ${text}`);
+          }
+        
+          const data = await response.json();
+          const translations = Array.isArray(data?.translations) ? data.translations : [];
+        
+          const outLines = translations.map(t => (t && typeof t.text === 'string') ? t.text : '');
+        
+          if (outLines.length !== lines.length) {
+            log(
+              `*️⃣ Warning: expected ${lines.length} lines from DeepL but got ${outLines.length}. Mapping by order anyway.`,
+              'warn'
+            );
+          }
+        
+          return outLines;
+        }
+         
           const LINGVA_LANG_MAP = {
             'Bahasa Indonesia': 'id',
             Indonesian: 'id',
@@ -527,6 +599,7 @@
             const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
             const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
             const targetLang = el.langTarget ? el.langTarget.value : 'id';
+            const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
 
             updateControlButtons();
 
@@ -561,6 +634,8 @@
                     targetLang,
                     apiKey
                   );
+                } else if (model === 'deepl') {
+                  translatedLines = await translateBatchDeepL(batchDialogs, targetLang, deeplApiKey);
                 } else {
                   translatedLines = await translateBatchLingva(
                     batchDialogs,
@@ -627,6 +702,13 @@
         
             if (model === 'deepseek' && !apiKey) {
               log('*️⃣ Please provide your DeepSeek API key.', 'error');
+              return;
+            }
+        
+            const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
+        
+            if (model === 'deepl' && !deeplApiKey) {
+              log('*️⃣ Please provide your DeepL API key.', 'error');
               return;
             }
         
