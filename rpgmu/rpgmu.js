@@ -77,9 +77,21 @@ function addLog(type, left, right = "") {
 }
 
 function updateUI() {
-  const pct = state.totalLines ? Math.round((state.doneLines / state.totalLines) * 100) : 0;
+  const total = Number(state.totalLines) || 0;
+  const done = Number(state.doneLines) || 0;
+
+  const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+
   els.bar.style.width = pct + "%";
-  els.pt.textContent = `${pct}% (${state.doneLines}/${state.totalLines})`;
+  els.pt.textContent = total ? `${pct}% (${done}/${total})` : "Ready";
+}
+
+function resetProgress(totalLines = 0) {
+  state.doneLines = 0;
+  state.totalLines = Number(totalLines) || 0;
+
+  els.bar.style.width = "0%";
+  els.pt.textContent = state.totalLines ? `0% (0/${state.totalLines})` : "Ready";
 }
 
 const RPGM_ESCAPE_RE = /\\\\|\\(?:[A-Za-z]+(?:\[[^\]]*])?(?:<[^>]*>)?|[{}|!^$<>.])/g;
@@ -347,6 +359,9 @@ function shouldSkipLine(line, skipVi) {
 }
 
 els.start.addEventListener("click", async () => {
+  resetProgress(0);
+  els.pt.textContent = "Preparing…";
+  
   const model = els.model.value;
   const targetLang = els.mode.value;
   const apiKey = (els.apiKey && els.apiKey.value) ? els.apiKey.value.trim() : "";
@@ -386,6 +401,9 @@ els.start.addEventListener("click", async () => {
     finish();
     return;
   }
+  
+  state.totalLines = tasks.length;
+  updateUI();
 
   addLog("ok", "Start", `Model=${model}, target=${targetLang}, lines=${tasks.length}`);
 
