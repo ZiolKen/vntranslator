@@ -1,6 +1,9 @@
     let currentPage = 1;
     const pageSize = 50;
     
+    const TRANSLATOR_CREDIT =
+        '# Translated by VNTranslator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+    
     function safeJsonParse(data, fallback) {
       try {
         return data ? JSON.parse(data) : fallback;
@@ -126,13 +129,13 @@
 
     async function translateWithDeepSeek(text) {
       const prompt = `[REN'PY TRANSLATION]
-Translate this to ${langTarget} while preserving all special formats:
-- Keep {color=}, [tags], and \\n exactly as-is
-- Only translate text outside these markers
-- Return JUST the translated text with NO additional comments
-
-Text to translate: "${text}"`;
-
+        Translate this to ${langTarget} while preserving all special formats:
+        - Keep {color=}, [tags], and \\n exactly as-is
+        - Only translate text outside these markers
+        - Return JUST the translated text with NO additional comments
+        
+        Text to translate: "${text}"`;
+        
       const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -228,54 +231,54 @@ Text to translate: "${text}"`;
     }
 
     function downloadFile() {
-  let finalLines = [...originalLines];
-  for (let i = 0; i < dialogIndexes.length; i++) {
-    const obj = dialogIndexes[i] || {};
-    const index = obj.index || 0;
-    const pre = obj.pre || '';
-    const quote = obj.quote || '"';
-    const post = obj.post || '';
-    
-    const indentation = (originalLines[index] || '').match(/^\s*/)?.[0] || '';
-    let val = (translatedDialogs[i] || '').trim();
-    
-    val = val
-      .replace(/\\"/g, '\uFFFF')
-      .replace(/^["']|["']$/g, '')
-      .replace(/\uFFFF/g, '\\"')
-      .replace(/([^\\])"/g, '$1\\"');
-    
-    if (index < finalLines.length) {
-      finalLines[index] = 
-        indentation +
-        (pre ? pre + ' ' : '') +
-        quote + val + quote +
-        (post ? ' ' + post : '');
+      let finalLines = [...originalLines];
+      for (let i = 0; i < dialogIndexes.length; i++) {
+        const obj = dialogIndexes[i] || {};
+        const index = obj.index || 0;
+        const pre = obj.pre || '';
+        const quote = obj.quote || '"';
+        const post = obj.post || '';
+        
+        const indentation = (originalLines[index] || '').match(/^\s*/)?.[0] || '';
+        let val = (translatedDialogs[i] || '').trim();
+        
+        val = val
+          .replace(/\\"/g, '\uFFFF')
+          .replace(/^["']|["']$/g, '')
+          .replace(/\uFFFF/g, '\\"')
+          .replace(/([^\\])"/g, '$1\\"');
+        
+        if (index < finalLines.length) {
+          finalLines[index] = 
+            indentation +
+            (pre ? pre + ' ' : '') +
+            quote + val + quote +
+            (post ? ' ' + post : '');
+        }
+      }
+      
+      const blob = new Blob([finalLines.join('\n') + '\n\n' + TRANSLATOR_CREDIT + '\n'], {type: 'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'translated_result.rpy';
+      a.click();
     }
-  }
-  
-  const blob = new Blob([finalLines.join('\n')], {type: 'text/plain'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'translated_result.rpy';
-  a.click();
-}
 
     function escapeHtml(str) {
-  if (!str) return '';
-  return str
-    .replace(/\\"/g, '\uFFFF')
-    .replace(/[&<>"']/g, function(m) {
-      return {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[m];
-    })
-    .replace(/\uFFFF/g, '\\"');
-}
+      if (!str) return '';
+      return str
+        .replace(/\\"/g, '\uFFFF')
+        .replace(/[&<>"']/g, function(m) {
+          return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+          }[m];
+        })
+        .replace(/\uFFFF/g, '\\"');
+    }
 
     function injectWatermark() {
       const el = document.createElement('div');
