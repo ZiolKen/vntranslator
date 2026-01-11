@@ -206,7 +206,9 @@ function toDeepLTargetLang(code) {
     case "vi": return "VI";
     case "id": return "ID";
     case "en": return "EN-US";
-    default: return null;
+    case "ms": return "MS";
+    case "tl": return "TL";
+    default: return String(code || "").toUpperCase();
   }
 }
 
@@ -222,7 +224,9 @@ async function translateDeepLBatch(linesSafe, targetLang, apiKey, signal) {
     apiKey,
     text: linesSafe,
     target_lang: dlTarget,
-    preserve_formatting: true,
+    preserve_formatting: 1,
+    split_sentences: 0,
+    ...(needQualityModel ? { model_type: "quality_optimized" } : {}),
   };
 
   const res = await fetch("/api/deepl-trans", {
