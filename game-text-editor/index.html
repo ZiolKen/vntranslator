@@ -1,278 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <meta name="theme-color" content="#000000">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <title>Game Text Editor</title>
-    <link href="./Content/custom.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link href="./Content/style.css" rel="stylesheet" />
-    <link href="./Content/jquery.fileupload.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
- 
-	<style>
-		.qnavi {
-			position: fixed;
-			right: 20px;
-			bottom: 20px;
-			z-index: 150;
-			opacity: 0.3;
-		}
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
 
-		.qnavi:hover {
-			opacity: 1;
-		}
+  <title>Game Text Editor | VN Translator</title>
 
-		.hl {
-			color: black;
-		}
-	</style>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-BXTNE3VPWH');
-    </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link href="./Content/custom.css" rel="stylesheet" />
+  <link href="./Content/style.css" rel="stylesheet" />
+  <link href="./Content/jquery.fileupload.css" rel="stylesheet" />
+
+  <link href="./Content/pro.css" rel="stylesheet" />
+
+  <style>
+    .qnavi{
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 150;
+      opacity: 0.35;
+    }
+    .qnavi:hover{opacity:1}
+    .hl{color:black}
+  </style>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BXTNE3VPWH');
+  </script>
 </head>
 
 <body>
-<div class="BG"></div>
-<div id="particles-js"></div>
-<div class="grid-bg"></div>
-	
-<h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">
-    Game Text <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Editor</span>
-</h1>
+  <div class="bg" aria-hidden="true">
+    <div id="particles-js"></div>
+    <div class="grid"></div>
+    <div class="glow"></div>
+  </div>
 
-<div class="container body-content">
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span aria-hidden="true">
+        <img class="brand__img" src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" />
+      </span>
+      <span class="brand__text">
+        <span class="brand__name">VN Translator</span>
+        <span class="brand__tag">Ren’Py • RPG Maker • Text Tools</span>
+      </span>
+    </a>
 
-<div class="card usage-tips" id="head">
-	<p style="font-size: 1.1rem;" itemprop="description">
-		This tool can extract and update texts of game in most easy way. For editing, translating, or you can rename any character. Just drag your 📁 <b>File</b> to the site.
-		<br />Translate games before playing, it's easy.
-	</p>
-	<ul class="notice-list">
-		<li>Editor for RPG Maker MV, MZ. *.json</li>
-		<li>Editor for Ren'Py *.rpy</li>
-		<li>Editor for Kirikiri *.ks</li>
-		<li>Editor for Tyranobuild *.ks</li>
-		<li>For MV, MZ the <b>data</b> have be here \www\data</li>
-		<li>For Ren'Py you need extract RPA/decompile RPYC if necessary.</li>
-		<li>For Kirikiri/Tyranobuild you need extract game data with some tool.</li>
-		<li>All data submitted/uploaded is deleted after 1 day.</li>
-		<li>Be careful, make backups.</li>
-	</ul>
-</div>
+    <nav class="nav">
+      <a class="nav__link" href="../renpy/">Ren’Py</a>
+      <a class="nav__link" href="../rpgm/">RPG Maker</a>
+      <a class="nav__link nav__link--active" href="./">Game Text Editor</a>
+      <a class="nav__link nav__link--muted" href="../rpgmu/">RPGM Ultimate</a>
+    </nav>
 
-<div id="headM" style="display: none;"><br /></div>
-
-<div id="dropZone" style="margin-top: 35px; margin-block: 35px;">
-    📂 <b>DROP YOUR FILE HERE</b><br>
-    or <u>click to choose</u>
-</div>
-<input id="fileupload" type="file" multiple name="files">
-<script src="./Scripts/filedrop.js"></script>
-
-<div class="border2"></div>
-<h2 style="text-align: center; font-size: 35px; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff; font-family: 'Turret Road', sans-serif;">Monaco Editor</h2>
-<div class="wrapeditor">
-<div id="tabBar" class="tab-bar"></div>
-
-<div id="editorContainer" class="editor-area"></div>
-<div id="statusBar" class="status-bar">
-    <div id="cursorPos">Ln 1, Col 1</div>
-    <div id="indentInfo">Spaces: 4</div>
-    <div id="encodingInfo">UTF-8</div>
-    <div id="eolInfo">CRLF</div>
-    <div id="langInfo">PLAINTEXT</div>
-</div>
-</div>
-<div id="buttonBar" class="button-bar"></div>
-
-<div class="border"></div>
-
-<div class="card cyber-grid help-container">
-    <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
-        <div style="grid-column: 1 / -1;">
-            <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px;">SUPPORT THIS PROJECT!</p>
-                <a href="https://www.buymeacoffee.com/_zkn"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee!&emoji=☕&slug=_zkn&button_colour=ff00ff&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
-                <a href="https://www.patreon.com/ZiolKen">
-                    <img width="200px" height="50px" style="border-radius: 12px;" alt="Become a Patron" src="https://raw.githubusercontent.com/elsiehupp/patron-buttons/master/svg/become_a_patron_4x1_white_logo_black_text_on_coral.svg">
-                </a>
-        </div>
+    <div class="topbar__actions">
+      <a class="pill pill--primary" href="../">Back</a>
     </div>
-</div>
-	
-<div class="footer-note">
-    ⚠️ By using this tool, you agree to accept all kinds of risks.
-</div>
-<div style="text-align: center; margin: 30px 0 20px;">
-    <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
-</div>
-	
-</div>
-	
-<div id="PreLoad" style="font-size: 50px; position: fixed; display: flex; z-index: 999999; padding: 270px 40px; font-weight: bold; font-family: 'Turret Road', sans-serif; inset: 0; transition: opacity 0.6s ease; backdrop-filter: blur(3px); justify-content: center; align-items: center; text-align: center; background-color: rgba(0, 0, 0, 0.6); color: white; display: none;">Loading...</div>
-	
-<script src="./bundles/custom.js"></script>
-<script src="./bundles/script.js"></script>
+  </header>
 
-<script>
-		function getFormData($form){
-			var unindexed_array = $form.serializeArray();
-			var indexed_array = {};
-			$.map(unindexed_array, function (n, i) {
-				if (!(n['name'] in indexed_array))
-					indexed_array[n['name']] = n['value'];
-			});
-			return indexed_array;
-		}
+  <main class="wrap">
+    <section class="pageHead">
+      <div class="pageHead__left">
+        <div class="badge">
+          <span class="dot" aria-hidden="true"></span>
+          Game Text Editor
+        </div>
 
-		function PreLoadOn() {
-			$('#PreLoad').show();
-		}
-		function PreLoadOff() {
-			$('#PreLoad').hide();
-		}
-	
-        document.addEventListener("keydown", e => {
-	        if (
-          	    e.key === "F12" ||
-          	    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
-         	    (e.ctrlKey && e.key === "U")
-        	) {
-         	    e.preventDefault();
-        	}
-       	});
+        <h1 class="title">
+          Edit & translate game text with <span class="accent">Monaco Editor</span>.
+        </h1>
 
-       	console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
-</script>
+        <p class="subtitle">
+          Drag & drop files, edit safely, rename characters, and export. Supports common VN/game formats.
+        </p>
 
-<script src="./bundles/index.js"></script>
-<script src="./Scripts/particles.js"></script>
+        <div class="quickActions">
+          <a class="btn btn--ghost" href="../renpy/" title="Ren'Py Translator">🎮 Ren’Py Translator</a>
+          <a class="btn btn--ghost" href="../rpgm/" title="RPG Maker Translator">🕹️ RPG Maker Translator</a>
+        </div>
+      </div>
 
-<script>
-// =====================================
-// CONFIG
-// =====================================
-	
-const API_HOSTS = [
-  "https://game-text-editor-api-production.up.railway.app",
-  "https://game-text-editor-api-production-aeba.up.railway.app",
-  "https://game-text-editor-api-production-7a01.up.railway.app",
-  "https://game-text-backend.onrender.com",
-  "https://game-text-editor.onrender.com",
-  "https://game-text-editor-api-9grm.onrender.com",
-  "https://game-text-backend-backup-u9d9.onrender.com",
-  "https://game-text-backend.vercel.app",
-  "https://game-text-editor.vercel.app",
-  "https://game-text-editor-api.vercel.app",
-  "https://game-text-backend-backup.vercel.app"
-];
+      <div class="pageHead__right">
+        <div class="miniPanel">
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Supported</div>
+            <div class="miniPanel__v"><span class="chip chip--ok">JSON</span> MV/MZ, <span class="chip">RPY</span>, <span class="chip">KS</span></div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Data privacy</div>
+            <div class="miniPanel__v">Uploads auto-deleted after 1 day</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Safety</div>
+            <div class="miniPanel__v">Make backups before saving</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-async function apiFetch(path, options) {
-  for (let base of API_HOSTS) {
-    try {
-      const res = await fetch(base + path, options);
-      if (res.ok) {
-        console.log("Using API:", base);
-        return res;
-      }
-    } catch (e) {
-      console.warn("API failed:", base);
-    }
-  }
-  throw new Error("❌ All backend servers failed!");
-}
+    <section class="layout editorLayout">
+      <div class="col">
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Quick Notes</div>
+              <div class="panel__hint">What to upload & where to find files</div>
+            </div>
+          </div>
+          <div class="panel__body notice">
+            <ul class="notice-list">
+              <li>RPG Maker MV/MZ: edit <b>*.json</b> in <code>\www\data</code></li>
+              <li>Ren’Py: edit <b>*.rpy</b> (extract RPA / decompile RPYC if needed)</li>
+              <li>Kirikiri / Tyranobuild: edit <b>*.ks</b> (extract game data first)</li>
+              <li>All uploaded data is deleted after <b>1 day</b>. Still: <b>make backups</b>.</li>
+            </ul>
+          </div>
+        </section>
 
-// =====================================
-// LOAD EDITOR
-// =====================================
-	
-async function loadEditor(id) {
-    PreLoadOn();
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Upload files</div>
+              <div class="panel__hint">Drag & drop or click to browse</div>
+            </div>
+          </div>
 
-    try {
-        const res = await apiFetch("/Edit/" + id);
+          <div class="panel__body">
+            <div id="dropZone" class="dropzone" role="button" tabindex="0">
+              <div class="dropzone__icon">📁</div>
+              <div class="dropzone__title">DROP YOUR FILE HERE</div>
+              <div class="dropzone__sub">or <u>click to choose</u> (JSON / RPY / KS)</div>
+            </div>
 
-        if (!res.ok) {
-            alert("Load editor error: " + res.status);
-            PreLoadOff();
-            return;
-        }
+            <input id="fileupload" type="file" multiple name="files" class="fileinput">
+            <script src="./Scripts/filedrop.js"></script>
+          </div>
+        </section>
 
-        const json = await res.json();
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Support</div>
+              <div class="panel__hint">Help keep the project alive</div>
+            </div>
+          </div>
 
-        // Show editor
-        $('#headM').show();
-        $('#editorContainer').show();
+          <div class="panel__body">
+            <div class="support">
+              <div class="support__label">Support this project</div>
+              <div class="support__buttons">
+                <a class="supportBtn" href="https://www.buymeacoffee.com/_zkn" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+                <a class="supportBtn supportBtn--patreon" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">❤️ Patreon</a>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        renderEditor(json);
-    } catch (e) {
-        console.error(e);
-        alert("Editor load failed");
-    }
+        <div class="backRow">
+          <a href="../" class="backBtn">⬅️ Back to Main Menu</a>
+        </div>
+      </div>
 
-    PreLoadOff();
-}
+      <div class="col">
+        <section class="panel panel--editor">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Monaco Editor</div>
+              <div class="panel__hint">Tabs • Status bar • Fast search</div>
+            </div>
+          </div>
 
-// =====================================
-// SAVE DATA
-// =====================================
-	
-async function saveData(id) {
-    let dataText = document.getElementById("editorArea").value;
-    let json;
+          <div class="panel__body">
+            <div class="wrapeditor">
+              <div id="tabBar" class="tab-bar"></div>
+              <div id="editorContainer" class="editor-area"></div>
 
-    try {
-        json = JSON.parse(dataText);
-    } catch (e) {
-        alert("Invalid JSON!");
-        return;
-    }
+              <div id="statusBar" class="status-bar">
+                <div id="cursorPos">Ln 1, Col 1</div>
+                <div id="indentInfo">Spaces: 4</div>
+                <div id="encodingInfo">UTF-8</div>
+                <div id="eolInfo">CRLF</div>
+                <div id="langInfo">PLAINTEXT</div>
+              </div>
+            </div>
 
-    PreLoadOn();
+            <div id="buttonBar" class="button-bar"></div>
+          </div>
+        </section>
 
-    try {
-        const res = await apiFetch("/Edit/" + id, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: json })
-        });
+        <div class="footer-note">
+          ⚠️ By using this tool, you agree to accept all kinds of risks.
+        </div>
+      </div>
+    </section>
+  </main>
 
-        if (res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "edited.json";
-            a.click();
-            URL.revokeObjectURL(url);
-        } else {
-            alert("Save failed: " + res.status);
-        }
-    } catch (err) {
-        console.error(err);
-        alert("Save network error!");
-    }
+  <script>
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const particleCount = isMobile ? 60 : 111;
 
-    PreLoadOff();
-}
-</script>
-
-<script src="./Scripts/editor.js"></script>
-
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": particleCount, "density": { "enable": true, "value_area": 950 } },
+        "color": { "value": "#a855f7" },
+        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
+        "opacity": { "value": 0.40, "random": true, "anim": { "enable": false } },
+        "size": { "value": 2.1, "random": true, "anim": { "enable": false } },
+        "line_linked": { "enable": true, "distance": 160, "color": "#a855f7", "opacity": 0.16, "width": 1 },
+        "move": { "enable": true, "speed": 0.75, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
+        "modes": { "repulse": { "distance": 90, "duration": 0.35 } }
+      },
+      "retina_detect": true
+    });
+  </script>
 </body>
-	
+
 </html>
