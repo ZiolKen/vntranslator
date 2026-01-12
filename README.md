@@ -1,4 +1,4 @@
-# Translator Tool | Translate Ren'Py & RPG Maker Games
+# VN Translator | Translate Ren'Py & RPG Maker Games
 
 <p align="left">
   <img src="https://raw.githubusercontent.com/ZiolKen/vntranslator/main/assets/logo.png" alt="Image" width="50%" />
@@ -9,4 +9,4 @@ A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple La
 - https://vntranslator.vercel.app
 - https://vntranslator.pages.dev
 
-Game Translator
+@ジオルケン | @ZiolKen
