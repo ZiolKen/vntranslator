@@ -32,7 +32,6 @@ body{
   overflow-x:hidden;
 }
 
-/* Background */
 .bg{position:fixed; inset:0; z-index:-3}
 #particles-js{position:absolute; inset:0; z-index:-3}
 .grid{
@@ -58,7 +57,6 @@ body{
   padding: 26px 0 34px;
 }
 
-/* Topbar */
 .topbar{
   position:sticky;
   top:0;
@@ -137,7 +135,6 @@ body{
 
 .topbar__actions{display:flex; gap:10px; align-items:center}
 
-/* Buttons */
 .pill, .btn{
   border: 1px solid var(--border);
   background: rgba(255,255,255,.03);
@@ -189,7 +186,6 @@ body{
 }
 .btn--block{width:100%}
 
-/* Head */
 .pageHead{
   display:grid;
   grid-template-columns: 1.2fr .8fr;
@@ -276,7 +272,6 @@ body{
   background: rgba(34,197,94,.10);
 }
 
-/* Layout grid */
 .layout{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -285,7 +280,6 @@ body{
 }
 .col{display:flex; flex-direction:column; gap: 16px}
 
-/* Panel */
 .panel{
   border-radius: var(--r);
   border: 1px solid var(--border);
@@ -306,7 +300,6 @@ body{
 .panel__hint{color: var(--muted); font-size: 12.5px}
 .panel__body{padding: 14px}
 
-/* Form */
 .form .field label{
   display:block;
   font-weight: 800;
@@ -358,7 +351,6 @@ progress::-webkit-progress-value{
 }
 .progress__text{color: var(--muted); font-size: 12.5px}
 
-/* Controls */
 .controls{display:grid; gap: 12px}
 .controls__grid{
   display:grid;
@@ -367,7 +359,6 @@ progress::-webkit-progress-value{
 }
 .controls__row{display:flex; gap: 10px; margin-top: 6px}
 
-/* Log */
 .log{
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,.08);
@@ -385,7 +376,6 @@ progress::-webkit-progress-value{
 .log::-webkit-scrollbar-thumb{background: rgba(255,255,255,.10); border-radius: 999px}
 .log::-webkit-scrollbar-thumb:hover{background: rgba(255,255,255,.16)}
 
-/* Notice */
 .notice{display:grid; gap: 12px}
 .noticeBox{
   border-radius: 16px;
@@ -407,7 +397,6 @@ progress::-webkit-progress-value{
   padding-left: 10px;
 }
 
-/* Support */
 .support{display:grid; gap: 14px}
 .support__label{
   font-weight: 900;
@@ -449,7 +438,6 @@ progress::-webkit-progress-value{
 }
 .helpBtn:hover{border-color: rgba(168,85,247,.22); background: rgba(255,255,255,.04)}
 
-/* Back */
 .backRow{display:flex; justify-content:center; margin-top: 2px}
 .backBtn{
   display:inline-flex;
@@ -466,7 +454,6 @@ progress::-webkit-progress-value{
 }
 .backBtn:hover{border-color: var(--border2); background: rgba(255,255,255,.05)}
 
-/* Modal */
 .modal{
   display:none;
   position:fixed;
@@ -501,7 +488,6 @@ progress::-webkit-progress-value{
 .close-modal:hover{color: rgba(255,255,255,.92)}
 .modal-footer{display:flex; justify-content:flex-end; margin-top: 12px}
 
-/* Spinner (renpy.js dùng #spinner) */
 .spinner{
   width: 16px;
   height: 16px;
@@ -514,7 +500,6 @@ progress::-webkit-progress-value{
 .hidden{display:none}
 @keyframes spin{to{transform: rotate(360deg)}}
 
-/* Responsive */
 @media (max-width: 980px){
   .nav{display:none}
   .pageHead{grid-template-columns: 1fr}
