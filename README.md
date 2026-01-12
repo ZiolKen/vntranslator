@@ -8,5 +8,6 @@ A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple La
 
 - https://vntranslator.vercel.app
 - https://vntranslator.pages.dev
+- https://ziolken.github.io/vntranslator
 
 @ジオルケン | @ZiolKen
