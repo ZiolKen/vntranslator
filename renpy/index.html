@@ -1,264 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
- 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <title>Ren'Py RPY Translator</title>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <link rel="stylesheet" href="renpy.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <meta name="theme-color" content="#000000">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-BXTNE3VPWH');
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
+
+  <title>Ren’Py RPY Translator | VN Translator</title>
+
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <link rel="stylesheet" href="renpy.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BXTNE3VPWH');
+  </script>
 </head>
- 
+
 <body>
-  <div class="BG"></div>
-  <div id="particles-js"></div>
-  <div class="grid-bg"></div>
-  <!-- Modal for Lingva Warning -->
+  <div class="bg" aria-hidden="true">
+    <div id="particles-js"></div>
+    <div class="grid"></div>
+    <div class="glow"></div>
+  </div>
+
   <div id="libreWarningModal" class="modal">
     <div class="modal-content">
-      <span class="close-modal">&times;</span>
+      <button class="close-modal" aria-label="Close modal">&times;</button>
       <h3>Important Notice About Lingva Translate</h3>
+
       <div class="notice-content">
         <ul class="notice-list">
-          <li>Lingva is a free service that may not perfectly preserve Ren'Py code structure.</li>
-          <li>We recommend using it only for testing purposes or when you're willing to manually review the results.</li>
-          <li>For production use or accurate translations that maintain all Ren'Py formatting, please use DeepSeek.</li>
+          <li>Lingva is a free service that may not perfectly preserve Ren’Py code structure.</li>
+          <li>Use it for testing or when you can manually review results.</li>
+          <li>For production-quality formatting preservation, use DeepSeek.</li>
         </ul>
       </div>
+
       <div class="modal-footer">
-        <button id="confirmLibre" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">
-          I Understand
-        </button>
+        <button id="confirmLibre" class="btn btn--warn">I Understand</button>
       </div>
     </div>
   </div>
-  
-  <div class="main-title">
-    <h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">Ren'Py RPY <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Translator</span>
-    </h1>
-    <div class="card cyber-grid">
-      <h4>Translation Settings</h4>
 
-      <div class="form-group">
-        <label>Translation Model</label>
-        <select id="modelSelect">
-          <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
-          <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
-          <option value="libre">🌐 Lingva (Free - Stable)</option>
-        </select>
-      </div>
-      <div class="form-group" id="apiKeyContainer">
-        <label>DeepSeek API Key</label>
-        <input id="apiKey" type="password" placeholder="Enter your API Key">
-      </div>
-        <div class="form-group" id="deeplKeyContainer" style="display:none;">
-          <label>DeepL API Key</label>
-          <input id="deeplApiKey" type="password" placeholder="Enter your DeepL API Key" autocomplete="off">
-        </div>
-      <div class="form-group">
-        <label>Target Language</label>
-        <select id="langTarget">
-          <option value="Bahasa Indonesia">Indonesian</option>
-          <option value="English">English</option>
-          <option value="Malay">Malay</option>
-          <option value="Vietnamese">Vietnamese</option>
-          <option value="Filipino">Filipino</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Upload .rpy File</label>
-        <input id="fileInput" type="file" accept=".rpy">
-      </div>
-      <div class="progress-container">
-        <label>Progress</label>
-        <progress id="progressBar" value="0" max="1000"></progress>
-        <div id="progressText">0/0</div>
-      </div>
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span class="brand__logo" aria-hidden="true">
+        <img class="brand__img" src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator logo" />
+      </span>
+      <span class="brand__text">
+        <span class="brand__name">VN Translator</span>
+        <span class="brand__tag">Ren’Py • RPG Maker • Text Tools</span>
+      </span>
+    </a>
+
+    <nav class="nav">
+      <a class="nav__link nav__link--active" href="./">Ren’Py</a>
+      <a class="nav__link" href="../rpgm/">RPG Maker</a>
+      <a class="nav__link" href="../game-text-editor/">Text Editor</a>
+      <a class="nav__link nav__link--muted" href="../rpgmu/">RPGM Ultimate</a>
+    </nav>
+
+    <div class="topbar__actions">
+      <a class="pill pill--ghost" href="../">Back Home</a>
+      <a class="pill pill--primary" href="#settings">Settings</a>
     </div>
-      <div class="card cyber-grid">
-        <h5>Translation Control</h5>
-        <div class="button-group">
-        <button id="translateBtn">
-          <span id="translateLabel"><span>▶️</span> Start Translating</span>
-          <span id="spinner" class="hidden"></span>
-        </button>
-        <button id="downloadFinal"><span>⬇️</span> Download Result</button>
-        <button id="downloadProgress"><span>⬇️</span> Download Log</button>
-        <button id="previewBtn" disabled><span>ℹ️</span> Preview/Edit Manual</button>
+  </header>
+
+  <main class="wrap">
+    <section class="pageHead">
+      <div class="pageHead__left">
+        <div class="badge">
+          <span class="dot" aria-hidden="true"></span>
+          Ren’Py RPY Translator
+        </div>
+
+        <h1 class="title">
+          Translate <span class="accent">.rpy</span> files safely.
+        </h1>
+
+        <p class="subtitle">
+          Choose a model → upload your RPY → translate → download result & logs. Designed for large scripts and clean formatting.
+        </p>
+
+        <div class="quickActions">
+          <a class="btn btn--ghost" href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer">📂 How to get RPY?</a>
+          <a class="btn btn--ghost" href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener noreferrer">❓ DeepSeek API Key</a>
+          <a class="btn btn--ghost" href="rpy-dialog-extractor.html" target="_blank" rel="noopener noreferrer">🔄 Extract dialogs & Merge</a>
         </div>
       </div>
-    <div class="card cyber-grid" style="margin-bottom: 25px;">
-      <h2>Translation Log</h2>
-      <div id="logBox" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</div>
-    <div>
-      <div id="controlBtns" style="display:none; margin-top: 10px;">
-        <button id="stopBtn"><span>⏸</span> Stop Translation</button>
-        <button id="resumeBtn" disabled><span>🔄</span> Resume Translation</button>
-      </div>
-    </div>
-    </div>
-  <div class="card cyber-grid" style="margin-bottom: 25px;">
-    <h6>Support & Resources</h6>
-      <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
-        <div style="grid-column: 1 / -1;">
-            <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">SUPPORT THIS PROJECT!</p>
-            <a href="https://www.buymeacoffee.com/_zkn"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee!&emoji=☕&slug=_zkn&button_colour=ff00ff&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
-            <a href="https://www.patreon.com/ZiolKen">
-                <img width="200px" height="50px" style="border-radius: 12px;" alt="Become a Patron" src="https://raw.githubusercontent.com/elsiehupp/patron-buttons/master/svg/become_a_patron_4x1_white_logo_black_text_on_coral.svg">
-            </a>
-            <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">GET HELP:</p>
-            <a href="rpy-dialog-extractor.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">🔄</span>Extract RPY dialogs & Merge</a>
-            <a href="https://grviewer.com/" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">🔁</span>Extract RPA & Decompile RPYC</a>
-            <a href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">❓</span>How to get a DeepSeek API Key?</a>
-            <a href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer" class="help-btn"><span class="help-icon">📂</span>How to get RPY file from game?</a>
+
+      <div class="pageHead__right">
+        <div class="miniPanel">
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Recommended</div>
+            <div class="miniPanel__v"><span class="chip chip--ok">DeepSeek</span> best formatting</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Free option</div>
+            <div class="miniPanel__v"><span class="chip">Lingva</span> needs review</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Tip</div>
+            <div class="miniPanel__v">Use dialog extractor to reduce breakage</div>
+          </div>
         </div>
-  </div>
-</div>
-  <div class="card usage-tips">
-    <h6>Notice</h6>
-    <div class="notice-content">
-      <p><strong>Suggest:</strong></p>
-      <ul class="notice-list">
-        <li>It is recommended to use the RPY Dialog Extraction & Merge Tool to extract the dialog and translate, then merge the translated RPY with the original RPY.</li>
-      </ul>
-      <p><strong>Important:</strong></p>
-      <ul class="notice-list">
-        <li>DeepSeek requires an API key but provides higher quality translations that preserve Ren'Py formatting.</li>
-        <li>Lingva is free but may require manual adjustments.</li>
-      </ul>
-    </div>
-  </div>
+      </div>
+    </section>
 
-  <div class="footer-note">
-    ⚠️ By using this tool, you agree to accept all kinds of risks.
-  </div>
+    <section class="layout">
+      <div class="col">
+        <section id="settings" class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Translation Settings</div>
+              <div class="panel__hint">Configure model, key, language, and file</div>
+            </div>
+          </div>
 
-  <div style="text-align: center; margin: 40px 0 20px;">
-  <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
-  </div>
-  </div>
+          <div class="panel__body form">
+            <div class="form-row">
+              <div class="field">
+                <label for="modelSelect">Translation Model</label>
+                <select id="modelSelect">
+                  <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
+                  <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
+                  <option value="libre">🌐 Lingva (Free - Stable)</option>
+                </select>
+                <div class="help">DeepSeek recommended for preserving Ren’Py formatting.</div>
+              </div>
+            </div>
 
-<style>
-  #particles-js,
-  .grid-bg {
-    z-index: -1;
-  }
+            <div class="form-row two">
+              <div class="field" id="apiKeyContainer">
+                <label for="apiKey">DeepSeek API Key</label>
+                <input id="apiKey" type="password" placeholder="Enter your API Key" autocomplete="off">
+              </div>
 
-  .card,
-  button,
-  select,
-  input,
-  textarea,
-  h1, h2, h3, h4, h5, h6 {
-    position: relative;
-    z-index: 1;
-  }
+              <div class="field" id="deeplKeyContainer" style="display:none;">
+                <label for="deeplApiKey">DeepL API Key</label>
+                <input id="deeplApiKey" type="password" placeholder="Enter your DeepL API Key" autocomplete="off">
+              </div>
+            </div>
 
-  .close-modal {
-      color: var(--text-secondary);
-      float: right;
-      font-size: 30px;
-      font-weight: bold;
-      cursor: pointer;
-  }
-  
-  .close-modal:hover {
-      color: var(--text-secondary);
-  }
-    
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
+            <div class="form-row two">
+              <div class="field">
+                <label for="langTarget">Target Language</label>
+                <select id="langTarget">
+                  <option value="Bahasa Indonesia">Indonesian</option>
+                  <option value="English">English</option>
+                  <option value="Malay">Malay</option>
+                  <option value="Vietnamese">Vietnamese</option>
+                  <option value="Filipino">Filipino</option>
+                </select>
+              </div>
 
-<script>
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const particleCount = isMobile ? 55 : 111;
-        particlesJS("particles-js", {
-            "particles": {
-                "number": {
-                    "value": particleCount,
-                    "density": {
-                        "enable": true,
-                        "value_area": 800
-                    }
-                },
-                "color": { "value": "#a855f7" },
-                "shape": {
-                    "type": "circle",
-                    "stroke": { "width": 0, "color": "#000" }
-                },
-                "opacity": {
-                    "value": 0.7,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 0.5,
-                        "opacity_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "size": {
-                    "value": 3,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 2,
-                        "size_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "line_linked": {
-                    "enable": true,
-                    "distance": 150,
-                    "color": "#a855f7",
-                    "opacity": 0.3,
-                    "width": 1
-                },
-                "move": {
-                    "enable": true,
-                    "speed": 1.5,
-                    "direction": "none",
-                    "random": false,
-                    "straight": false,
-                    "out_mode": "out",
-                    "bounce": false
-                }
-            },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": {
-                    "onhover": { "enable": true, "mode": "repulse" },
-                    "onclick": { "enable": false },
-                    "resize": true
-                },
-                "modes": {
-                    "repulse": { "distance": 100, "duration": 0.4 }
-                }
-            },
-            "retina_detect": true
-        });
-</script>
- 
-<script
-    src="./renpy.js">
-</script>
+              <div class="field">
+                <label for="fileInput">Upload .rpy File</label>
+                <input id="fileInput" type="file" accept=".rpy">
+                <div class="help">Only .rpy — keep a backup of the original.</div>
+              </div>
+            </div>
 
+            <div class="form-row">
+              <div class="field">
+                <label>Progress</label>
+                <div class="progress">
+                  <progress id="progressBar" value="0" max="1000"></progress>
+                  <div id="progressText" class="progress__text">0/0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Translation Control</div>
+              <div class="panel__hint">Start, preview, download result & logs</div>
+            </div>
+          </div>
+
+          <div class="panel__body">
+            <div class="controls">
+              <button id="translateBtn" class="btn btn--primary btn--block">
+                <span id="translateLabel">▶️ Start Translating</span>
+                <span id="spinner" class="spinner hidden" aria-hidden="true"></span>
+              </button>
+
+              <div class="controls__grid">
+                <button id="downloadFinal" class="btn btn--secondary">⬇️ Download Result</button>
+                <button id="downloadProgress" class="btn btn--ghost">⬇️ Download Log</button>
+                <button id="previewBtn" class="btn btn--ghost" disabled>ℹ️ Preview/Edit Manual</button>
+              </div>
+
+              <div id="controlBtns" class="controls__row" style="display:none;">
+                <button id="stopBtn" class="btn btn--warn">⏸ Stop</button>
+                <button id="resumeBtn" class="btn btn--ghost" disabled>🔄 Resume</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Notice</div>
+              <div class="panel__hint">Avoid surprises in formatting</div>
+            </div>
+          </div>
+
+          <div class="panel__body notice">
+            <div class="noticeBox">
+              <div class="noticeBox__t">Suggest</div>
+              <ul class="notice-list">
+                <li>Use the <b>RPY Dialog Extraction & Merge Tool</b> to extract dialogs, translate, then merge back.</li>
+              </ul>
+            </div>
+
+            <div class="noticeBox">
+              <div class="noticeBox__t">Important</div>
+              <ul class="notice-list">
+                <li>DeepSeek requires an API key but preserves Ren’Py formatting better.</li>
+                <li>Lingva is free but may require manual adjustments.</li>
+              </ul>
+            </div>
+
+            <div class="risk">
+              ⚠️ By using this tool, you agree to accept all kinds of risks.
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Translation Log</div>
+              <div class="panel__hint">Realtime output for debugging</div>
+            </div>
+          </div>
+
+          <div class="panel__body">
+            <div id="logBox" class="log">[SYSTEM_BOOT] :: Awaiting input...</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Support & Resources</div>
+              <div class="panel__hint">Help links + sponsor</div>
+            </div>
+          </div>
+
+          <div class="panel__body">
+            <div class="support">
+              <div class="support__block">
+                <div class="support__label">Support this project</div>
+                <div class="support__buttons">
+                  <a class="supportBtn" href="https://www.buymeacoffee.com/_zkn" target="_blank" rel="noopener noreferrer">☕ Buy me a coffee</a>
+                  <a class="supportBtn supportBtn--patreon" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener noreferrer">❤️ Patreon</a>
+                </div>
+              </div>
+
+              <div class="support__block">
+                <div class="support__label">Get help</div>
+                <div class="support__links">
+                  <a class="helpBtn" href="rpy-dialog-extractor.html" target="_blank" rel="noopener noreferrer">🔄 Extract RPY dialogs & Merge</a>
+                  <a class="helpBtn" href="https://grviewer.com/" target="_blank" rel="noopener noreferrer">🔁 Extract RPA & Decompile RPYC</a>
+                  <a class="helpBtn" href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener noreferrer">❓ How to get a DeepSeek API Key?</a>
+                  <a class="helpBtn" href="how-to-get-renpy-rpy.html" target="_blank" rel="noopener noreferrer">📂 How to get RPY file from game?</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="backRow">
+          <a href="../" class="backBtn">⬅️ Back to Main Menu</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const particleCount = isMobile ? 35 : 70;
+
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": particleCount, "density": { "enable": true, "value_area": 900 } },
+        "color": { "value": "#a855f7" },
+        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
+        "opacity": { "value": 0.45, "random": true, "anim": { "enable": false } },
+        "size": { "value": 2.2, "random": true, "anim": { "enable": false } },
+        "line_linked": { "enable": true, "distance": 155, "color": "#a855f7", "opacity": 0.18, "width": 1 },
+        "move": { "enable": true, "speed": 0.8, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
+        "modes": { "repulse": { "distance": 90, "duration": 0.35 } }
+      },
+      "retina_detect": true
+    });
+  </script>
+
+  <script src="./renpy.js"></script>
 </body>
 
 </html>
