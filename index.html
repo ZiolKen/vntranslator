@@ -1,159 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
- 
+    
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="assets/manifest.json">
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <title>VN Translator | Translate Ren'Py & RPG Maker Games</title>
-    <meta name="description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages.">
-    <meta name="keywords" content="translator renpy, translator rpg maker, translate visual novel, translate game, translator online, renpy, rpgm, renpy translate, rpgm translate, avns, vn translator, renpy game, rpgm game, rpy, json">
-    <meta property="og:title" content="Translate Tool for Ren'Py & RPGM Games">
-    <meta property="og:description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://vntranslator.vercel.app/">
-    <meta property="og:image" content="https://vntranslator.vercel.app/assets/thumbnail.png">
-    <meta property="og:locale" content="en_US">
-    <meta property="og:site_name" content="Translate Tool | Translate Ren'Py & RPG Maker Games">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Translate Tool | Translate Ren'Py & RPG Maker Games">
-    <meta name="twitter:description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages."
-    <meta name="twitter:image" content="https://vntranslator.vercel.app/assets/thumbnail.png">
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/logo.png">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-BXTNE3VPWH');
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
+  <link rel="manifest" href="assets/manifest.json" />
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+  <title>VN Translator | Translate Ren'Py & RPG Maker Games</title>
+  <meta name="description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages." />
+  <meta name="keywords" content="translator renpy, translator rpg maker, translate visual novel, translate game, translator online, renpy, rpgm, renpy translate, rpgm translate, avns, vn translator, renpy game, rpgm game, rpy, json" />
+
+  <meta property="og:title" content="Translate Tool for Ren'Py & RPGM Games" />
+  <meta property="og:description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://vntranslator.pages.dev/" />
+  <meta property="og:image" content="https://vntranslator.pages.dev/assets/thumbnail.png" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:site_name" content="Translate Tool | Translate Ren'Py & RPG Maker Games" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Translate Tool | Translate Ren'Py & RPG Maker Games" />
+  <meta name="twitter:description" content="A Simple, Modern Translate Tool For Ren'Py, RPG Maker Games. Support Multiple Languages." />
+  <meta name="twitter:image" content="https://vntranslator.pages.dev/assets/thumbnail.png" />
+
+  <link rel="icon" href="https://files.catbox.moe/kkqy9m.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://files.catbox.moe/2x5vw3.jpeg" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BXTNE3VPWH');
+  </script>
 </head>
- 
+
 <body>
-    <div class="BG"></div>
-    <div id="particles-js"></div>
-    <div class="grid-bg"></div>
-    <div class="scanlines"></div>
-    <div class="floating-elements" id="floatingElements"></div>
- 
-    <div class="container">
-        <div class="header">
-            <h1 class="glitch floating" data-text="VN Translator">VN Translator</h1>
-        </div>
-        <div class="card hologram cyber-grid">
-            <div class="btn-container">
-                <a href="renpy/" class="btn btn-renpy">
-                    <span class="icon">🎮</span>
-                    Translate Ren'Py Game
-                </a>
-                <a href="rpgm/" class="btn btn-rpgm">
-                    <span class="icon">🕹️</span>
-                    Translate RPG Maker Game
-                </a>
-                <a href="game-text-editor/" class="btn btn-editor">
-                    <span class="icon">📜</span>
-                    Game Text Editor
-                </a>
-            </div>
-        </div>
-        <footer class="footer-note" style="margin-top: 10px; align-items: center; text-align: center; justify-content: center;"><a href="rpgmu/" style="color: blue;">RPGM Ultimate Tool</a> - Powerful translation tool</footer>
+  <div class="bg">
+    <div id="particles-js" aria-hidden="true"></div>
+    <div class="grid" aria-hidden="true"></div>
+    <div class="glow" aria-hidden="true"></div>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span aria-hidden="true"><img class="brand__img" src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" /></span>
+      <span class="brand__text">
+        <span class="brand__name">VN Translator</span>
+        <span class="brand__tag">Ren’Py • RPG Maker • Text Tools</span>
+      </span>
+    </a>
+
+    <nav class="nav">
+      <a class="nav__link" href="renpy/">Ren’Py</a>
+      <a class="nav__link" href="rpgm/">RPG Maker</a>
+      <a class="nav__link" href="game-text-editor/">Text Editor</a>
+      <a class="nav__link nav__link--muted" href="rpgmu/">RPGM Ultimate</a>
+    </nav>
+
+    <div class="topbar__actions">
+      <a class="pill pill--ghost" href="https://t.me/ZiolKen" target="_blank" rel="noopener">
+        Contact
+      </a>
+      <a class="pill pill--primary" href="https://github.com/ZiolKen/vntranslator" target="_blank">
+        Github
+      </a>
     </div>
-    
-    <a href="https://www.patreon.com/ZiolKen" style="display: flex; position: fixed; margin-bottom: 98px; margin-right: 18px; bottom: 0; right: 0; z-index: 99; width: 63px; height: 63px;"><img width="63px" height="63px" src="https://images.icon-icons.com/2429/PNG/512/patreon_logo_icon_147253.png"></a>
-    
-    <script>
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const particleCount = isMobile ? 55 : 111;
-        particlesJS("particles-js", {
-            "particles": {
-                "number": {
-                    "value": particleCount,
-                    "density": {
-                        "enable": true,
-                        "value_area": 800
-                    }
-                },
-                "color": { "value": "#a855f7" },
-                "shape": {
-                    "type": "circle",
-                    "stroke": { "width": 0, "color": "#000" }
-                },
-                "opacity": {
-                    "value": 0.7,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 0.5,
-                        "opacity_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "size": {
-                    "value": 3,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 2,
-                        "size_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "line_linked": {
-                    "enable": true,
-                    "distance": 150,
-                    "color": "#a855f7",
-                    "opacity": 0.3,
-                    "width": 1
-                },
-                "move": {
-                    "enable": true,
-                    "speed": 1.5,
-                    "direction": "none",
-                    "random": false,
-                    "straight": false,
-                    "out_mode": "out",
-                    "bounce": false
-                }
-            },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": {
-                    "onhover": { "enable": true, "mode": "repulse" },
-                    "onclick": { "enable": false },
-                    "resize": true
-                },
-                "modes": {
-                    "repulse": { "distance": 100, "duration": 0.4 }
-                }
-            },
-            "retina_detect": true
-        });
-    </script>
-    
-<script
-  data-name="BMC-Widget" data-cfasync="false"
-  src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
-  data-id="_zkn"
-  data-description="Buy me a coffee!"
-  data-message="Sponsor this Translator!"
-  data-color="#BD5FFF"
-  data-position="Right"
-  data-x_margin="18"
-  data-y_margin="18">
-</script>
+  </header>
 
-<script
-  src="script.js">
-</script>
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero__left">
+        <div class="badge">
+          <span class="dot" aria-hidden="true"></span>
+          Free web tools for VN translators.
+        </div>
 
+        <h1 class="hero__title">
+          Translate Ren’Py & RPG Maker games
+          <span class="hero__titleAccent">faster</span>.
+        </h1>
+
+        <p class="hero__desc">
+          A clean workflow to extract, edit, and re-inject text. Built for large scripts, consistent formatting,
+          and multi-language support — without installing anything.
+        </p>
+
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="renpy/">
+            <span class="btn__icon" aria-hidden="true">🎮</span>
+            Translate Ren’Py
+          </a>
+          <a class="btn btn--secondary" href="rpgm/">
+            <span class="btn__icon" aria-hidden="true">🕹️</span>
+            Translate RPG Maker
+          </a>
+          <a class="btn btn--ghost" href="game-text-editor/">
+            <span class="btn__icon" aria-hidden="true">📜</span>
+            Game Text Editor
+          </a>
+        </div>
+
+        <div class="hero__meta">
+          <div class="stat">
+            <div class="stat__k">No install</div>
+            <div class="stat__v">Runs in browser</div>
+          </div>
+          <div class="stat">
+            <div class="stat__k">Batch-friendly</div>
+            <div class="stat__v">Big projects ready</div>
+          </div>
+          <div class="stat">
+            <div class="stat__k">Modern UI</div>
+            <div class="stat__v">Fast + readable</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__right">
+        <div class="panel">
+          <div class="panel__header">
+            <div class="panel__title">Quick Access</div>
+            <div class="panel__hint">Choose your engine</div>
+          </div>
+
+          <div class="panel__grid">
+            <a class="cardLink" href="renpy/">
+              <div class="cardLink__top">
+                <span class="cardLink__icon" aria-hidden="true">🎮</span>
+                <span class="cardLink__title">Ren’Py Translator</span>
+              </div>
+              <div class="cardLink__desc">Translate .rpy directly / strings → translate → build back / Extract text from .rpy for manual translate</div>
+              <div class="cardLink__go">Open →</div>
+            </a>
+
+            <a class="cardLink" href="rpgm/">
+              <div class="cardLink__top">
+                <span class="cardLink__icon" aria-hidden="true">🕹️</span>
+                <span class="cardLink__title">RPG Maker Translator</span>
+              </div>
+              <div class="cardLink__desc">Translate .json directly / strings → translate → build back / Extract text from .json .ks for manual translate</div>
+              <div class="cardLink__go">Open →</div>
+            </a>
+
+            <a class="cardLink" href="game-text-editor/">
+              <div class="cardLink__top">
+                <span class="cardLink__icon" aria-hidden="true">📜</span>
+                <span class="cardLink__title">Game Text Editor</span>
+              </div>
+              <div class="cardLink__desc">Extract text from .rpy .json .ks for search/replace, formatting, and quick cleanup</div>
+              <div class="cardLink__go">Open →</div>
+            </a>
+
+            <a class="cardLink cardLink--accent" href="rpgmu/">
+              <div class="cardLink__top">
+                <span class="cardLink__icon" aria-hidden="true">⚡</span>
+                <span class="cardLink__title">RPGM Ultimate Tool</span>
+              </div>
+              <div class="cardLink__desc">Powerful translator for RPGM workflows w/ ultimate upgrades.</div>
+              <div class="cardLink__go">Explore →</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="miniNote">
+          <span class="miniNote__dot" aria-hidden="true"></span>
+          Tip: Use <b>Game Text Editor</b> to check the format, tags, and code before adding them to the game.
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <h2 class="sectionTitle">Why people use this</h2>
+      <div class="features__grid">
+        <div class="feature">
+          <div class="feature__icon" aria-hidden="true">🧠</div>
+          <div class="feature__title">Less friction</div>
+          <div class="feature__desc">Minimalist UI, focusing on translation pipeline and formatting control.</div>
+        </div>
+        <div class="feature">
+          <div class="feature__icon" aria-hidden="true">🧰</div>
+          <div class="feature__title">Tooling friendly</div>
+          <div class="feature__desc">Suitable for batch translation / quick editing / QA text before packaging.</div>
+        </div>
+        <div class="feature">
+          <div class="feature__icon" aria-hidden="true">⚡</div>
+          <div class="feature__title">Fast</div>
+          <div class="feature__desc">Reduces visual clutter, increasing readability and operation speed.</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer__left">
+        <div class="footer__brand">VN Translator</div>
+        <div class="footer__small">Translate Ren’Py & RPG Maker games in your browser.</div>
+      </div>
+
+      <div class="footer__right">
+        <a class="footer__link" href="https://buymeacoffee.com/_zkn" target="_blank">Buy Me a Coffee</a>
+        <a class="footer__link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Patreon</a>
+      </div>
+    </footer>
+  </main>
+
+  <a href="https://www.patreon.com/ZiolKen"
+     style="display:flex; position:fixed; margin-bottom:98px; margin-right:18px; bottom:0; right:0; z-index:99; width:63px; height:63px;"
+     target="_blank" rel="noopener">
+    <img width="63" height="63" alt="Patreon"
+      src="https://images.icon-icons.com/2429/PNG/512/patreon_logo_icon_147253.png" />
+  </a>
+
+  <script>
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const particleCount = isMobile ? 55 : 111;
+
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": particleCount, "density": { "enable": true, "value_area": 800 } },
+        "color": { "value": "#a855f7" },
+        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
+        "opacity": { "value": 0.7, "random": true, "anim": { "enable": true, "speed": 0.5, "opacity_min": 0.3, "sync": false } },
+        "size": { "value": 3, "random": true, "anim": { "enable": true, "speed": 2, "size_min": 0.3, "sync": false } },
+        "line_linked": { "enable": true, "distance": 150, "color": "#a855f7", "opacity": 0.3, "width": 1 },
+        "move": { "enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
+        "modes": { "repulse": { "distance": 100, "duration": 0.4 } }
+      },
+      "retina_detect": true
+    });
+  </script>
+
+  <script
+    data-name="BMC-Widget" data-cfasync="false"
+    src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
+    data-id="_zkn"
+    data-description="Buy me a coffee!"
+    data-message="Sponsor this Translator!"
+    data-color="#BD5FFF"
+    data-position="Right"
+    data-x_margin="18"
+    data-y_margin="18">
+  </script>
+
+  <script src="script.js"></script>
 </body>
- 
+
 </html>
