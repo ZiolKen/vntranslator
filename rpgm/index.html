@@ -1,264 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
-
+    
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <title>RPG Maker JSON Translator</title>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <link rel="stylesheet" href="rpgm.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <meta name="theme-color" content="#000000">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-BXTNE3VPWH');
-    </script>
-    
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
+
+  <title>RPG Maker JSON Translator | VN Translator</title>
+
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <link rel="stylesheet" href="rpgm.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BXTNE3VPWH');
+  </script>
 </head>
 
 <body>
-    <div class="BG"></div>
+  <div class="bg" aria-hidden="true">
     <div id="particles-js"></div>
-    <div class="grid-bg"></div>
-    <div class="container">
-        <!-- The HTML structure is identical to the original file to maintain JS functionality -->
-        <h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">RPG Maker JSON <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Translator</span></h1>
-        
-        <div class="card cyber-grid">
-            <h2>Translation Settings</h2>
-            
-            <div class="form-group">
+    <div class="grid"></div>
+    <div class="glow"></div>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span aria-hidden="true">
+        <img class="brand__img" src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" />
+      </span>
+      <span class="brand__text">
+        <span class="brand__name">VN Translator</span>
+        <span class="brand__tag">Ren’Py • RPG Maker • Text Tools</span>
+      </span>
+    </a>
+
+    <nav class="nav">
+      <a class="nav__link" href="../renpy/">Ren’Py</a>
+      <a class="nav__link nav__link--active" href="./">RPG Maker</a>
+      <a class="nav__link" href="../game-text-editor/">Game Text Editor</a>
+      <a class="nav__link nav__link--muted" href="../rpgmu/">RPGM Ultimate</a>
+    </nav>
+
+    <div class="topbar__actions">
+      <a class="pill pill--primary" href="../">Back</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="pageHead">
+      <div class="pageHead__left">
+        <div class="badge">
+          <span class="dot" aria-hidden="true"></span>
+          RPG Maker JSON Translator
+        </div>
+
+        <h1 class="title">
+          Translate <span class="accent">.json</span> dialog safely.
+        </h1>
+
+        <p class="subtitle">
+          Choose model → upload JSON → translate in batches → download translated JSON & preview.
+          Built for RPG Maker MV/MZ style files.
+        </p>
+
+        <div class="quickActions">
+          <a class="btn btn--ghost" href="how-to-get-rpgm-json.html" target="_blank" rel="noopener">📂 RPGM JSON Files</a>
+          <a class="btn btn--ghost" href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener">🔑 DeepSeek API Key</a>
+          <a class="btn btn--ghost" href="how-to-get-chatgpt-api-key.html" target="_blank" rel="noopener">🔑 OpenAI API Key</a>
+          <a class="btn btn--ghost" href="json-ks-convert.html" target="_blank" rel="noopener">🔁 KS Extractor (Tyrano/Kiri)</a>
+        </div>
+      </div>
+
+      <div class="pageHead__right">
+        <div class="miniPanel">
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Recommended</div>
+            <div class="miniPanel__v"><span class="chip chip--ok">DeepSeek</span> Stable & consistent</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Highest quality</div>
+            <div class="miniPanel__v"><span class="chip">GPT-4o</span> Depends on source text</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Tip</div>
+            <div class="miniPanel__v">Smaller batches reduce failures</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="col">
+        <section id="settings" class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Translation Settings</div>
+              <div class="panel__hint">Model, key, language, batch, and file</div>
+            </div>
+          </div>
+
+          <div class="panel__body form">
+            <div class="form-row">
+              <div class="field">
                 <label for="translationModel">Translation Model</label>
                 <select id="translationModel">
-                    <option value="deepseek">🔥 DeepSeek API — High Quality (Paid)</option>
-                    <option value="gpt-4o">💎 ChatGPT 4o — Highest Quality (Paid)</option>
-                    <option value="gpt-4o-mini">⚡ ChatGPT 4o mini — Cheaper (Paid)</option>
-                    <option value="gpt-5">🚀 ChatGPT 5 — New (Paid)</option>
-                    <option value="gpt-5-mini">💡 ChatGPT 5 mini — Cheap (Paid)</option>
-                    <option value="gpt-5-nano">📦 ChatGPT 5 nano — Ultra Cheap (Paid)</option>
-                    <option value="lingva">🌐 Lingva — Free (Lower Quality)</option>
+                  <option value="deepseek">🔥 DeepSeek API — High Quality (Paid)</option>
+                  <option value="gpt-4o">💎 ChatGPT 4o — Highest Quality (Paid)</option>
+                  <option value="gpt-4o-mini">⚡ ChatGPT 4o mini — Cheaper (Paid)</option>
+                  <option value="gpt-5">🚀 ChatGPT 5 — New (Paid)</option>
+                  <option value="gpt-5-mini">💡 ChatGPT 5 mini — Cheap (Paid)</option>
+                  <option value="gpt-5-nano">📦 ChatGPT 5 nano — Ultra Cheap (Paid)</option>
+                  <option value="lingva">🌐 Lingva — Free (Lower Quality)</option>
                 </select>
+              </div>
             </div>
-            
-            <div class="form-group" id="apiKeyGroup">
+
+            <div class="form-row two">
+              <div class="field" id="apiKeyGroup">
                 <label for="apiKey">DeepSeek API Key</label>
-                <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key">
-            </div>
-            
-            <div class="form-group" id="chatgptApiKeyGroup" style="display: none;">
+                <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key" autocomplete="off">
+              </div>
+
+              <div class="field" id="chatgptApiKeyGroup" style="display:none;">
                 <label for="chatgptApiKey">OpenAI API Key</label>
-                <input type="password" id="chatgptApiKey" placeholder="Enter your OpenAI API key">
+                <input type="password" id="chatgptApiKey" placeholder="Enter your OpenAI API key" autocomplete="off">
+              </div>
             </div>
-            
-            <div class="form-group">
+
+            <div class="form-row two">
+              <div class="field">
                 <label for="targetLanguage">Target Language</label>
                 <select id="targetLanguage">
-                    <option value="id">Indonesian</option>
-                    <option value="vi">Vietnamese</option>
-                    <option value="en">English</option>
-                    <option value="ms">Malay</option>
-                    <option value="tl">Filipino</option>
+                  <option value="id">Indonesian</option>
+                  <option value="vi">Vietnamese</option>
+                  <option value="en">English</option>
+                  <option value="ms">Malay</option>
+                  <option value="tl">Filipino</option>
                 </select>
-            </div>
-            
-            <div class="form-group">
+              </div>
+
+              <div class="field">
                 <label for="batchSize">Batch Size (DeepSeek/ChatGPT only)</label>
                 <input type="number" id="batchSize" min="1" max="50" value="20">
-                <small style="color: var(--text-secondary); opacity: 0.8;">Number of texts to translate in one request.</small>
+                <div class="help">Number of texts to translate in one request.</div>
+              </div>
             </div>
-            
-            <div class="form-group">
+
+            <div class="form-row">
+              <div class="field">
                 <label for="jsonFile">Upload JSON File</label>
                 <input type="file" id="jsonFile" accept=".json">
+                <div class="help">Keep a backup of the original JSON.</div>
+              </div>
             </div>
 
-            <div id="jsonInfoGroup" style="display: none;">
-                <label>File Information</label>
-                <div id="jsonInfo" class="json-info" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 12px;">
-                    <p>JSON file has been loaded. <span id="fileStats">0 text found</span></p>
-                    <button id="viewRawBtn" class="btn-secondary" style="padding: 8px 12px; font-size: 0.85rem; width: auto; display: inline-block; margin-top: 8px; margin-bottom: 5px; border-color: var(--text-secondary); color: var(--text-secondary);">Show Raw JSON</button>
-                </div>
-                <textarea id="jsonContent" class="hidden" style="margin-bottom: 15px;" rows="6" placeholder="Paste your JSON content here"></textarea>
-            </div>
-        </div>
-        
-        <div class="card cyber-grid">
-            <h2>Translation Control</h2>
-            
-            <div class="button-group">
-                <button id="startBtn">
-                    <span>▶️</span> Start
-                </button>
-                <button id="stopBtn" disabled>
-                    <span>⏸️</span> Pause
-                </button>
-                <button id="resumeBtn" disabled>
-                    <span>🔄</span> Resume
-                </button>
-            </div>
-            
-            <div class="progress-container">
-                <label>Progress</label>
-                <progress id="progressBar" value="0" max="100"></progress>
-                <div id="progressText">0% (0/0)</div>
-            </div>
-        </div>
-        
-        <div class="card cyber-grid">
-            <h2>Translation Log</h2>
-            <div id="logContainer" class="log-container">[SYSTEM_BOOT] :: Awaiting input...</div>
-        </div>
-        
-        <div class="card cyber-grid">
-            <h2>Download Results</h2>
-            <button id="downloadResultBtn" disabled>
-                <span>⬇️</span> Download Translated JSON
-            </button>
-            <button id="previewResultBtn" disabled>
-                <span>ℹ️</span> Preview/Edit Translation
-            </button>
-        </div>
-        
-        <div class="card cyber-grid help-container">
-            <h2>Support & Resources</h2>
-            <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
-                <div style="grid-column: 1 / -1;">
-                    <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">SUPPORT THIS PROJECT!</p>
-                    <a href="https://www.buymeacoffee.com/_zkn"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee!&emoji=☕&slug=_zkn&button_colour=ff00ff&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
-                    <a href="https://www.patreon.com/ZiolKen">
-                        <img width="200px" height="50px" style="border-radius: 12px;" alt="Become a Patron" src="https://raw.githubusercontent.com/elsiehupp/patron-buttons/master/svg/become_a_patron_4x1_white_logo_black_text_on_coral.svg">
-                    </a>
-                    <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px; margin-top: 15px;">GET HELP:</p>
-                    <a href="json-ks-convert.html" class="help-btn" target="_blank"><span class="help-icon">🔁</span> KS Extractor For Tyranobuild & Kirikiri Engine</a>
-                    <a href="how-to-get-chatgpt-api-key.html" class="help-btn" target="_blank"><span class="help-icon">🔑</span> Get ChatGPT API Key</a>
-                    <a href="how-to-get-deepseek-api-key.html" class="help-btn" target="_blank"><span class="help-icon">🔑</span> Get DeepSeek API Key</a>
-                    <a href="how-to-get-rpgm-json.html" class="help-btn" target="_blank"><span class="help-icon">📂</span> RPGM JSON Files</a>
-                </div>
-            </div>
-        </div>
+            <div id="jsonInfoGroup" class="jsonInfo" style="display:none;">
+              <label>File Information</label>
+              <div id="jsonInfo" class="jsonInfo__box">
+                <p>JSON file has been loaded. <span id="fileStats">0 text found</span></p>
+                <button id="viewRawBtn" class="btn btn--ghost btn--sm">Show Raw JSON</button>
+              </div>
 
-        <div class="card usage-tips">
-            <h2>Usage Tips</h2>
-            <div class="notice-content">
-                <p><strong>For best results:</strong></p>
-                <ul class="notice-list">
-                    <li>Prioritize games with only one language, as the tool cannot manually select the source language and uses auto-detection</li>
-                    <li>All detected dialog will be translated, making the process much slower for multi-language games</li>
-                    <li>If the game uses separate files for each language, the process will be more efficient</li>
-                    <li>For professional translations, always use high-quality English source text</li>
-                </ul>
-                <p><strong>Note:</strong> The translation quality depends on the source text quality and the selected translation model.</p>
+              <textarea id="jsonContent" class="hidden jsonInfo__raw" rows="6" placeholder="Paste your JSON content here"></textarea>
             </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Translation Control</div>
+              <div class="panel__hint">Start / Pause / Resume / Progress</div>
+            </div>
+          </div>
+
+          <div class="panel__body">
+            <div class="controls__grid">
+              <button id="startBtn" class="btn btn--primary">▶️ Start</button>
+              <button id="stopBtn" class="btn btn--warn" disabled>⏸️ Pause</button>
+              <button id="resumeBtn" class="btn btn--ghost" disabled>🔄 Resume</button>
+            </div>
+
+            <div class="progress">
+              <label>Progress</label>
+              <progress id="progressBar" value="0" max="100"></progress>
+              <div id="progressText" class="progress__text">0% (0/0)</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Usage Tips</div>
+              <div class="panel__hint">Make it faster & safer</div>
+            </div>
+          </div>
+
+          <div class="panel__body notice">
+            <ul class="notice-list">
+              <li>Prioritize games with only one language (tool uses auto-detection).</li>
+              <li>Multi-language JSON → slower (everything detected will be translated).</li>
+              <li>If game uses separate files for each language, it’s more efficient.</li>
+              <li>For professional results, start from high-quality English source text.</li>
+            </ul>
+            <div class="risk">⚠️ By using this tool, you agree to accept all kinds of risks.</div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Translation Log</div>
+              <div class="panel__hint">Realtime output</div>
+            </div>
+          </div>
+          <div class="panel__body">
+            <div id="logContainer" class="log">[SYSTEM_BOOT] :: Awaiting input...</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Download Results</div>
+              <div class="panel__hint">Export translated JSON</div>
+            </div>
+          </div>
+
+          <div class="panel__body dl">
+            <button id="downloadResultBtn" class="btn btn--secondary btn--block" disabled>⬇️ Download Translated JSON</button>
+            <button id="previewResultBtn" class="btn btn--ghost btn--block" disabled>ℹ️ Preview/Edit Translation</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Support & Resources</div>
+              <div class="panel__hint">Help links + sponsor</div>
+            </div>
+          </div>
+
+          <div class="panel__body">
+            <div class="support">
+              <div class="support__block">
+                <div class="support__label">Support this project</div>
+                <div class="support__buttons">
+                  <a class="supportBtn" href="https://www.buymeacoffee.com/_zkn" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+                  <a class="supportBtn supportBtn--patreon" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">❤️ Patreon</a>
+                </div>
+              </div>
+
+              <div class="support__block">
+                <div class="support__label">Get help</div>
+                <div class="support__links">
+                  <a href="json-ks-convert.html" class="helpBtn" target="_blank" rel="noopener">🔁 KS Extractor For Tyranobuild & Kirikiri</a>
+                  <a href="how-to-get-chatgpt-api-key.html" class="helpBtn" target="_blank" rel="noopener">🔑 Get ChatGPT API Key</a>
+                  <a href="how-to-get-deepseek-api-key.html" class="helpBtn" target="_blank" rel="noopener">🔑 Get DeepSeek API Key</a>
+                  <a href="how-to-get-rpgm-json.html" class="helpBtn" target="_blank" rel="noopener">📂 RPGM JSON Files</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="backRow">
+          <a href="../" class="backBtn">⬅️ Back to Main Menu</a>
         </div>
-        
-        <div class="footer-note">
-            ⚠️ By using this tool, you agree to accept all kinds of risks.
-        </div>
-      <div style="text-align: center; margin: 30px 0 20px;">
-  <a href="../" class="btn back-btn">⬅️ Back to Main Menu</a>
+      </div>
+    </section>
+  </main>
+
+  <div id="lingvaWarningModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-modal" aria-label="Close modal">&times;</button>
+      <h3>Important Notice About Lingva Translation</h3>
+      <p>You have selected Lingva for translation. Please be aware that:</p>
+      <div class="notice-content">
+        <ul class="notice-list">
+          <li>Lingva is a free service with limited quality control</li>
+          <li>Translation quality may be inconsistent or inaccurate</li>
+          <li>There is a risk of damaging RPG Maker game structure</li>
+        </ul>
+      </div>
+      <p>For professional results, we recommend using the DeepSeek API.</p>
+      <div class="modal-footer">
+        <button id="confirmLingvaBtn" class="btn btn--warn">OK</button>
+        <button id="cancelLingvaBtn" class="btn btn--ghost">Cancel</button>
       </div>
     </div>
-    
-    <div id="lingvaWarningModal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Important Notice About Lingva Translation</h3>
-            <p>You have selected Lingva for translation. Please be aware that:</p>
-            <div class="notice-content">
-                <ul class="notice-list">
-                    <li>Lingva is a free service with limited quality control</li>
-                    <li>Translation quality may be inconsistent or inaccurate</li>
-                    <li>There is a risk of damaging RPG Maker game structure</li>
-                </ul>
-            </div>
-            <p>For professional results, we recommend using the DeepSeek API.</p>
-            <div class="modal-footer">
-                <button id="confirmLingvaBtn" style="border-color: var(--neon-yellow); color: var(--neon-yellow);">OK</button>
-                <button id="cancelLingvaBtn" style="border-color: var(--text-secondary); color: var(--text-secondary);">Cancel</button>
-            </div>
-        </div>
-    </div>
+  </div>
 
-    <script>
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const particleCount = isMobile ? 55 : 111;
-        particlesJS("particles-js", {
-            "particles": {
-                "number": {
-                    "value": particleCount,
-                    "density": {
-                        "enable": true,
-                        "value_area": 800
-                    }
-                },
-                "color": { "value": "#a855f7" },
-                "shape": {
-                    "type": "circle",
-                    "stroke": { "width": 0, "color": "#000" }
-                },
-                "opacity": {
-                    "value": 0.7,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 0.5,
-                        "opacity_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "size": {
-                    "value": 3,
-                    "random": true,
-                    "anim": {
-                        "enable": true,
-                        "speed": 2,
-                        "size_min": 0.3,
-                        "sync": false
-                    }
-                },
-                "line_linked": {
-                    "enable": true,
-                    "distance": 150,
-                    "color": "#a855f7",
-                    "opacity": 0.3,
-                    "width": 1
-                },
-                "move": {
-                    "enable": true,
-                    "speed": 1.5,
-                    "direction": "none",
-                    "random": false,
-                    "straight": false,
-                    "out_mode": "out",
-                    "bounce": false
-                }
-            },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": {
-                    "onhover": { "enable": true, "mode": "repulse" },
-                    "onclick": { "enable": false },
-                    "resize": true
-                },
-                "modes": {
-                    "repulse": { "distance": 100, "duration": 0.4 }
-                }
-            },
-            "retina_detect": true
-        });
-    </script>
-    
-    <script
-        src="./rpgm.js">
-    </script>
+  <script>
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const particleCount = isMobile ? 35 : 70;
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": particleCount, "density": { "enable": true, "value_area": 900 } },
+        "color": { "value": "#a855f7" },
+        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
+        "opacity": { "value": 0.45, "random": true, "anim": { "enable": false } },
+        "size": { "value": 2.2, "random": true, "anim": { "enable": false } },
+        "line_linked": { "enable": true, "distance": 155, "color": "#a855f7", "opacity": 0.18, "width": 1 },
+        "move": { "enable": true, "speed": 0.8, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
+        "modes": { "repulse": { "distance": 90, "duration": 0.35 } }
+      },
+      "retina_detect": true
+    });
+  </script>
 
+  <script src="./rpgm.js"></script>
 </body>
 
 </html>
