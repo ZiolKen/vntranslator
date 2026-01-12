@@ -450,21 +450,27 @@ progress::-webkit-progress-value{
 }
 .backBtn:hover{border-color: var(--border2); background: rgba(255,255,255,.05)}
 
+.hidden{display:none !important;}
+
 .modal{
-  display:none;
   position:fixed;
   inset:0;
   z-index:200;
-  background: rgba(0,0,0,.6);
+  background: rgba(0,0,0,.62);
   padding: 18px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
 }
-.modal.hidden{display:none}
+.modal.hidden{display:none !important;}
+
 .modal-content{
   max-width: 640px;
-  margin: 7vh auto 0;
+  width: 100%;
+  margin-top: 7vh;
   border-radius: 18px;
   border: 1px solid var(--border);
-  background: rgba(18,18,24,.92);
+  background: rgba(18,18,24,.94);
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow);
   padding: 16px;
@@ -474,16 +480,33 @@ progress::-webkit-progress-value{
   font-family: Orbitron, Inter, sans-serif;
   letter-spacing:.4px;
 }
-.close-modal{
-  border:none;
-  background: transparent;
-  color: rgba(255,255,255,.70);
-  float:right;
-  font-size: 30px;
-  cursor:pointer;
+.modal-content p{
+  margin: 10px 0;
+  color: rgba(255,255,255,.78);
+  line-height: 1.6;
 }
-.close-modal:hover{color: rgba(255,255,255,.92)}
-.modal-footer{display:flex; justify-content:flex-end; gap: 10px; margin-top: 12px}
+.modal-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+#jsonContent{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.25);
+  color: rgba(255,255,255,.86);
+  margin-top: 10px;
+  min-height: 140px;
+  max-height: 360px;
+  overflow:auto;
+  resize: vertical;
+}
 
 @media (max-width: 980px){
   .nav{display:none}
