@@ -23,8 +23,8 @@ html,body{height:100%}
 body{
   margin:0;
   color:var(--text);
-  background: radial-gradient(1200px 800px at 20% 0%, rgba(168,85,247,.18), transparent 60%),
-              radial-gradient(900px 700px at 100% 20%, rgba(34,211,238,.10), transparent 55%),
+  background: linear-gradient(1200px 800px at 20% 0%, rgba(168,85,247,.18), transparent 60%),
+              linear-gradient(900px 700px at 100% 20%, rgba(34,211,238,.10), transparent 55%),
               linear-gradient(180deg, var(--bg0), var(--bg1));
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   overflow-x:hidden;
