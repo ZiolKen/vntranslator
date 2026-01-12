@@ -393,6 +393,8 @@ progress::-webkit-progress-value{
 }
 .jsonInfo__raw{margin-top: 10px}
 
+.btn--sm{height:34px; padding:0 12px; border-radius:12px; font-size:13px}
+
 .support{display:grid; gap: 14px}
 .support__label{
   font-weight: 900;
