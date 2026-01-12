@@ -15,7 +15,6 @@
   --shadow: 0 12px 48px rgba(0,0,0,.55);
   --r: 18px;
   --r2: 14px;
-
   --max: 1120px;
 }
 
@@ -31,7 +30,6 @@ body{
   overflow-x:hidden;
 }
 
-/* Background layers */
 .bg{position:fixed; inset:0; z-index:-3}
 #particles-js{position:absolute; inset:0; z-index:-3}
 .grid{
@@ -51,14 +49,12 @@ body{
   z-index:-1;
 }
 
-/* Layout */
 .wrap{
   width:min(var(--max), calc(100% - 36px));
   margin: 0 auto;
   padding: 86px 0 32px;
 }
 
-/* Topbar */
 .topbar{
   position:sticky;
   top:0;
@@ -160,7 +156,6 @@ body{
 }
 .pill--primary:hover{filter:brightness(1.06)}
 
-/* Hero */
 .hero{
   display:grid;
   grid-template-columns: 1.2fr .9fr;
@@ -243,7 +238,6 @@ body{
   background: rgba(255,255,255,.02);
 }
 
-/* Stats */
 .hero__meta{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -266,7 +260,6 @@ body{
   font-size: 13px;
 }
 
-/* Right panel */
 .panel{
   border-radius: var(--r);
   border: 1px solid var(--border);
@@ -360,7 +353,6 @@ body{
   box-shadow: 0 0 0 6px rgba(34,211,238,.10);
 }
 
-/* Features */
 .features{
   margin-top: 26px;
   border-top: 1px solid var(--border);
@@ -402,7 +394,6 @@ body{
   line-height: 1.6;
 }
 
-/* Footer */
 .footer{
   margin-top: 28px;
   padding: 18px 0 6px;
@@ -436,7 +427,6 @@ body{
 }
 .footer__link:hover{border-color: var(--border); background: rgba(255,255,255,.03)}
 
-/* Responsive */
 @media (max-width: 980px){
   .hero{grid-template-columns: 1fr; }
   .nav{display:none;}
