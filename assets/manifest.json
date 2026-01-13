@@ -3,12 +3,12 @@
   "short_name": "VNTl",
   "icons": [
     {
-      "src": "https://files.catbox.moe/2x5vw3.jpeg",
+      "src": "logo.jpeg",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://files.catbox.moe/2x5vw3.jpeg",
+      "src": "logo.jpeg",
       "sizes": "512x512",
       "type": "image/png"
     }
