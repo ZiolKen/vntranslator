@@ -211,6 +211,137 @@
     </section>
   </main>
 
+  <div id="PreLoad" style="font-size: 50px; position: fixed; display: flex; z-index: 999999; padding: 270px 40px; font-weight: bold; font-family: 'Turret Road', sans-serif; inset: 0; transition: opacity 0.6s ease; backdrop-filter: blur(3px); justify-content: center; align-items: center; text-align: center; background-color: rgba(0, 0, 0, 0.6); color: white; display: none;">Loading...</div>
+  	
+  <script src="./bundles/custom.js"></script>
+  <script src="./bundles/script.js"></script>
+  <script>
+  		function getFormData($form){
+  			var unindexed_array = $form.serializeArray();
+  			var indexed_array = {};
+  			$.map(unindexed_array, function (n, i) {
+  				if (!(n['name'] in indexed_array))
+  					indexed_array[n['name']] = n['value'];
+  			});
+  			return indexed_array;
+  		}
+  
+  		function PreLoadOn() {
+  			$('#PreLoad').show();
+  		}
+  		function PreLoadOff() {
+  			$('#PreLoad').hide();
+  		}
+  	
+      document.addEventListener("keydown", e => {
+        if (
+          e.key === "F12" ||
+          (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
+          (e.ctrlKey && e.key === "U")
+        ) {
+          e.preventDefault();
+        }
+      });
+  
+      console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
+  </script>
+  <script src="./bundles/index.js"></script>
+  <script src="./Scripts/particles.js"></script>
+  <script>
+  const API_HOSTS = [
+    "https://game-text-editor-api-production.up.railway.app",
+    "https://game-text-editor-api-production-aeba.up.railway.app",
+    "https://game-text-editor-api-production-7a01.up.railway.app",
+    "https://game-text-backend.onrender.com",
+    "https://game-text-editor.onrender.com",
+    "https://game-text-editor-api-9grm.onrender.com",
+    "https://game-text-backend-backup-u9d9.onrender.com",
+    "https://game-text-backend.vercel.app",
+    "https://game-text-editor.vercel.app",
+    "https://game-text-editor-api.vercel.app",
+    "https://game-text-backend-backup.vercel.app"
+  ];
+  
+  async function apiFetch(path, options) {
+    for (let base of API_HOSTS) {
+      try {
+        const res = await fetch(base + path, options);
+        if (res.ok) {
+          console.log("Using API:", base);
+          return res;
+        }
+      } catch (e) {
+        console.warn("API failed:", base);
+      }
+    }
+    throw new Error("❌ All backend servers failed!");
+  }
+  	
+  async function loadEditor(id) {
+      PreLoadOn();
+  
+      try {
+          const res = await apiFetch("/Edit/" + id);
+  
+          if (!res.ok) {
+              alert("Load editor error: " + res.status);
+              PreLoadOff();
+              return;
+          }
+  
+          const json = await res.json();
+  
+          $('#headM').show();
+          $('#editorContainer').show();
+  
+          renderEditor(json);
+      } catch (e) {
+          console.error(e);
+          alert("Editor load failed");
+      }
+  
+      PreLoadOff();
+  }
+  	
+  async function saveData(id) {
+      let dataText = document.getElementById("editorArea").value;
+      let json;
+  
+      try {
+          json = JSON.parse(dataText);
+      } catch (e) {
+          alert("Invalid JSON!");
+          return;
+      }
+  
+      PreLoadOn();
+  
+      try {
+          const res = await apiFetch("/Edit/" + id, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ data: json })
+          });
+  
+          if (res.ok) {
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "edited.json";
+              a.click();
+              URL.revokeObjectURL(url);
+          } else {
+              alert("Save failed: " + res.status);
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Save network error!");
+      }
+  
+      PreLoadOff();
+  }
+  </script>
   <script>
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const particleCount = isMobile ? 60 : 111;
