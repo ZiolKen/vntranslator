@@ -1,8 +1,19 @@
 <br>
 <p align="center">
-<a href="https://vntranslator.pages.dev" target="_blank">
-<img src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" height="250" width="250" style="border-radius: 16px;" />
-</a>
+  <a href="https://vntranslator.pages.dev">
+    <div style="
+      width: 250px;
+      height: 250px;
+      border-radius: 16px;
+      overflow: hidden;
+      display: inline-block;
+    ">
+      <img src="./assets/logo.jpeg"
+           alt="VN Translator"
+           width="250"
+           height="250" />
+    </div>
+  </a>
 </p>
 
 # <p align="center">VN Translator</p>
