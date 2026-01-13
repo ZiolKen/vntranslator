@@ -1,336 +1,338 @@
-        <!DOCTYPE html>
-        <html lang="en">
- 
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta content="ie=edge" http-equiv="X-UA-Compatible">
-            <title>RPGM Ultimate Tool (Editor + Translator)</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-            <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <meta name="theme-color" content="#000000">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Turret+Road:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="./rpgmu.css">
-            <!-- Google Analytics -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-            <script>
-                window.dataLayer = window.dataLayer || [];
- 
-                function gtag() {
-                    dataLayer.push(arguments);
-                }
-                gtag('js', new Date());
- 
-                gtag('config', 'G-BXTNE3VPWH');
-            </script>
- 
-        </head>
- 
-        <body>
-            <div class="BG"></div>
-            <div id="particles-js"></div>
-            <div class="grid-bg"></div>
-            <h1 id="main-title" class="floating" style="font-size: 3rem; font-weight: 900; margin-bottom: 1rem; animation: floating 3s ease-in-out infinite; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;">RPGM Ultimate <span style="background: linear-gradient(to right, #c084fc, #f472b6, #c084fc); -webkit-background-clip: text; color: transparent; background-clip: text;">Tool</span>
-            </h1>
-            <div style="max-width: 1200px; margin: 0 auto;">
-                <div id="step1-root" style="margin-bottom: 40px;">
-                  <div class="card cyber-grid" id="step1Card">
-                    <div class="form-group">
-                      <div class="form-group">
-                        <h2>STEP 1: EXTRACTION & PACKAGING</h2>
-                      </div>
-                      <label class="label" id="fileCountLabel">0 file(s) is open.</label>
-                    </div>
-                
-                    <div class="form-group">
-                      <div class="form-group">
-                        <label for="json-upload" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full cursor-pointer inline-flex items-center gap-3 shadow-lg transition transform hover:-translate-y-1">
-                          <i class="fas fa-folder-open"></i>
-                          <span>SELECT ORIGINAL JSON FILE(s)</span>
-                        </label>
-                        <input id="json-upload" type="file" accept=".json" multiple />
-                        <p style="text-align:center; font-size:13px; color:#666; margin-bottom:20px">
-                          Select multiple files (hold Ctrl) from the game data folder (Actors.json, Armors.json, Items.json, CommonEvents.json, MapXXX.json, Skills.json, System.json, ...)
-                        </p>
-                
-                        <div class="tab-bar" id="fileTabs" style="display:none;"></div>
-                      </div>
-                
-                      <div class="form-group">
-                        <div class="form-group">
-                          <textarea
-                            id="editorArea"
-                            class="editor-textarea w-full h-[500px] p-4 text-sm text-gray-800 bg-transparent focus:bg-white focus:outline-none transition wrap-off"
-                            placeholder="The JSON data will appear here..."
-                            spellcheck="false"
-                          ></textarea>
-                
-                          <div class="button-group" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; text-align:center">
-                            <button id="exportTxtBtn" class="p-2 hover:bg-purple-100 text-gray-600 hover:text-purple-700 rounded transition" title="1. Export to TXT for translation">
-                              <i class="fas fa-file-export fa-lg"></i>
-                            </button>
-                            <button id="importTxtBtn" class="p-2 hover:bg-green-100 text-gray-600 hover:text-green-700 rounded transition" title="2. Import translated TXT">
-                              <i class="fas fa-file-import fa-lg"></i>
-                            </button>
-                          </div>
-                
-                          <input id="txt-upload" type="file" accept=".txt" style="display:none;" />
-                        </div>
-                      </div>
-                
-                      <div class="form-group">
-                        <div class="form-group">
-                          <span class="log-container" style="text-align:center; margin-bottom:12px; display:block" id="step1Status">Waiting file...</span>
-                
-                          <label class="custom-checkbox">
-                            <input type="checkbox" id="wordWrapToggle" />
-                            <span class="checkmark"></span>
-                            <span>Word Wrap</span>
-                          </label>
-                        </div>
-                
-                        <button
-                          id="saveBtn"
-                          disabled
-                          class="font-bold py-2 px-6 rounded shadow flex items-center gap-2 bg-gray-300 text-gray-500 cursor-not-allowed"
-                        >
-                          <i class="fas fa-save"></i>
-                          <span id="saveBtnText">SAVE JSON (DONE)</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
- 
-                <hr style="border:0; border-top:2px dashed #ccc; margin: 40px 0;">
- 
-                <div class="card">
-                    <h2>STEP 2: AUTO TRANSLATION</h2>
-                    <div style="text-align:center; font-size:13px; color:#666; margin-bottom:20px">
-                        Use this section to translate the .txt file exported from the step above.
-                    </div>
- 
-                    <div class="form-group">
-                        <div class="form-group">
-                            <div class="form-group" style="flex: 2;">
-                                <label>1. Select TXT File:</label>
-                                <input id="fileInput" type="file" accept=".txt" />
-                            </div>
- 
-                            <div class="form-group">
-                                <label>2. Translation Language:</label>
-                                <select id="transMode">
-                                    <option value="id">Indonesia</option>
-                                    <option value="vi">Vietnamese</option>
-                                    <option value="en">English</option>
-                                    <option value="ms">Malaysia</option>
-                                    <option value="tl">Filipino</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>3. Translation Model:</label>
-                                <select id="transModel">
-                                    <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
-                                    <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
-                                    <option value="lingva">🌐 Lingva (Free – Stable)</option>
-                                    <option value="google">💠 Google Translate (Free - Fast)</option>
-                                </select>
-                            </div>
- 
-                            <div class="form-group" id="apiKeyGroup">
-                                <label for="apiKey">DeepSeek API Key:</label>
-                                <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key">
-                            </div>
-                                <div class="form-group" id="deeplKeyGroup" style="display:none;">
-                                  <label for="deeplApiKey">DeepL API Key:</label>
-                                  <input
-                                    type="password"
-                                    id="deeplApiKey"
-                                    placeholder="Enter your DeepL API key"
-                                    autocomplete="off"
-                                  >
-                                </div>
- 
-                            <div class="form-group" style="flex:0.5">
-                                <label>Batch:</label>
-                                <input id="batchSize" type="number" value="20" title="Number of lines processed at the same time." />
-                            </div>
-                        </div>
- 
-                        <div class="form-group">
-                            <div class="checkbox-group">
-                                <label class="custom-checkbox" title="If any line has Vietnamese characters, it will not be translated again. Use to continue running the unfinished translated file.">
-                                    <input type="checkbox" id="skipVietnamese">
-                                    <span class="checkmark"></span>
-                                    <span>Skip Vietnamese line (Continue)</span>
-                                </label>
-                            </div>
-                        </div>
- 
-                        <div class="button-group">
-                            <button id="startBtn" disabled style="flex:2">▶️ Start translation</button>
-                            <button id="stopBtn" class="btn-secondary" disabled style="flex:1">⏹ Stop</button>
-                            <button id="copyBtn" class="btn-success" disabled style="flex:1">📋 Copy</button>
-                            <button id="downloadBtn" class="btn-success" disabled style="flex:1">⬇ Download results</button>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress-container">
-                                <div class="progress-bar" id="progressBar"></div>
-                            </div>
-                            <div class="progress-text" id="progressText">Ready</div>
-                        </div>
- 
-                        <div class="log-container" id="logConsole">
-                            <div style="color:#666; font-style:italic">Select .txt file to start translating...</div>
-                        </div>
-                    </div>
-                </div>
- 
-                <div class="card" style="margin-top: 25px;">
-                    <h2>Preview translation results:</h2>
-                    <textarea style="height: 256px;" id="outputArea" readonly></textarea>
-                </div>
-                <div class="card cyber-grid help-container" style="margin-top: 25px;">
-                    <div class="support-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }">
-                        <div style="grid-column: 1 / -1;">
-                            <p class="support-label" style="font-weight: bold; color: var(--neon-yellow); margin-bottom: 10px;">SUPPORT THIS PROJECT!</p>
-                                <a href="https://www.buymeacoffee.com/_zkn"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee!&emoji=☕&slug=_zkn&button_colour=ff00ff&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
-                                <a href="https://www.patreon.com/ZiolKen">
-                                    <img width="200px" height="50px" style="border-radius: 12px;" alt="Become a Patron" src="https://raw.githubusercontent.com/elsiehupp/patron-buttons/master/svg/become_a_patron_4x1_white_logo_black_text_on_coral.svg">
-                                </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="card usage-tips" style="margin-top: 25px;">
-                    <h2>Usage Tips</h2>
-                    <div class="notice-content">
-                        <p><strong>For best results:</strong></p>
-                        <ul class="notice-list">
-                            <li>Prioritize games with only one language, as the tool cannot manually select the source language and uses auto-detection</li>
-                            <li>All detected dialog will be translated, making the process much slower for multi-language games</li>
-                            <li>If the game uses separate files for each language, the process will be more efficient</li>
-                            <li>For professional translations, always use high-quality English source text</li>
-                        </ul>
-                        <p><strong>Note:</strong> The translation quality depends on the source text quality and the selected translation model.</p>
-                    </div>
-                </div>
-            <footer class="footer-note">
-                ⚠️ By using this tool, you agree to accept all kinds of risks.
-            </footer>
- 
-            <div style="text-align: center; margin: 40px 0 20px;">
-                <a href="../" class="back-btn">⬅️ Back to Main Menu</a>
-            </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
+
+  <title>RPGM Ultimate (Editor + Translator) | VN Translator</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./rpgmu.css" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BXTNE3VPWH');
+  </script>
+</head>
+
+<body>
+  <div class="bg" aria-hidden="true">
+    <div id="particles-js"></div>
+    <div class="grid"></div>
+    <div class="glow"></div>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span aria-hidden="true">
+        <img class="brand__img" src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator logo" />
+      </span>
+      <span class="brand__text">
+        <span class="brand__name">VN Translator</span>
+        <span class="brand__tag">Ren’Py • RPG Maker • Text Tools</span>
+      </span>
+    </a>
+
+    <nav class="nav">
+      <a class="nav__link" href="../renpy/">Ren’Py</a>
+      <a class="nav__link" href="../rpgm/">RPG Maker</a>
+      <a class="nav__link" href="../game-text-editor/">Game Text Editor</a>
+      <a class="nav__link nav__link--active" href="./">RPGM Ultimate</a>
+    </nav>
+
+    <div class="topbar__actions">
+      <a class="pill pill--primary" href="../">Back</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="pageHead">
+      <div class="pageHead__left">
+        <div class="badge">
+          <span class="dot" aria-hidden="true"></span>
+          RPGM Ultimate Tool
         </div>
- 
-            <div id="lingvaWarningModal" class="modal hidden">
-                <div class="modal-content">
-                    <h3>Important Notice About Lingva/Google Translation</h3>
-                    <p>You have selected Lingva/Google for translation. Please be aware that:</p>
-                    <ul class="notice-list">
-                        <li>Lingva/Google is a free service with limited quality control</li>
-                        <li>Translation quality may be inconsistent or inaccurate</li>
-                        <li>There is a risk of damaging RPG Maker game structure</li>
-                    </ul>
-                    <p>For professional results, we recommend using the DeepSeek API.</p>
-                    <div class="modal-footer">
-                        <button id="confirmLingvaBtn">OK</button>
-                        <button id="cancelLingvaBtn">Cancel</button>
-                    </div>
-                </div>
+
+        <h1 class="title">
+          Extract • Edit • Translate <span class="accent">RPG Maker JSON</span>
+        </h1>
+
+        <p class="subtitle">
+          Step 1 packages game JSON into TXT for translation. Step 2 auto-translates the TXT and lets you import back.
+          Designed for MV/MZ workflows.
+        </p>
+
+        <div class="quickActions">
+          <a class="btn btn--ghost" href="../rpgm/">🕹️ RPG Maker Translator</a>
+          <a class="btn btn--ghost" href="../game-text-editor/">🧩 Game Text Editor</a>
+        </div>
+      </div>
+
+      <div class="pageHead__right">
+        <div class="miniPanel">
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Best choice</div>
+            <div class="miniPanel__v"><span class="chip chip--ok">DeepSeek</span> Preserves structure better</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Free options</div>
+            <div class="miniPanel__v"><span class="chip">Lingva</span> / <span class="chip">Google</span> (Riskier)</div>
+          </div>
+          <div class="miniPanel__row">
+            <div class="miniPanel__k">Tip</div>
+            <div class="miniPanel__v">Smaller batch → fewer failures</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="step1-root" class="panel">
+      <div class="panel__header">
+        <div>
+          <div class="panel__title">STEP 1: Extraction & Packaging</div>
+          <div class="panel__hint">Load JSON → export TXT → import translated TXT → save JSON</div>
+        </div>
+        <div class="panel__meta">
+          <span class="metaPill"><i class="fa-solid fa-file"></i> <span id="fileCountLabel">0 file(s) is open.</span></span>
+        </div>
+      </div>
+
+      <div class="panel__body">
+        <div class="grid2">
+          <div class="panelSub">
+            <label for="json-upload" class="btn btn--primary btn--block" style="cursor:pointer;">
+              <i class="fas fa-folder-open"></i>
+              <span>SELECT ORIGINAL JSON FILE(s)</span>
+            </label>
+            <input id="json-upload" type="file" accept=".json" multiple class="hiddenInput" />
+
+            <p class="helpText">
+              Select multiple files from the game data folder (Actors.json, Armors.json, Items.json, CommonEvents.json,
+              MapXXX.json, Skills.json, System.json, ...)
+            </p>
+
+            <div class="tab-bar" id="fileTabs" style="display:none;"></div>
+
+            <div class="iconBtnGrid">
+              <button id="exportTxtBtn" class="iconBtn" title="1. Export to TXT for translation">
+                <i class="fas fa-file-export fa-lg"></i>
+                <span>Export TXT</span>
+              </button>
+
+              <button id="importTxtBtn" class="iconBtn iconBtn--ok" title="2. Import translated TXT">
+                <i class="fas fa-file-import fa-lg"></i>
+                <span>Import TXT</span>
+              </button>
+
+              <input id="txt-upload" type="file" accept=".txt" class="hiddenInput" />
             </div>
- 
-            <script src="./rpgmu.js">
-            </script>
- 
-            <script src="./rpgmux.js">
-            </script>
- 
-            <script>
-                const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                const particleCount = isMobile ? 25 : 80;
-                particlesJS("particles-js", {
-                    "particles": {
-                        "number": {
-                            "value": particleCount,
-                            "density": {
-                                "enable": true,
-                                "value_area": 800
-                            }
-                        },
-                        "color": {
-                            "value": "#a855f7"
-                        },
-                        "shape": {
-                            "type": "circle",
-                            "stroke": {
-                                "width": 0,
-                                "color": "#000"
-                            }
-                        },
-                        "opacity": {
-                            "value": 0.7,
-                            "random": true,
-                            "anim": {
-                                "enable": true,
-                                "speed": 0.5,
-                                "opacity_min": 0.3,
-                                "sync": false
-                            }
-                        },
-                        "size": {
-                            "value": 3,
-                            "random": true,
-                            "anim": {
-                                "enable": true,
-                                "speed": 2,
-                                "size_min": 0.3,
-                                "sync": false
-                            }
-                        },
-                        "line_linked": {
-                            "enable": true,
-                            "distance": 150,
-                            "color": "#a855f7",
-                            "opacity": 0.3,
-                            "width": 1
-                        },
-                        "move": {
-                            "enable": true,
-                            "speed": 1.5,
-                            "direction": "none",
-                            "random": false,
-                            "straight": false,
-                            "out_mode": "out",
-                            "bounce": false
-                        }
-                    },
-                    "interactivity": {
-                        "detect_on": "canvas",
-                        "events": {
-                            "onhover": {
-                                "enable": true,
-                                "mode": "repulse"
-                            },
-                            "onclick": {
-                                "enable": false
-                            },
-                            "resize": true
-                        },
-                        "modes": {
-                            "repulse": {
-                                "distance": 100,
-                                "duration": 0.4
-                            }
-                        }
-                    },
-                    "retina_detect": true
-                });
-            </script>
- 
-        </body>
- 
-        </html>
+
+            <div class="rowBetween">
+              <span class="statusLine" id="step1Status">Waiting file...</span>
+
+              <label class="toggle">
+                <input type="checkbox" id="wordWrapToggle" />
+                <span class="toggle__ui"></span>
+                <span class="toggle__text">Word Wrap</span>
+              </label>
+            </div>
+
+            <button id="saveBtn" disabled class="btn btn--disabled btn--block">
+              <i class="fas fa-save"></i>
+              <span id="saveBtnText">SAVE JSON (DONE)</span>
+            </button>
+          </div>
+
+          <div class="panelSub">
+            <div class="subHead">
+              <div class="subHead__title">JSON Editor</div>
+              <div class="subHead__hint">Edit safely, then export/import</div>
+            </div>
+
+            <textarea
+              id="editorArea"
+              class="editorText"
+              placeholder="The JSON data will appear here..."
+              spellcheck="false"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <div class="panel__title">STEP 2: Auto Translation</div>
+          <div class="panel__hint">Translate the TXT exported from Step 1</div>
+        </div>
+      </div>
+
+      <div class="panel__body">
+        <div class="formGrid">
+          <div class="field">
+            <label>1. Select TXT File</label>
+            <input id="fileInput" type="file" accept=".txt" />
+          </div>
+
+          <div class="field">
+            <label>2. Target Language</label>
+            <select id="transMode">
+              <option value="id">Indonesia</option>
+              <option value="vi">Vietnamese</option>
+              <option value="en">English</option>
+              <option value="ms">Malaysia</option>
+              <option value="tl">Filipino</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>3. Translation Model</label>
+            <select id="transModel">
+              <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
+              <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
+              <option value="lingva">🌐 Lingva (Free – Stable)</option>
+              <option value="google">💠 Google Translate (Free - Fast)</option>
+            </select>
+          </div>
+
+          <div class="field" id="apiKeyGroup">
+            <label for="apiKey">DeepSeek API Key</label>
+            <input type="password" id="apiKey" placeholder="Enter your DeepSeek API key" autocomplete="off" />
+          </div>
+
+          <div class="field" id="deeplKeyGroup" style="display:none;">
+            <label for="deeplApiKey">DeepL API Key</label>
+            <input type="password" id="deeplApiKey" placeholder="Enter your DeepL API key" autocomplete="off" />
+          </div>
+
+          <div class="field small">
+            <label>Batch</label>
+            <input id="batchSize" type="number" value="20" title="Number of lines processed at the same time." />
+          </div>
+        </div>
+
+        <div class="rowBetween" style="margin-top:10px;">
+          <label class="toggle" title="If any line has Vietnamese characters, it will not be translated again. Use to continue running the unfinished translated file.">
+            <input type="checkbox" id="skipVietnamese" />
+            <span class="toggle__ui"></span>
+            <span class="toggle__text">Skip Vietnamese line (Continue)</span>
+          </label>
+        </div>
+
+        <div class="controls">
+          <button id="startBtn" disabled class="btn btn--primary" style="flex:2;">▶️ Start translation</button>
+          <button id="stopBtn" class="btn btn--warn" disabled style="flex:1;">⏹ Stop</button>
+          <button id="copyBtn" class="btn btn--ghost" disabled style="flex:1;">📋 Copy</button>
+          <button id="downloadBtn" class="btn btn--secondary" disabled style="flex:1;">⬇ Download</button>
+        </div>
+
+        <div class="progressWrap">
+          <div class="progressTrack">
+            <div class="progressBar" id="progressBar"></div>
+          </div>
+          <div class="progressText" id="progressText">Ready</div>
+        </div>
+
+        <div class="logBox" id="logConsole">
+          <div class="muted" style="font-style:italic;">Select .txt file to start translating...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top: 16px;">
+      <div class="panel__header">
+        <div>
+          <div class="panel__title">Preview translation results</div>
+          <div class="panel__hint">Output preview (read-only)</div>
+        </div>
+      </div>
+      <div class="panel__body">
+        <textarea id="outputArea" class="outputText" readonly></textarea>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top: 16px;">
+      <div class="panel__header">
+        <div>
+          <div class="panel__title">Support</div>
+          <div class="panel__hint">Help keep the project alive</div>
+        </div>
+      </div>
+      <div class="panel__body">
+        <div class="support__buttons">
+          <a class="supportBtn" href="https://www.buymeacoffee.com/_zkn" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+          <a class="supportBtn supportBtn--patreon" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">❤️ Patreon</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer-note">
+      ⚠️ By using this tool, you agree to accept all kinds of risks.
+    </footer>
+
+    <div class="backRow">
+      <a href="../" class="backBtn">⬅️ Back to Main Menu</a>
+    </div>
+  </main>
+
+  <div id="lingvaWarningModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Important Notice About Lingva/Google Translation</h3>
+      <p>You have selected Lingva/Google for translation. Please be aware that:</p>
+      <ul class="notice-list">
+        <li>Lingva/Google is a free service with limited quality control</li>
+        <li>Translation quality may be inconsistent or inaccurate</li>
+        <li>There is a risk of damaging RPG Maker game structure</li>
+      </ul>
+      <p>For professional results, we recommend using the DeepSeek API.</p>
+      <div class="modal-footer">
+        <button id="confirmLingvaBtn" class="btn btn--warn">OK</button>
+        <button id="cancelLingvaBtn" class="btn btn--ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./rpgmu.js"></script>
+  <script src="./rpgmux.js"></script>
+
+  <script>
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const particleCount = isMobile ? 60 : 111;
+
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": particleCount, "density": { "enable": true, "value_area": 950 } },
+        "color": { "value": "#a855f7" },
+        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
+        "opacity": { "value": 0.40, "random": true, "anim": { "enable": false } },
+        "size": { "value": 2.2, "random": true, "anim": { "enable": false } },
+        "line_linked": { "enable": true, "distance": 160, "color": "#a855f7", "opacity": 0.16, "width": 1 },
+        "move": { "enable": true, "speed": 0.75, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
+        "modes": { "repulse": { "distance": 90, "duration": 0.35 } }
+      },
+      "retina_detect": true
+    });
+  </script>
+</body>
+
+</html>
