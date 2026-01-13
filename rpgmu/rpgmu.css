@@ -623,36 +623,3 @@ body{
                     white-space: nowrap;
                     color: #fff;
                 }
-
-                .btn {
-                    width: 100%;
-                    padding: 14px;
-                    border: 1px solid var(--neon-cyan);
-                    border-radius: 12px;
-                    font-size: 1rem;
-                    font-weight: 700;
-                    cursor: pointer;
-                    transition: all 0.3s;
-                    font-family: 'Turret Road', sans-serif;
-                    text-transform: uppercase;
-                    letter-spacing: 1.5px;
-                    position: relative;
-                    overflow: hidden;
-                    background: transparent;
-                    backdrop-filter: blur(2px);
-                    color: var(--neon-cyan);
-                }
-
-                .btn:disabled {
-                    border-color: var(--text-secondary);
-                    color: var(--text-secondary);
-                    cursor: not-allowed;
-                    text-shadow: none;
-                    box-shadow: none;
-                }
- 
-                .btn:hover:not(:disabled) {
-                    background-color: var(--neon-cyan);
-                    color: var(--bg-primary);
-                    box-shadow: 0 0 20px var(--neon-cyan);
-                }
