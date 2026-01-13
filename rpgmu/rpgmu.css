@@ -409,7 +409,7 @@ body{
 .supportBtn:hover{border-color: var(--border2); background: rgba(255,255,255,.05)}
 .supportBtn--patreon{border-color: rgba(168,85,247,.30); background: rgba(168,85,247,.12)}
 
-.footer-note{margin-top: 18px; color: rgba(255,255,255,.72); font-size: 13px}
+.footer-note{margin-top: 18px; color: rgba(255,255,255,.72); font-size: 13px; text-align: center; justify-content: center; align-items: center}
 .backRow{display:flex; justify-content:center; margin: 18px 0 8px}
 .backBtn{
   display:inline-flex; align-items:center; justify-content:center;
@@ -622,4 +622,37 @@ body{
                     pointer-events: none;
                     white-space: nowrap;
                     color: #fff;
+                }
+
+                .btn {
+                    width: 100%;
+                    padding: 14px;
+                    border: 1px solid var(--neon-cyan);
+                    border-radius: 12px;
+                    font-size: 1rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    font-family: 'Turret Road', sans-serif;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    position: relative;
+                    overflow: hidden;
+                    background: transparent;
+                    backdrop-filter: blur(2px);
+                    color: var(--neon-cyan);
+                }
+
+                .btn:disabled {
+                    border-color: var(--text-secondary);
+                    color: var(--text-secondary);
+                    cursor: not-allowed;
+                    text-shadow: none;
+                    box-shadow: none;
+                }
+ 
+                .btn:hover:not(:disabled) {
+                    background-color: var(--neon-cyan);
+                    color: var(--bg-primary);
+                    box-shadow: 0 0 20px var(--neon-cyan);
                 }
