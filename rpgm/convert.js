@@ -121,86 +121,91 @@
  
             // ==================== JSON + KS ====================          
             document.getElementById('mergeBtn').addEventListener('click', function() {
-                const jsonFile = document.getElementById('jsonFile').files[0];
-                const ksFile = document.getElementById('ksOriginFile').files[0];
-                if (!jsonFile || !ksFile) {
-                    alert("⚠️ Please select both translated JSON and original KS!");
-                    return;
+              const jsonFile = document.getElementById('jsonFile').files[0];
+              const ksFile = document.getElementById('ksOriginFile').files[0];
+              if (!jsonFile || !ksFile) {
+                alert("⚠️ Please select both translated JSON and original KS!");
+                return;
+              }
+            
+              const readerJSON = new FileReader();
+              readerJSON.onload = function(e) {
+                let jsonData;
+                try {
+                  jsonData = JSON.parse(e.target.result);
+                } catch (err) {
+                  alert("⚠️ Invalid JSON!");
+                  return;
                 }
- 
-                const readerJSON = new FileReader();
-                readerJSON.onload = function(e) {
-                    let jsonData;
-                    try {
-                        jsonData = JSON.parse(e.target.result);
-                    } catch (err) {
-                        alert("⚠️ Invalid JSON!");
-                        return;
+            
+                const textsArr = Array.isArray(jsonData?.texts) ? jsonData.texts : [];
+                const map = new Map(textsArr.map(t => [t.lineIndex, t]));
+            
+                const readerKS = new FileReader();
+                readerKS.onload = function(ev2) {
+                  const lines = ev2.target.result.split(/\r?\n/);
+            
+                  const finalLines = lines.map((line, idx) => {
+                    const item = map.get(idx);
+                    if (!item) return line;
+            
+                    const newText = (item.text ?? "").trim();
+                    if (!newText) return line;
+            
+                    let updatedLine = line;
+            
+                    const safeTextDQ = newText
+                      .replace(/\\/g, "\\\\")
+                      .replace(/"/g, '\\"')
+                      .replace(/\r?\n/g, "\\n");
+            
+                    if (/text=(["'])(.*?)\1/.test(line)) {
+                      updatedLine = line.replace(/text=(["'])(.*?)\1/, () => `text="${safeTextDQ}"`);
                     }
- 
-                    const readerKS = new FileReader();
-                    readerKS.onload = function(ev2) {
-                        const lines = ev2.target.result.split(/\r?\n/);
-                        const finalLines = lines.map((line, idx) => {
-                            let updatedLine = line;
-                            const item = jsonData.texts.find(t => t.lineIndex === idx);
-                            if (!item) return line;
- 
-                            const newText = item.text?.trim() || "";
-   
-                            if (/text=(["'])(.*?)\1/.test(line)) {
-                                updatedLine = line.replace(/text=(["'])(.*?)\1/, match => {
-                                    const safeText = newText.replace(/"/g, '\\"');
-                                    return `text="${safeText}"`;
-                                });
-                            }  
-                            else if (/@eval\s+exp=sf\.(?:name\d?|hnam\d?)="(.*?)"/.test(line)) {
-                                updatedLine = line.replace(/"(.*?)"/, `"${newText}"`);
-                            }   
-                            else if (/「(.*?)」/.test(line)) {
-                                updatedLine = line.replace(/「(.*?)」/, `「${newText}」`);
-                            }     
-                            else if (/emb\s+exp="sf\.hnam\d?"/.test(line) || /。$/.test(line)) {
-                                if (/^;/.test(line)) {
-                                    updatedLine = line.replace(/^;　?.*$/, `;　${newText}`);
-                                } else {
-                                    updatedLine = newText;
-                                }
-                            }      
-                            else if (/^\[cname\s+chara=.*?\]/.test(line)) {
-                                updatedLine = line.replace(/^\[cname\s+chara=.*?\].*$/, `[cname chara=""]${newText}[np]`);
-                            }    
-                            else if (
-                                line.trim() !== "" &&
-                                !line.trim().startsWith("[") &&
-                                !line.trim().startsWith("*") &&
-                                !line.trim().startsWith(";") &&
-                                !line.trim().startsWith("@")
-                            ) {
-                                updatedLine = newText;
-                            }
- 
-                            return updatedLine;
-                        });
- 
-                        const ksContent = finalLines.join("\n");
-                        output.value = ksContent;
- 
-                        const blob = new Blob([ksContent], {
-                            type: 'application/octet-stream'
-                        });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = ksFile.name;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    };
-                    readerKS.readAsText(ksFile, 'UTF-8');
+                    else if (/@eval\s+exp=sf\.(?:name\d?|hnam\d?)="(.*?)"/.test(line)) {
+                      updatedLine = line.replace(/"(.*?)"/, `"${newText.replace(/"/g, '\\"')}"`);
+                    }
+                    else if (/「(.*?)」/.test(line)) {
+                      updatedLine = line.replace(/「(.*?)」/, `「${newText}」`);
+                    }
+                    else if (/emb\s+exp="sf\.hnam\d?"/.test(line) || /。$/.test(line)) {
+                      if (/^;/.test(line)) updatedLine = line.replace(/^;　?.*$/, `;　${newText}`);
+                      else updatedLine = newText;
+                    }
+                    else if (/^\[cname\s+chara=.*?\]/.test(line)) {
+                      updatedLine = `[cname chara=""]${newText}[np]`;
+                    }
+                    else if (
+                      line.trim() !== "" &&
+                      !line.trim().startsWith("[") &&
+                      !line.trim().startsWith("*") &&
+                      !line.trim().startsWith(";") &&
+                      !line.trim().startsWith("@")
+                    ) {
+                      updatedLine = newText;
+                    }
+            
+                    return updatedLine;
+                  });
+            
+                  const ksContent = finalLines.join("\n");
+                  output.value = ksContent;
+            
+                  const blob = new Blob([ksContent], { type: 'application/octet-stream' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = ksFile.name;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
                 };
-                readerJSON.readAsText(jsonFile, 'UTF-8');
+            
+                readerKS.readAsText(ksFile, 'UTF-8');
+              };
+            
+              readerJSON.readAsText(jsonFile, 'UTF-8');
             });
 
             document.addEventListener("contextmenu", e => e.preventDefault());
