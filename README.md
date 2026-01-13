@@ -5,9 +5,13 @@
 </a>
 </p>
 
-# VN Translator
+# <h1 align="center">VN Translator</h1>
 
-### Modern Web Toolkit for Translating Ren’Py & RPG Maker Games
+<div>
+  <img style="100%" src="https://capsule-render.vercel.app/api?type=waving&height=100&section=header&reversal=false&fontSize=70&fontColor=FFFFFF&fontAlign=50&fontAlignY=50&stroke=-&descSize=20&descAlign=50&descAlignY=50&theme=cobalt"  />
+</div>
+
+### <p align="center">Modern Web Toolkit for Translating Ren’Py & RPG Maker Games</p>
 
 <p align="center">
   <img src="https://files.catbox.moe/9bk373.png" alt="VN Translator Banner" width="720">
@@ -114,15 +118,14 @@ Never expose private API keys in client-side code.
 
 ## ❤️ Credits
 
-Created and maintained by **ZiolKen**.
+Created and maintained by **[ZiolKen](https://github.com/ZiolKen)**.
 
 ---
 
 ## ☕ Support
 
 If this project helps you:
-- Patreon
-- Buy Me a Coffee
+[![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/_zkn) [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/zkn0461) [![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://patreon.com/ZiolKen) 
 
 ---
 
@@ -130,3 +133,7 @@ If this project helps you:
 
 All tools are provided **as-is**.  
 Always back up your game files before using automated translation or merge features.
+
+<div>
+  <img style="100%" src="https://capsule-render.vercel.app/api?type=waving&height=100&section=footer&reversal=false&fontSize=70&fontColor=FFFFFF&fontAlign=50&fontAlignY=50&stroke=-&descSize=20&descAlign=50&descAlignY=50&theme=cobalt"  />
+</div>
