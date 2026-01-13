@@ -1,25 +1,3 @@
-        :root {
-            --neon-cyan: #00ffff;
-            --neon-magenta: #ff00ff;
-            --neon-green: #39ff14;
-            --neon-red: #ff1b1b;
-            --neon-yellow: #f1f759;
-            --bg-primary: #02001a;
-            --bg-secondary: rgba(14, 2, 54, 0.4);
-            --text-primary: #e0e0e0;
-            --text-secondary: #a3a1b9;
-            --border-color: rgba(0, 255, 255, 0.3);
-        }
- 
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
-
         @font-face {
             font-family: "Glyphicons Halflings";
             src: url(../fonts/glyphicons-halflings-regular.eot);
@@ -1084,40 +1062,4 @@
         
         .glyphicon-menu-up:before {
             content: ""
-        }
-
-        label {
-            display: block; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: block;               
-            font-size: 0.750rem;          
-            font-weight: 600;             
-            color: rgb(192, 132, 252);   
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
- 
-        html {
-            scrollbar-width: thin;
-            background: rgba(121, 121, 121, 0);
-        }
- 
-        body {
-            color: var(--text-primary);
-            font-family: 'Roboto Mono', monospace;
-            line-height: 1.7;
-            padding: 16px;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        #particles-js,
-        .grid-bg {
-            pointer-events: none !important;
         }
