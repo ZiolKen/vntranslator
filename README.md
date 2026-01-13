@@ -1,10 +1,12 @@
 <br>
 <p align="center">
 <a href="https://vntranslator.pages.dev" target="_blank">
-<img src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" height="250" width="250"/>
+<img src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" height="250" width="250" style="border-radius: 16px;" />
 </a>
 </p>
-# VN Translator  
+
+# VN Translator
+
 ### Modern Web Toolkit for Translating Ren’Py & RPG Maker Games
 
 <p align="center">
@@ -16,7 +18,6 @@
   <a href="https://vntranslator.pages.dev"><img src="https://img.shields.io/badge/Live-Cloudflare-f97316?style=for-the-badge"></a>
   <a href="https://ziolken.github.io/vntranslator"><img src="https://img.shields.io/badge/Live-GitHub%20Pages-18181b?style=for-the-badge"></a>
   <img src="https://img.shields.io/github/stars/ZiolKen/vntranslator?style=for-the-badge">
-  <img src="https://img.shields.io/github/license/ZiolKen/vntranslator?style=for-the-badge">
 </p>
 
 VN Translator is a **modern, browser-based translation toolkit** designed for **game developers, translators, and modders** working with **Ren’Py**, **RPG Maker**, **Kirikiri**, and **Tyranobuild** engines.
@@ -28,8 +29,8 @@ It focuses on **accuracy**, **format preservation**, and **ease of use**, withou
 ## ✨ Features Overview
 
 <p align="center">
-  <img src="https://vntranslator.vercel.app/assets/preview-renpy.png" width="48%">
-  <img src="https://vntranslator.vercel.app/assets/preview-rpgm.png" width="48%">
+  <img src="https://files.catbox.moe/7scfv7.png" width="48%">
+  <img src="https://files.catbox.moe/dteqhf.png" width="48%">
 </p>
 
 ### 🎮 Ren’Py Translator
