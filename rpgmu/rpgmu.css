@@ -572,32 +572,70 @@ body{
                     font-weight: bold;
                 }
  
-                .tab {
-                    padding: 4px 12px;
-                    background: transparent;
-                    color: #fff;
-                    font-size: 14px;
-                    user-select: none;
-                    transition: 0.2s;
-                    border: 1px solid rgba(192, 132, 252, 0.5);
-                    border-radius: 8px;
-                    background-color: rgba(168, 85, 247, 0.08);
-                    color: var(--text-primary);
-                    font-family: 'Roboto Mono', monospace;
-                    transition: all 0.2s;
-                    box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.1);
-                }
- 
-                .tab-bar {
-                    background: transparent;
-                    position: relative;
-                    z-index: 10;
-                    display: flex;
-                    overflow-y: auto;
-                    overflow-x: auto;
-                    white-space: nowrap;
-                    scrollbar-width: thin;
-                }
+.tab-bar{
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.18) transparent;
+}
+
+.tab-bar::-webkit-scrollbar{height: 8px}
+.tab-bar::-webkit-scrollbar-track{background: transparent}
+.tab-bar::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.16);
+  border-radius: 999px;
+}
+.tab-bar::-webkit-scrollbar-thumb:hover{background: rgba(255,255,255,.22)}
+
+.tab{
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  color: rgba(255,255,255,.82);
+  font-size: 13px;
+  font-weight: 800;
+  user-select: none;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.tab:hover{
+  border-color: rgba(255,255,255,.16);
+  background: rgba(255,255,255,.05);
+  transform: translateY(-1px);
+}
+
+.tab.active,
+.tab.tab-active{
+  border-color: rgba(168,85,247,.35);
+  background: linear-gradient(135deg, rgba(168,85,247,.22), rgba(34,211,238,.10));
+  color: rgba(255,255,255,.92);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+.tab .close,
+.tab .tab-close{
+  margin-left: 10px;
+  opacity: .7;
+}
+.tab .close:hover,
+.tab .tab-close:hover{opacity:1}
+
+.tab.dirty::after{
+  content:"•";
+  margin-left: 8px;
+  color: rgba(34,197,94,.9);
+}
  
                 .progress-wrapper {
                     position: relative;
