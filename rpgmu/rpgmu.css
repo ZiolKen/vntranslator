@@ -573,9 +573,8 @@ body{
                 }
  
 .tab-bar{
-  background: rgba(0,0,0,.18);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px;
+  background: transparent;
+  border: 0;
   padding: 8px;
   display: flex;
   gap: 8px;
@@ -596,13 +595,13 @@ body{
 
 .tab{
   flex: 0 0 auto;
-  padding: 8px 12px;
-  border-radius: 999px;
+  padding: 6px 10px;
+  border-radius: 10px;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.03);
   color: rgba(255,255,255,.82);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 600;
   user-select: none;
   cursor: pointer;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
