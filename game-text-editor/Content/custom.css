@@ -210,3 +210,13 @@
         .wrapeditor:hover {
             border-color: rgba(168, 85, 247, 0.3);
         }
+        
+        .layout > .col { min-width: 0; }
+        .panel, .panel__body, .wrapeditor { min-width: 0; }
+        
+        .wrapeditor { width: 100%; max-width: 100%; overflow: hidden; }
+        
+        #tabBar, .tab-bar { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+        #tabBar { white-space: nowrap; flex-wrap: nowrap; }
+        
+        .tab { flex: 0 0 auto; }
