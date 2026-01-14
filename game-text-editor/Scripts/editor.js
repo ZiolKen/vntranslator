@@ -2,14 +2,14 @@
 // CONFIG
 // ===================================
 
-const OPEN_FILES = {};   
-let ACTIVE_FILE_ID = null;  
-let MONACO_EDITOR = null;  
-const MONACO_MODELS = {};  
-let MONACO_READY = false; 
-const HIDE_TAGS = {};
-const HIDE_TAG_STATE = {};
-const RPGM_TAG_STATE = {};
+window.OPEN_FILES ??= {};   
+window.ACTIVE_FILE_ID ??= null;  
+window.MONACO_EDITOR ??= null;  
+window.MONACO_MODELS ??= {};  
+window.MONACO_READY ??= false; 
+window.HIDE_TAGS ??= {};
+window.HIDE_TAG_STATE ??= {};
+window.RPGM_TAG_STATE ??= {};
 
 // ================================
 // TEXT HELPERS
