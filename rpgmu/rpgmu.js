@@ -320,6 +320,7 @@ ${marked.join("\n")}`;
 }
 
 const LINGVA_HOSTS = [
+  "https://lingva.dialectapp.org",
   "https://lingva.ml",
   "https://translate.plausibility.cloud",
   "https://lingva.vercel.app",
@@ -446,14 +447,6 @@ els.start.addEventListener("click", async () => {
 
   if (model === "deepl" && !deeplApiKey) {
     alert("DeepL API key is required.");
-    return;
-  }
-
-  if (model === "deepl" && !toDeepLTargetLang(targetLang)) {
-    alert(
-      `DeepL currently supports these targets in this tool: vi, id, en.\n` +
-      `You selected: ${targetLang}. Please change language or use another model.`
-    );
     return;
   }
 
