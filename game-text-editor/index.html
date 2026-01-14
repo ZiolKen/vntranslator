@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta charset="UTF-8" />
@@ -194,7 +195,7 @@
                 <div id="indentInfo">Spaces: 4</div>
                 <div id="encodingInfo">UTF-8</div>
                 <div id="eolInfo">CRLF</div>
-                <div id="langInfo">PLAINTEXT</div>
+                <div id="langInfo">UNKNOWN</div>
               </div>
             </div>
 
@@ -266,15 +267,16 @@
         if (res.ok) {
           console.log("Using API:", base);
           return res;
+        } else {
+          console.warn("API responded but not ok:", base, res.status);
         }
       } catch (e) {
         console.warn("API failed:", base);
       }
-    } catch (e) {
-      console.error(e);
-      alert("❌ All backend servers failed!");
-      PreLoadOff();
     }
+    alert("❌ All backend servers failed!");
+    PreLoadOff();
+    throw new Error("All backend servers failed");
   }
   	
   async function loadEditor(id) {
