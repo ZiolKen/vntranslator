@@ -539,6 +539,7 @@
           
           const LINGVA_BASE_URLS = [
             'https://lingva.lunar.icu',
+            'https://lingva.dialectapp.org',
             'https://lingva.ml',
             'https://lingva.vercel.app',
             'https://translate.plausibility.cloud',
