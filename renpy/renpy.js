@@ -45,41 +45,57 @@
             return new Promise(resolve => setTimeout(resolve, ms));
           }
         
-          function languageLabel(codeOrName) {
-            const v = String(codeOrName || '').toLowerCase();
+        function languageLabel(codeOrName) {
+          const v = String(codeOrName || '').toLowerCase().trim();
         
-            if (['id', 'indonesian', 'bahasa indonesia'].includes(v)) return 'Indonesian';
-            if (['en', 'english', 'en-us', 'en-gb'].includes(v)) return 'English';
-            if (['ms', 'malay', 'ms-my'].includes(v)) return 'Malay';
-            if (['vi', 'vietnamese', 'vi-vn'].includes(v)) return 'Vietnamese';
-            if (['tl', 'fil', 'filipino', 'tagalog'].includes(v)) return 'Filipino';
+          if (['id', 'indonesian', 'bahasa indonesia'].includes(v)) return 'Indonesian';
+          if (['en', 'english', 'en-us', 'en-gb'].includes(v)) return 'English';
+          if (['ms', 'malay', 'ms-my'].includes(v)) return 'Malay';
+          if (['vi', 'vietnamese', 'vi-vn'].includes(v)) return 'Vietnamese';
+          if (['tl', 'fil', 'filipino', 'tagalog'].includes(v)) return 'Filipino';
         
-            return codeOrName || '';
-          }
+          if (['zh', 'zh-cn', 'chinese (simplified)', 'simplified chinese', 'chinese'].includes(v))
+            return 'Chinese (Simplified)';
+          if (['hi', 'hindi'].includes(v)) return 'Hindi';
+          if (['es', 'spanish'].includes(v)) return 'Spanish';
+          if (['fr', 'french'].includes(v)) return 'French';
+          if (['ar', 'arabic'].includes(v)) return 'Arabic';
+          if (['pt', 'portuguese', 'pt-br', 'pt-pt'].includes(v)) return 'Portuguese';
+          if (['ru', 'russian'].includes(v)) return 'Russian';
+          if (['de', 'german'].includes(v)) return 'German';
+          if (['ja', 'japanese'].includes(v)) return 'Japanese';
+          if (['ko', 'korean'].includes(v)) return 'Korean';
+        
+          return codeOrName || '';
+        }
         
         function getDeepLLangCode(lang) {
           if (!lang) return 'EN-US';
         
-          const v = String(lang).trim();
-          const low = v.toLowerCase();
-        
+          const low = String(lang).toLowerCase().trim();
           if (low === 'bahasa indonesia' || low === 'indonesian' || low === 'id') return 'ID';
-          if (low === 'vietnamese' || low === 'vi') return 'VI';
-          if (low === 'malay' || low === 'ms') return 'MS';
-          if (low === 'filipino' || low === 'tl' || low === 'tagalog' || low === 'fil') return 'TL';
-        
           if (low === 'english' || low === 'en') return 'EN-US';
-          if (low === 'en-us') return 'EN-US';
-          if (low === 'en-gb') return 'EN-GB';
-        
-          if (/^[a-z]{2}$/i.test(v)) return v.toUpperCase();
-          if (/^[a-z]{2}-[a-z]{2}$/i.test(v)) return v.toUpperCase();
+          if (low === 'malay' || low === 'ms') return 'MS';
+          if (low === 'vietnamese' || low === 'vi') return 'VI';
+          if (low === 'filipino' || low === 'tl' || low === 'tagalog') return 'TL';
+          if (low === 'chinese (simplified)' || low === 'simplified chinese' || low === 'zh' || low === 'zh-cn') return 'ZH';
+          if (low === 'hindi' || low === 'hi') return 'HI';
+          if (low === 'spanish' || low === 'es') return 'ES';
+          if (low === 'french' || low === 'fr') return 'FR';
+          if (low === 'arabic' || low === 'ar') return 'AR';
+          if (low === 'portuguese' || low === 'pt') return 'PT';
+          if (low === 'russian' || low === 'ru') return 'RU';
+          if (low === 'german' || low === 'de') return 'DE';
+          if (low === 'japanese' || low === 'ja') return 'JA';
+          if (low === 'korean' || low === 'ko') return 'KO';
         
           return 'EN-US';
         }
         
         function needsDeepLQualityModel(targetCode) {
-          return targetCode === 'MS' || targetCode === 'TL';
+          return ['MS', 'TL', 'HI'].includes(
+            String(targetCode || '').toUpperCase()
+          );
         }
         
           function escapeHtml(str) {
@@ -436,6 +452,7 @@
             text: lines,
             target_lang: targetCode,
             preserve_formatting: 1,
+            split_sentences: 0,
             ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {}),
           };
         
@@ -472,22 +489,37 @@
           return outLines;
         }
          
-          const LINGVA_LANG_MAP = {
-            'Bahasa Indonesia': 'id',
-            Indonesian: 'id',
+        const LINGVA_LANG_MAP = {
+          'Bahasa Indonesia': 'id',
+          Indonesian: 'id',
         
-            Vietnamese: 'vi',
-            'vi-VN': 'vi',
+          Vietnamese: 'vi',
+          'vi-VN': 'vi',
         
-            English: 'en',
-            'en-US': 'en',
-            'en-GB': 'en',
+          English: 'en',
+          'en-US': 'en',
+          'en-GB': 'en',
         
-            Malay: 'ms',
+          Malay: 'ms',
         
-            Filipino: 'tl',
-            Filipina: 'tl',
-          };
+          Filipino: 'tl',
+          Filipina: 'tl',
+          Tagalog: 'tl',
+        
+          'Chinese (Simplified)': 'zh-CN',
+          'Simplified Chinese': 'zh-CN',
+          Chinese: 'zh-CN',
+        
+          Hindi: 'hi',
+          Spanish: 'es',
+          French: 'fr',
+          Arabic: 'ar',
+          Portuguese: 'pt',
+          Russian: 'ru',
+          German: 'de',
+          Japanese: 'ja',
+          Korean: 'ko',
+        };
         
           function getLingvaLangCode(lang) {
             if (!lang) return 'en';
