@@ -347,6 +347,20 @@ body{
   padding: 12px;
   outline:none;
 }
+input[type="file"]::-webkit-file-upload-button{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.88);
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-right: 10px;
+  cursor:pointer;
+  font-weight: 900;
+}
+input[type="file"]::-webkit-file-upload-button:hover{
+  border-color: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+}
 .field input:focus, .field select:focus, textarea:focus{
   border-color: rgba(168,85,247,.30);
   box-shadow: 0 0 0 4px rgba(168,85,247,.12);
