@@ -762,6 +762,7 @@ ${lines.join("\n")}`;
    Translator: Lingva (Free)
 ------------------------------------------------------------ */
 const LINGVA_HOSTS = [
+  "https://lingva.dialectapp.org",
   "https://lingva.ml",
   "https://translate.plausibility.cloud",
   "https://lingva.vercel.app",
