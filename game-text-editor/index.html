@@ -212,7 +212,7 @@
   </main>
 
   <div id="PreLoad" style="font-size: 50px; position: fixed; display: flex; z-index: 999999; padding: 270px 40px; font-weight: bold; font-family: 'Turret Road', sans-serif; inset: 0; transition: opacity 0.6s ease; backdrop-filter: blur(3px); justify-content: center; align-items: center; text-align: center; background-color: rgba(0, 0, 0, 0.6); color: white; display: none;">Loading...</div>
-  	
+
   <script src="./bundles/custom.js"></script>
   <script src="./bundles/script.js"></script>
   <script>
@@ -242,7 +242,6 @@
           e.preventDefault();
         }
       });
-  
       console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
   </script>
   <script src="./bundles/index.js"></script>
@@ -273,56 +272,49 @@
       } catch (e) {
         console.warn("API failed:", base);
       }
+    } catch (e) {
+      console.error(e);
+      alert("❌ All backend servers failed!");
+      PreLoadOff();
     }
-    throw new Error("❌ All backend servers failed!");
   }
   	
   async function loadEditor(id) {
       PreLoadOn();
-  
       try {
           const res = await apiFetch("/Edit/" + id);
-  
           if (!res.ok) {
               alert("Load editor error: " + res.status);
               PreLoadOff();
               return;
           }
-  
           const json = await res.json();
-  
           $('#headM').show();
           $('#editorContainer').show();
-  
           renderEditor(json);
       } catch (e) {
           console.error(e);
           alert("Editor load failed");
       }
-  
       PreLoadOff();
   }
   	
   async function saveData(id) {
       let dataText = document.getElementById("editorArea").value;
       let json;
-  
       try {
           json = JSON.parse(dataText);
       } catch (e) {
           alert("Invalid JSON!");
           return;
       }
-  
       PreLoadOn();
-  
       try {
           const res = await apiFetch("/Edit/" + id, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ data: json })
           });
-  
           if (res.ok) {
               const blob = await res.blob();
               const url = URL.createObjectURL(blob);
@@ -338,32 +330,10 @@
           console.error(err);
           alert("Save network error!");
       }
-  
       PreLoadOff();
   }
   </script>
-  <script>
-    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const particleCount = isMobile ? 60 : 111;
-
-    particlesJS("particles-js", {
-      "particles": {
-        "number": { "value": particleCount, "density": { "enable": true, "value_area": 950 } },
-        "color": { "value": "#a855f7" },
-        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
-        "opacity": { "value": 0.40, "random": true, "anim": { "enable": false } },
-        "size": { "value": 2.1, "random": true, "anim": { "enable": false } },
-        "line_linked": { "enable": true, "distance": 160, "color": "#a855f7", "opacity": 0.16, "width": 1 },
-        "move": { "enable": true, "speed": 0.75, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
-      },
-      "interactivity": {
-        "detect_on": "canvas",
-        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
-        "modes": { "repulse": { "distance": 90, "duration": 0.35 } }
-      },
-      "retina_detect": true
-    });
-  </script>
+  <script src="./Scripts/editor.js"></script>
 </body>
 
 </html>
