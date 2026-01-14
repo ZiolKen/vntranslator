@@ -21,7 +21,12 @@
   <a href="https://vntranslator.vercel.app"><img src="https://img.shields.io/badge/Live-Vercel-6366f1?style=for-the-badge"></a>
   <a href="https://vntranslator.pages.dev"><img src="https://img.shields.io/badge/Live-Cloudflare-f97316?style=for-the-badge"></a>
   <a href="https://ziolken.github.io/vntranslator"><img src="https://img.shields.io/badge/Live-GitHub%20Pages-18181b?style=for-the-badge"></a>
-  <img src="https://img.shields.io/github/stars/ZiolKen/vntranslator?style=for-the-badge">
+</p>
+
+<p align="center">
+  <a href="https://github.com/ZiolKen/vntranslator/stargazers"><img src="https://img.shields.io/github/stars/ZiolKen/vntranslator?style=flat"></a>
+  <a href="https://github.com/ZiolKen/vntranslator/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ZiolKen/vntranslator?style=flat"></a>
+  <a href="https://github.com/ZiolKen/vntranslator/forks"><img src="https://img.shields.io/github/forks/ZiolKen/vntranslator?style=flat"></a>
 </p>
 
 VN Translator is a **modern, browser-based translation toolkit** designed for **game developers, translators, and modders** working with **Ren’Py**, **RPG Maker**, **Kirikiri**, and **Tyranobuild** engines.
