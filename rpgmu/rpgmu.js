@@ -191,25 +191,37 @@ async function withRetry(fn, { retries = 4, baseDelay = 400, signal } = {}) {
   }
 }
 
+const LANG_MAP = {
+  vi: { label: "Vietnamese", deepl: "VI" },
+  id: { label: "Indonesian", deepl: "ID" },
+  en: { label: "English", deepl: "EN-US" },
+  ms: { label: "Malay", deepl: "MS" },
+  tl: { label: "Filipino", deepl: "TL" },
+
+  ja: { label: "Japanese", deepl: "JA" },
+  ko: { label: "Korean", deepl: "KO" },
+  zh: { label: "Chinese (Simplified)", deepl: "ZH" },
+  th: { label: "Thai", deepl: "TH" },
+  hi: { label: "Hindi", deepl: "HI" },
+
+  fr: { label: "French", deepl: "FR" },
+  de: { label: "German", deepl: "DE" },
+  es: { label: "Spanish", deepl: "ES" },
+  pt: { label: "Portuguese", deepl: "PT-PT" }, 
+  ru: { label: "Russian", deepl: "RU" },
+  ar: { label: "Arabic", deepl: "AR" },
+};
+
 function languageLabel(code) {
-  return {
-    vi: "Vietnamese",
-    en: "English",
-    id: "Indonesian",
-    ms: "Malay",
-    tl: "Filipino",
-  }[code] || code;
+  return LANG_MAP[code]?.label || code;
 }
 
 function toDeepLTargetLang(code) {
-  switch (code) {
-    case "vi": return "VI";
-    case "id": return "ID";
-    case "en": return "EN-US";
-    case "ms": return "MS";
-    case "tl": return "TL";
-    default: return String(code || "").toUpperCase();
-  }
+  return LANG_MAP[code]?.deepl || null;
+}
+
+function needsDeepLQualityModel(dlTarget) {
+  return ["MS", "TL", "HI"].includes(String(dlTarget || "").toUpperCase());
 }
 
 const deeplPool = createPool(2);
@@ -226,7 +238,7 @@ async function translateDeepLBatch(linesSafe, targetLang, apiKey, signal) {
     target_lang: dlTarget,
     preserve_formatting: 1,
     split_sentences: 0,
-    ...(needQualityModel ? { model_type: "quality_optimized" } : {}),
+    ...(needsDeepLQualityModel(dlTarget) ? { model_type: "quality_optimized" } : {}),
   };
 
   const res = await fetch("/api/deepl-trans", {
