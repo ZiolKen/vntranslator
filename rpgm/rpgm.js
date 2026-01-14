@@ -621,12 +621,27 @@ function createBatches(dialogs, size) {
    Language Mapping
 ------------------------------------------------------------ */
 function languageLabel(code){
-  switch(code){
-    case "vi": return "Vietnamese";
+  const c = String(code || "").toLowerCase().trim();
+
+  switch(c){
     case "en": return "English";
-    case "ms": return "Malay";
+    case "zh-cn":
+    case "zh": return "Chinese (Simplified)";
+    case "hi": return "Hindi";
+    case "es": return "Spanish";
+    case "fr": return "French";
+    case "ar": return "Arabic";
+    case "pt": return "Portuguese";
+    case "ru": return "Russian";
+    case "de": return "German";
+    case "ja": return "Japanese";
     case "id": return "Indonesian";
-    case "tl": return "Filipino";
+    case "ms": return "Malay";
+    case "vi": return "Vietnamese";
+    case "tl":
+    case "fil": return "Filipino";
+    case "ko": return "Korean";
+
     default: return code;
   }
 }
@@ -672,7 +687,11 @@ ${lines.join("\n")}`;
 
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content || "";
-  const outLines = content.split(/\r?\n/).filter(l => l.trim() !== "");
+  const outLines = content
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l !== "")
+    .map(l => l.replace(/^(?:\d+[\).\-\:]\s*|\-\s+|\*\s+)/, ""));
 
   if (outLines.length !== lines.length) {
     log(`⚠️ DeepSeek returned ${outLines.length} lines, expected ${lines.length}. Mapping by order.`, "warn");
@@ -726,8 +745,12 @@ ${lines.join("\n")}`;
 
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content || "";
-  const outLines = content.split(/\r?\n/).filter(l => l.trim() !== "");
-
+  const outLines = content
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l !== "")
+    .map(l => l.replace(/^(?:\d+[\).\-\:]\s*|\-\s+|\*\s+)/, ""));
+  
   if (outLines.length !== lines.length) {
     log(`⚠️ ChatGPT returned ${outLines.length} lines, expected ${lines.length}.`, "warn");
   }
@@ -746,11 +769,23 @@ const LINGVA_HOSTS = [
   "https://lingva.lunar.icu"
 ];
 
+function normalizeLingvaTargetCode(code) {
+  const c = String(code || "").trim().toLowerCase();
+
+  if (c === "zh" || c === "zh-cn" || c === "zh_cn") return "zh-CN";
+
+  if (c === "fil") return "tl";
+
+  return c;
+}
+
 async function lingvaRequest(text, target) {
+  const t = normalizeLingvaTargetCode(target);
+
   for (const host of LINGVA_HOSTS) {
     try {
       const res = await fetch(
-        host + "/api/v1/auto/" + target + "/" + encodeURIComponent(text)
+        host + "/api/v1/auto/" + encodeURIComponent(t) + "/" + encodeURIComponent(text)
       );
       if (!res.ok) continue;
       const data = await res.json();
