@@ -1,3 +1,6 @@
+    window.OPEN_FILES ||= {};
+    const OPEN_FILES = window.OPEN_FILES;
+
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("fileupload");
 
