@@ -1,7 +1,7 @@
 <br>
 <p align="center">
 <a href="https://vntranslator.pages.dev" target="_blank">
-<img src="https://files.catbox.moe/2x5vw3.jpeg" alt="VN Translator" height="250" width="250" style="border-radius: 16px;" />
+<img src="./assets/logo.jpeg" alt="VN Translator" height="250" width="250" style="border-radius: 16px;" />
 </a>
 </p>
 
