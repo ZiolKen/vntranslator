@@ -35,7 +35,8 @@
             color: #fff;
             cursor: pointer;
             font-size: 14px;
-        	border: 1px solid #2B2B2B;
+            overflow: hidden;
+            border: 1px solid #2B2B2B;
             user-select: none;
             transition: 0.2s;
         }
@@ -203,6 +204,7 @@
         }
         
         .wrapeditor {
+            overflow: hidden;
             border: 1px solid var(--border-color);
         }
         .wrapeditor:hover {
