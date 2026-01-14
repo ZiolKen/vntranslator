@@ -259,9 +259,9 @@
     "https://game-text-editor-api.vercel.app",
     "https://game-text-backend-backup.vercel.app"
   ];
-  
+
   async function apiFetch(path, options) {
-    for (let base of API_HOSTS) {
+    for (const base of API_HOSTS) {
       try {
         const res = await fetch(base + path, options);
         if (res.ok) {
@@ -271,7 +271,7 @@
           console.warn("API responded but not ok:", base, res.status);
         }
       } catch (e) {
-        console.warn("API failed:", base);
+        console.warn("API failed:", base, e);
       }
     }
     alert("❌ All backend servers failed!");
