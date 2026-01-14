@@ -11,6 +11,15 @@ window.HIDE_TAGS = window.HIDE_TAGS || {};
 window.HIDE_TAG_STATE = window.HIDE_TAG_STATE || {};
 window.RPGM_TAG_STATE = window.RPGM_TAG_STATE || {};
 
+const OPEN_FILES = window.OPEN_FILES;
+let ACTIVE_FILE_ID = window.ACTIVE_FILE_ID;
+let MONACO_EDITOR = window.MONACO_EDITOR;
+const MONACO_MODELS = window.MONACO_MODELS;
+let MONACO_READY = window.MONACO_READY;
+const HIDE_TAGS = window.HIDE_TAGS;
+const HIDE_TAG_STATE = window.HIDE_TAG_STATE;
+const RPGM_TAG_STATE = window.RPGM_TAG_STATE;
+
 // ================================
 // TEXT HELPERS
 // ================================
@@ -130,13 +139,11 @@ document.addEventListener("DOMContentLoaded", function () {
             renderEditor(OPEN_FILES[ACTIVE_FILE_ID]);
         }
     });
-    function (err) {
-      console.error("Monaco load failed:", err);
-      MONACO_READY = false;
-      MONACO_EDITOR = null;
-      enableFallbackEditor(err);
-    }
 });
+
+window.MONACO_READY = MONACO_READY;
+window.MONACO_EDITOR = MONACO_EDITOR;
+window.ACTIVE_FILE_ID = ACTIVE_FILE_ID;
 
 // ===================================
 // ADD TAB WITH CLOSE + DRAGGABLE
