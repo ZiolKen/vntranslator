@@ -2,23 +2,14 @@
 // CONFIG
 // ===================================
 
-window.OPEN_FILES = window.OPEN_FILES || {};
-window.ACTIVE_FILE_ID = window.ACTIVE_FILE_ID || null;
-window.MONACO_EDITOR = window.MONACO_EDITOR || null;
-window.MONACO_MODELS = window.MONACO_MODELS || {};
-window.MONACO_READY = window.MONACO_READY || false;
-window.HIDE_TAGS = window.HIDE_TAGS || {};
-window.HIDE_TAG_STATE = window.HIDE_TAG_STATE || {};
-window.RPGM_TAG_STATE = window.RPGM_TAG_STATE || {};
-
-const OPEN_FILES = window.OPEN_FILES;
-let ACTIVE_FILE_ID = window.ACTIVE_FILE_ID;
-let MONACO_EDITOR = window.MONACO_EDITOR;
-const MONACO_MODELS = window.MONACO_MODELS;
-let MONACO_READY = window.MONACO_READY;
-const HIDE_TAGS = window.HIDE_TAGS;
-const HIDE_TAG_STATE = window.HIDE_TAG_STATE;
-const RPGM_TAG_STATE = window.RPGM_TAG_STATE;
+const OPEN_FILES = {};   
+let ACTIVE_FILE_ID = null;  
+let MONACO_EDITOR = null;  
+const MONACO_MODELS = {};  
+let MONACO_READY = false; 
+const HIDE_TAGS = {};
+const HIDE_TAG_STATE = {};
+const RPGM_TAG_STATE = {};
 
 // ================================
 // TEXT HELPERS
@@ -90,9 +81,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     require(["vs/editor/editor.main"], function () {
         const editorContainer = document.getElementById("editorContainer");
-        if (editorContainer && editorContainer.offsetHeight < 50) {
-          editorContainer.style.height = "60vh";
-        }
         MONACO_EDITOR = monaco.editor.create(editorContainer, {
             value: "",
             language: "plaintext",
@@ -140,10 +128,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
-
-window.MONACO_READY = MONACO_READY;
-window.MONACO_EDITOR = MONACO_EDITOR;
-window.ACTIVE_FILE_ID = ACTIVE_FILE_ID;
 
 // ===================================
 // ADD TAB WITH CLOSE + DRAGGABLE
