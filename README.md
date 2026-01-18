@@ -121,6 +121,12 @@ Never expose private API keys in client-side code.
 
 ---
 
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
 ## ❤️ Credits
 
 Created and maintained by **[ZiolKen](https://github.com/ZiolKen)**.
