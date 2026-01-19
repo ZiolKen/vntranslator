@@ -14,7 +14,7 @@
 ### <p align="center">Modern Web Toolkit for Translating Ren’Py & RPG Maker Games</p>
 
 <p align="center">
-  <img src="https://files.catbox.moe/9bk373.png" alt="VN Translator Banner" width="720">
+  <img src="assets/thumbnail.png" alt="Thumbnail" width="720">
 </p>
 
 <p align="center">
