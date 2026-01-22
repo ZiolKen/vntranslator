@@ -538,12 +538,12 @@
           }
           
           const LINGVA_BASE_URLS = [
-            'https://lingva.lunar.icu',
             'https://lingva.dialectapp.org',
-            'https://lingva.ml',
             'https://lingva.vercel.app',
             'https://translate.plausibility.cloud',
             'https://lingva.garudalinux.org',
+            'https://lingva.lunar.icu',
+            'https://lingva.ml',
           ];
           
           async function lingvaFetch(path, init) {
