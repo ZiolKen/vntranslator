@@ -163,3 +163,20 @@ textarea{resize:none}
 
 .search{display:flex;gap:10px;align-items:center}
 .search input{flex:1}
+
+.search select{
+  border:1px solid var(--line);
+  background:var(--chip);
+  border-radius:12px;
+  padding:10px 10px;
+  outline:none;
+}
+.modalBody textarea{
+  border:1px solid var(--line);
+  background:var(--chip);
+  border-radius:12px;
+  padding:10px 12px;
+  outline:none;
+  font-family:var(--mono);
+  line-height:1.35;
+}
