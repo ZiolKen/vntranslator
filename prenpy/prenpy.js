@@ -147,12 +147,22 @@ let gridCache = { rows: [], filtered: [], scrollTop: 0, start: 0, end: 0 };
 function computeFilteredRows() {
   const f = activeFile();
   if (!f) return [];
-  const q = $("q").value.trim().toLowerCase();
+  const q = $("q").value.trim();
   if (!q) return f.rows.map((r, i) => ({ r, i }));
+
+  const field = $("qField").value;
+  const needle = q.toLowerCase();
+
+  const pickFields = (r) => {
+    if (field === "original") return [r.original];
+    if (field === "machine") return [r.machine];
+    if (field === "manual") return [r.manual];
+    return [r.original, r.machine, r.manual];
+  };
+
   return f.rows.map((r, i) => ({ r, i })).filter(x => {
-    const r = x.r;
-    const hay = [r.original, r.machine, r.manual].filter(Boolean).join("\n").toLowerCase();
-    return hay.includes(q);
+    const hay = pickFields(x.r).filter(Boolean).join("\n").toLowerCase();
+    return hay.includes(needle);
   });
 }
 
@@ -195,10 +205,21 @@ function findNext(dir) {
 
   const norm = (s) => String(s || "");
   const needle = q;
-  const cmp = (text) => {
-    const hay = norm(text);
-    const cs = $("repCase")?.checked;
-    return cs ? hay.includes(needle) : hay.toLowerCase().includes(needle.toLowerCase());
+  const field = $("qField").value;
+  
+  const pickFields = (r) => {
+    if (field === "original") return [r.original];
+    if (field === "machine") return [r.machine];
+    if (field === "manual") return [r.manual];
+    return [r.original, r.machine, r.manual];
+  };
+  
+  const cs = false;
+  const needle = cs ? q : q.toLowerCase();
+  const cmpRow = (r) => {
+    const arr = pickFields(r).filter(Boolean).map(x => String(x));
+    if (cs) return arr.some(x => x.includes(needle));
+    return arr.some(x => x.toLowerCase().includes(needle));
   };
 
   const step = dir > 0 ? 1 : -1;
@@ -208,7 +229,7 @@ function findNext(dir) {
     if (k >= list.length) k -= list.length;
 
     const r = list[k].r;
-    if (cmp(r.original) || cmp(r.machine) || cmp(r.manual)) {
+    if (cmpRow(r)) {
       state.selectedRowId = r.id;
       saveState();
       scrollToFilteredIndex(k);
@@ -229,6 +250,67 @@ function buildReplaceRegex(find, { regex, caseSensitive, wholeWord }) {
   const body = wholeWord ? `\\b${src}\\b` : src;
   const flags = caseSensitive ? "g" : "gi";
   return new RegExp(body, flags);
+}
+
+function unescapeMini(s) {
+  return String(s ?? "")
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "\t")
+    .replace(/\\\\/g, "\\");
+}
+
+function parseRules(text) {
+  const lines = String(text || "").split(/\r?\n/);
+  const rules = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+
+    let a = "", b = "";
+    const arrow = t.indexOf("=>");
+    if (arrow >= 0) {
+      a = t.slice(0, arrow).trim();
+      b = t.slice(arrow + 2).trim();
+    } else {
+      const tab = t.split("\t");
+      if (tab.length >= 2) {
+        a = tab[0].trim();
+        b = tab.slice(1).join("\t").trim();
+      } else {
+        continue;
+      }
+    }
+    if (!a) continue;
+    rules.push({ find: unescapeMini(a), withStr: unescapeMini(b) });
+  }
+  return rules;
+}
+
+function safeRenpyReplaceMany(text, compiledRules) {
+  const original = String(text ?? "");
+  if (!original) return { out: original, changed: false };
+
+  const masked = maskTagsInText(original);
+  let s = masked.masked;
+
+  for (const r of compiledRules) {
+    s = s.replace(r.re, r.withStr);
+  }
+
+  const out = unmaskTagsInText(s, masked.map);
+  return { out, changed: out !== original };
+}
+
+function countMatchesMasked(text, compiledRules) {
+  const original = String(text ?? "");
+  if (!original) return 0;
+  const masked = maskTagsInText(original).masked;
+  let hits = 0;
+  for (const r of compiledRules) {
+    const m = masked.match(r.re);
+    if (m) hits += m.length;
+  }
+  return hits;
 }
 
 function safeRenpyReplace(text, re, withStr) {
@@ -255,33 +337,47 @@ function iterScopeRows(scope) {
 }
 
 function replaceRun() {
-  const find = $("repFind").value;
-  if (!find) return setJobUI(0, "Find is empty.", false);
-
+  const mode = $("repMode").value;
   const scope = $("repScope").value;
   const field = $("repField").value;
-  const withStr = $("repWith").value;
-
-  const re = buildReplaceRegex(find, {
-    regex: $("repRegex").checked,
-    caseSensitive: $("repCase").checked,
-    wholeWord: $("repWhole").checked
-  });
+  const includeDone = $("repIncludeDone").checked;
 
   const rows = iterScopeRows(scope);
   if (!rows.length) return setJobUI(0, "Nothing to replace.", false);
 
   const fields = field === "both" ? ["manual", "machine"] : [field];
 
-  let changed = 0;
+  const build = (find, withStr) => buildReplaceRegex(find, {
+    regex: $("repRegex").checked,
+    caseSensitive: $("repCase").checked,
+    wholeWord: $("repWhole").checked
+  });
+
+  let compiledRules = [];
+  if (mode === "single") {
+    const find = $("repFind").value;
+    if (!find) return setJobUI(0, "Find is empty.", false);
+    const withStr = $("repWith").value;
+    compiledRules = [{ re: build(find, withStr), withStr: unescapeMini(withStr) }];
+  } else {
+    const rules = parseRules($("repRules").value);
+    if (!rules.length) return setJobUI(0, "Rules is empty.", false);
+    compiledRules = rules.map(x => ({ re: build(x.find, x.withStr), withStr: x.withStr }));
+  }
+
+  let changedFields = 0;
+
   for (const r of rows) {
+    if (!includeDone && r.flag === "done") continue;
+
     for (const k of fields) {
       const cur = r[k] || "";
       if (!cur) continue;
-      const rr = safeRenpyReplace(cur, re, withStr);
+
+      const rr = safeRenpyReplaceMany(cur, compiledRules);
       if (rr.changed) {
         r[k] = rr.out;
-        changed++;
+        changedFields++;
         if (r.flag === "done") r.flag = "review";
         else if (r.flag === "todo") r.flag = "review";
       }
@@ -294,34 +390,46 @@ function replaceRun() {
   renderFiles();
   renderVirtualRows();
   syncEditor();
-  setJobUI(0, `Replaced in ${changed} field(s).`, false);
+  setJobUI(0, `Replaced in ${changedFields} field(s).`, false);
 }
 
 function replaceCount() {
-  const find = $("repFind").value;
-  if (!find) return setJobUI(0, "Find is empty.", false);
+  const mode = $("repMode").value;
+  const scope = $("repScope").value;
+  const field = $("repField").value;
 
-  const re = buildReplaceRegex(find, {
+  const rows = iterScopeRows(scope);
+  if (!rows.length) return setJobUI(0, "No rows.", false);
+
+  const fields = field === "both" ? ["manual", "machine"] : [field];
+
+  const build = (find, withStr) => buildReplaceRegex(find, {
     regex: $("repRegex").checked,
     caseSensitive: $("repCase").checked,
     wholeWord: $("repWhole").checked
   });
 
-  const scope = $("repScope").value;
-  const field = $("repField").value;
-  const rows = iterScopeRows(scope);
-  const fields = field === "both" ? ["manual", "machine"] : [field];
+  let compiledRules = [];
+  if (mode === "single") {
+    const find = $("repFind").value;
+    if (!find) return setJobUI(0, "Find is empty.", false);
+    const withStr = $("repWith").value;
+    compiledRules = [{ re: build(find, withStr), withStr: unescapeMini(withStr) }];
+  } else {
+    const rules = parseRules($("repRules").value);
+    if (!rules.length) return setJobUI(0, "Rules is empty.", false);
+    compiledRules = rules.map(x => ({ re: build(x.find, x.withStr), withStr: x.withStr }));
+  }
 
   let hits = 0;
   for (const r of rows) {
     for (const k of fields) {
       const cur = r[k] || "";
       if (!cur) continue;
-      const masked = maskTagsInText(cur).masked;
-      const ms = masked.match(re);
-      if (ms) hits += ms.length;
+      hits += countMatchesMasked(cur, compiledRules);
     }
   }
+
   setJobUI(0, `Matches: ${hits}`, false);
 }
 
@@ -760,6 +868,24 @@ function bind() {
   
   $("btnRepRun").addEventListener("click", replaceRun);
   $("btnRepCount").addEventListener("click", replaceCount);
+  
+  $("qField").addEventListener("change", () => refreshGrid(true));
+  
+  $("repMode").addEventListener("change", () => {
+    const m = $("repMode").value;
+    $("repRulesWrap").style.display = m === "multi" ? "" : "none";
+    $("repFind").disabled = m === "multi";
+    $("repWith").disabled = m === "multi";
+  });
+  
+  $("btnReplace").addEventListener("click", () => {
+    $("repFind").value = $("q").value || "";
+    $("repMode").value = "single";
+    $("repRulesWrap").style.display = "none";
+    $("repFind").disabled = false;
+    $("repWith").disabled = false;
+    openReplace();
+  });
 }
 
 function boot() {
