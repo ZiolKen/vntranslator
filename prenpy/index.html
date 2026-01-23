@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ren'Py Translator Workbench</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#0f1620; --panel2:#0c131c; --line:#1f2a3a; --text:#e8eef9; --muted:#9fb0c6;
+      --accent:#7c5cff; --good:#1fda8a; --warn:#ffb020; --bad:#ff4d4d;
+      --chip:#111a26; --sel:#13233a; --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --r:14px;
+    }
+    [data-theme="light"]{
+      --bg:#f6f8fb; --panel:#ffffff; --panel2:#fbfcff; --line:#e5eaf3; --text:#182235; --muted:#5c6b84;
+      --chip:#f2f5fb; --sel:#eaf0ff; --shadow: 0 10px 30px rgba(18,34,62,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.35 var(--sans);overflow:hidden}
+    button,input,select,textarea{font:inherit;color:inherit}
+    a{color:inherit}
+
+    #appRoot{height:100%;display:grid;grid-template-rows:56px 1fr 170px;grid-template-columns:320px 1fr}
+    #topBar{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--panel2))}
+    #topBarLeft,#topBarRight{display:flex;align-items:center;gap:10px}
+    #topBarLeft{flex:1}
+    #appTitle{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
+    #appTitleLogo{width:12px;height:12px;border-radius:4px;background:var(--accent);box-shadow:0 0 0 4px rgba(124,92,255,.18)}
+    #appTitleText{font-weight:650;letter-spacing:.2px}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--chip);padding:8px 10px;border-radius:12px;cursor:pointer;user-select:none}
+    .btn:hover{filter:brightness(1.06)}
+    .btn:active{transform:translateY(1px)}
+    .btnPrimary{background:rgba(124,92,255,.18);border-color:rgba(124,92,255,.35)}
+    .btnGood{background:rgba(31,218,138,.14);border-color:rgba(31,218,138,.35)}
+    .btnWarn{background:rgba(255,176,32,.14);border-color:rgba(255,176,32,.35)}
+    .btnBad{background:rgba(255,77,77,.12);border-color:rgba(255,77,77,.32)}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--muted);display:inline-flex;gap:8px;align-items:center}
+    .kbd{font:12px var(--mono);padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.12)}
+    [data-theme="light"] .kbd{background:rgba(0,0,0,.04)}
+    .icon{width:16px;height:16px;display:inline-block}
+    .sep{width:1px;height:26px;background:var(--line);margin:0 2px}
+    #globalSearchWrap{flex:1;display:flex;align-items:center;gap:10px;min-width:280px}
+    #globalSearch{flex:1;border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 12px;outline:none}
+    #globalSearch:focus{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
+    #globalScope{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 10px;outline:none}
+
+    #leftPane{grid-row:2;grid-column:1;display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;padding:12px;border-right:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel))}
+    #projectBar{display:flex;gap:10px;align-items:center}
+    #projectName{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip);color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    #leftTools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    #filterWrap{display:flex;gap:10px;align-items:center}
+    #fileFilter{flex:1;border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 12px;outline:none}
+    #fileSort{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 10px;outline:none}
+
+    #fileList{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:auto}
+    .fileRow{display:grid;grid-template-columns:1fr 64px 74px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+    .fileRow:last-child{border-bottom:none}
+    .fileRow:hover{background:rgba(124,92,255,.06)}
+    .fileRow[data-active="true"]{background:var(--sel)}
+    .fileName{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .filePct{justify-self:end;font:12px var(--mono);color:var(--muted)}
+    .fileBar{height:8px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.10);overflow:hidden}
+    [data-theme="light"] .fileBar{background:rgba(0,0,0,.03)}
+    .fileFill{height:100%;background:linear-gradient(90deg,var(--accent),rgba(124,92,255,.4));width:0%}
+    #leftFooter{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted)}
+    #statusChip{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip);min-width:0}
+    #statusText{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    #hotkeysChip{display:flex;gap:8px;align-items:center}
+
+    #mainPane{grid-row:2;grid-column:2;display:grid;grid-template-rows:auto 1fr;gap:10px;padding:12px;min-width:0}
+    #toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    #toolbar .btn{padding:8px 10px}
+    #viewTabs{display:flex;gap:8px;align-items:center}
+    .tab{padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--chip);cursor:pointer;color:var(--muted)}
+    .tab[data-active="true"]{color:var(--text);border-color:rgba(124,92,255,.45);background:rgba(124,92,255,.12)}
+    #quickTools{display:flex;gap:10px;align-items:center;margin-left:auto}
+    #pageInfo{color:var(--muted);font:12px var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
+
+    #gridWrap{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:hidden;min-width:0}
+    #gridHeader{display:grid;grid-template-columns:44px 1.4fr 1.2fr 1.2fr 1.2fr 1.2fr 44px;gap:0;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel))}
+    .hcell{padding:10px 10px;font-weight:650;color:var(--muted);border-right:1px solid var(--line);display:flex;align-items:center;gap:8px}
+    .hcell:last-child{border-right:none;justify-content:center}
+    #gridBody{height:calc(100vh - 56px - 170px - 12px - 12px - 10px - 44px);overflow:auto}
+    .row{display:grid;grid-template-columns:44px 1.4fr 1.2fr 1.2fr 1.2fr 1.2fr 44px;border-bottom:1px solid var(--line);min-width:0}
+    .row:last-child{border-bottom:none}
+    .cell{padding:10px 10px;border-right:1px solid var(--line);min-width:0}
+    .cell:last-child{border-right:none}
+    .idx{font:12px var(--mono);color:var(--muted);display:flex;align-items:flex-start;justify-content:center;padding-top:12px}
+    .text{white-space:pre-wrap;word-break:break-word}
+    .mono{font-family:var(--mono)}
+    .flag{display:flex;align-items:center;justify-content:center;padding:0}
+    .flagBtn{width:28px;height:28px;border-radius:10px;border:1px solid var(--line);background:var(--chip);cursor:pointer}
+    .flagBtn[data-state="todo"]{box-shadow:inset 0 0 0 0 rgba(0,0,0,0)}
+    .flagBtn[data-state="done"]{border-color:rgba(31,218,138,.5);background:rgba(31,218,138,.12)}
+    .flagBtn[data-state="review"]{border-color:rgba(255,176,32,.5);background:rgba(255,176,32,.12)}
+    .row[data-selected="true"]{background:var(--sel)}
+    .editable{border:1px solid transparent;border-radius:10px;padding:8px 8px;background:transparent;outline:none}
+    .editable[contenteditable="true"]:focus{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 4px rgba(124,92,255,.14);background:rgba(124,92,255,.06)}
+    .muted{color:var(--muted)}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--muted);font:12px var(--mono)}
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--muted);opacity:.7}
+    .dot.good{background:var(--good)}
+    .dot.warn{background:var(--warn)}
+    .dot.bad{background:var(--bad)}
+
+    #bottomPane{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:320px 1fr;gap:0;border-top:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel))}
+    #bottomLeft{border-right:1px solid var(--line);padding:12px;display:grid;grid-template-rows:auto 1fr}
+    #metaTitle{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    #metaTitle h3{margin:0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+    #metaBox{margin-top:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);overflow:hidden}
+    #metaBox pre{margin:0;padding:10px 12px;white-space:pre-wrap;word-break:break-word;font:12px/1.4 var(--mono);color:var(--muted)}
+    #bottomRight{padding:12px;display:grid;grid-template-rows:auto 1fr;gap:10px;min-width:0}
+    #previewHeader{display:flex;align-items:center;gap:10px;justify-content:space-between}
+    #previewHeader h3{margin:0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+    #previewBox{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:auto;min-width:0}
+    #previewBoxInner{padding:12px 14px;min-width:0}
+    #speakerLine{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    #speakerTag{padding:6px 10px;border-radius:12px;border:1px solid var(--line);background:var(--chip);font-weight:700}
+    #previewText{white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.45}
+    #toast{position:fixed;right:14px;bottom:14px;min-width:240px;max-width:420px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);display:none;gap:10px;align-items:flex-start}
+    #toastIcon{width:10px;height:10px;border-radius:999px;background:var(--accent);margin-top:5px}
+    #toastMsg{color:var(--text)}
+    #toastClose{margin-left:auto;border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:6px 8px;cursor:pointer}
+
+    #modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px}
+    #modal{width:min(820px,95vw);border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden}
+    #modalHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+    #modalTitle{font-weight:750}
+    #modalClose{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:8px 10px;cursor:pointer}
+    #modalBody{padding:14px;display:grid;gap:10px}
+    .field{display:grid;gap:6px}
+    .field label{color:var(--muted);font-size:12px}
+    .field input,.field select{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 12px;outline:none}
+    .field input:focus,.field select:focus{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
+    #modalFooter{display:flex;gap:10px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--line)}
+    .hide{display:none !important}
+  </style>
+</head>
+<body>
+  <div id="appRoot" data-theme="dark">
+    <header id="topBar">
+      <div id="topBarLeft">
+        <div id="appTitle">
+          <div id="appTitleLogo"></div>
+          <div id="appTitleText">Ren'Py Translator Workbench</div>
+        </div>
+        <div class="sep"></div>
+        <button id="btnOpenProject" class="btn btnPrimary" type="button">Open Project</button>
+        <button id="btnImport" class="btn" type="button">Import Files</button>
+        <button id="btnExport" class="btn btnGood" type="button">Export</button>
+        <button id="btnAutosave" class="btn" type="button" aria-pressed="true">Autosave</button>
+      </div>
+
+      <div id="globalSearchWrap">
+        <input id="globalSearch" placeholder="Search (Ctrl+F) — text, tags, file" autocomplete="off" />
+        <select id="globalScope" aria-label="Search scope">
+          <option value="current">Current file</option>
+          <option value="all" selected>All files</option>
+          <option value="original">Original only</option>
+          <option value="translated">Translations only</option>
+        </select>
+      </div>
+
+      <div id="topBarRight">
+        <button id="btnTheme" class="btn" type="button">Theme</button>
+        <button id="btnSettings" class="btn" type="button">Settings</button>
+        <div class="pill"><span class="kbd">Ctrl</span><span class="kbd">S</span><span class="muted">Save</span></div>
+      </div>
+    </header>
+
+    <aside id="leftPane">
+      <div id="projectBar">
+        <div id="projectName" title="No project loaded">No project loaded</div>
+        <button id="btnNewFile" class="btn" type="button">New</button>
+      </div>
+
+      <div id="leftTools">
+        <div id="filterWrap" style="flex:1;min-width:0">
+          <input id="fileFilter" placeholder="Filter files…" autocomplete="off" />
+          <select id="fileSort" aria-label="Sort files">
+            <option value="name">Name</option>
+            <option value="progress">Progress</option>
+            <option value="recent">Recent</option>
+          </select>
+        </div>
+        <button id="btnBatch" class="btn btnWarn" type="button">Batch</button>
+      </div>
+
+      <div id="fileList" role="listbox" aria-label="Files"></div>
+
+      <div id="leftFooter">
+        <div id="statusChip">
+          <span class="badge"><span class="dot" id="dotState"></span><span id="statusMode">READY</span></span>
+          <span id="statusText">Load a project or import files.</span>
+        </div>
+        <div id="hotkeysChip" class="pill">
+          <span class="kbd">↑</span><span class="kbd">↓</span>
+          <span class="muted">Navigate</span>
+        </div>
+      </div>
+    </aside>
+
+    <main id="mainPane">
+      <div id="toolbar">
+        <div id="viewTabs">
+          <div id="tabGoogle" class="tab" data-active="true">Google</div>
+          <div id="tabManual" class="tab" data-active="true">Manual Translation</div>
+          <div id="tabAtlas" class="tab" data-active="true">Atlas</div>
+          <div id="tabTrans2" class="tab" data-active="true">Translation 2</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <button id="btnFindNext" class="btn" type="button">Find Next</button>
+        <button id="btnReplace" class="btn" type="button">Replace</button>
+        <button id="btnMarkDone" class="btn btnGood" type="button">Mark Done</button>
+        <button id="btnMarkReview" class="btn btnWarn" type="button">Needs Review</button>
+        <button id="btnClearFlag" class="btn" type="button">Clear</button>
+
+        <div id="quickTools">
+          <button id="btnCopyOriginal" class="btn" type="button">Copy Original</button>
+          <button id="btnSwap" class="btn" type="button">Swap ↔</button>
+          <button id="btnUndo" class="btn" type="button">Undo</button>
+          <button id="btnRedo" class="btn" type="button">Redo</button>
+          <div id="pageInfo">Rows: <span id="rowCount">0</span> · Selected: <span id="selIdx">—</span></div>
+        </div>
+      </div>
+
+      <section id="gridWrap" aria-label="Translation grid">
+        <div id="gridHeader">
+          <div id="hIndex" class="hcell">#</div>
+          <div id="hOriginal" class="hcell">Original Text</div>
+          <div id="hGoogle" class="hcell">Google</div>
+          <div id="hManual" class="hcell">Manual Translation</div>
+          <div id="hAtlas" class="hcell">Atlas</div>
+          <div id="hTrans2" class="hcell">Translation 2</div>
+          <div id="hFlag" class="hcell">✓</div>
+        </div>
+        <div id="gridBody"></div>
+      </section>
+    </main>
+
+    <section id="bottomPane" aria-label="Preview">
+      <div id="bottomLeft">
+        <div id="metaTitle">
+          <h3 id="metaHeader">Context</h3>
+          <button id="btnPin" class="btn" type="button" aria-pressed="false">Pin</button>
+        </div>
+        <div id="metaBox"><pre id="metaPre">No selection.</pre></div>
+      </div>
+
+      <div id="bottomRight">
+        <div id="previewHeader">
+          <h3 id="previewHeaderText">Game Preview</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button id="btnFocusManual" class="btn btnPrimary" type="button">Focus Manual</button>
+            <button id="btnAITranslate" class="btn btnWarn" type="button">AI Translate</button>
+          </div>
+        </div>
+        <div id="previewBox">
+          <div id="previewBoxInner">
+            <div id="speakerLine">
+              <div id="speakerTag">—</div>
+              <div class="badge" id="flagBadge"><span class="dot" id="flagDot"></span><span id="flagText">todo</span></div>
+              <div class="badge" id="fileBadge"><span class="dot"></span><span id="fileText">—</span></div>
+            </div>
+            <div id="previewText">Select a row to preview.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <input id="filePicker" type="file" multiple accept=".json,.txt,.rpy,.csv" class="hide" />
+
+  <div id="toast">
+    <div id="toastIcon"></div>
+    <div id="toastMsg"></div>
+    <button id="toastClose" type="button">Close</button>
+  </div>
+
+  <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div id="modal">
+      <div id="modalHeader">
+        <div id="modalTitle">Settings</div>
+        <button id="modalClose" type="button">Close</button>
+      </div>
+      <div id="modalBody">
+        <div class="field">
+          <label for="setLocale">UI Language</label>
+          <select id="setLocale">
+            <option value="en" selected>English</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="setAutosaveInterval">Autosave interval (seconds)</label>
+          <input id="setAutosaveInterval" type="number" min="5" max="600" value="30" />
+        </div>
+        <div class="field">
+          <label for="setFontScale">Font scale</label>
+          <select id="setFontScale">
+            <option value="0.95">0.95</option>
+            <option value="1" selected>1.00</option>
+            <option value="1.05">1.05</option>
+            <option value="1.1">1.10</option>
+          </select>
+        </div>
+      </div>
+      <div id="modalFooter">
+        <button id="btnReset" class="btn btnBad" type="button">Reset</button>
+        <button id="btnSaveSettings" class="btn btnGood" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const state = {
+      projectName: "Demo Project",
+      activeFileId: null,
+      selectedRowId: null,
+      pinned: false,
+      theme: "dark",
+      autosave: true,
+      autosaveIntervalSec: 30,
+      fontScale: 1,
+      scope: "all",
+      tabs: { google:true, manual:true, atlas:true, trans2:true },
+      undo: [],
+      redo: [],
+      files: []
+    };
+
+    const demo = () => ([
+      {
+        id:"Map001.txt",
+        name:"Map001.txt",
+        updated: Date.now(),
+        rows: [
+          { id:"r1", speaker:"Blue-haired adventurer", original:"\\c[2]Blue-haired adventurer\\c[0]\nBoth adventurers and alchemists,\nIt is troublesome to go back and forth.\nI wish I could come back instantly.", google:"", manual:"", atlas:"", trans2:"", flag:"todo", meta:"Map001.txt / line 1", tags:["dialogue"] },
+          { id:"r2", speaker:"Blue-haired adventurer", original:"\\c[2]Blue-haired adventurer\\c[0]\nI wish I had something if I had a level.\nBut, will not you make Rinon-chan ...?", google:"", manual:"", atlas:"", trans2:"", flag:"todo", meta:"Map001.txt / line 2", tags:["dialogue"] },
+          { id:"r3", speaker:"Narration", original:"...", google:"...", manual:"...", atlas:"...", trans2:"...", flag:"done", meta:"Map001.txt / line 3", tags:["narration"] }
+        ]
+      },
+      {
+        id:"Map152.txt",
+        name:"Map152.txt",
+        updated: Date.now()-86400000,
+        rows: [
+          { id:"a1", speaker:"Selphie", original:"セルフィ\nできた！いくわよ！", google:"Selphie\ndid it! Say!", manual:"Selphie\nIt's done! Let's go!", atlas:"", trans2:"", flag:"review", meta:"Map152.txt / events/2/pages/0/21/Dialogue", tags:["event"] },
+          { id:"a2", speaker:"Warrior", original:"\\c[2]戦士\\c[0]\n……！もう俺たちしか残ってないぞ！術はまだなのか！？", google:"\\c[2] warrior \\c[0]\n...! There are only us left! Is the operation still not done!?", manual:"", atlas:"", trans2:"", flag:"todo", meta:"Map152.txt / line 3", tags:["battle"] }
+        ]
+      }
+    ]);
+
+    const storageKey = "rpyt_workbench_v1";
+
+    function load() {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const s = JSON.parse(saved);
+          Object.assign(state, s);
+        } catch {}
+      }
+      if (!state.files?.length) state.files = demo();
+      if (!state.activeFileId) state.activeFileId = state.files[0]?.id ?? null;
+      applyTheme(state.theme);
+      applyFontScale(state.fontScale);
+      renderFiles();
+      renderGrid();
+      syncUI();
+      toast("Ready.");
+    }
+
+    function save() {
+      const snap = {
+        projectName: state.projectName,
+        activeFileId: state.activeFileId,
+        selectedRowId: state.selectedRowId,
+        pinned: state.pinned,
+        theme: state.theme,
+        autosave: state.autosave,
+        autosaveIntervalSec: state.autosaveIntervalSec,
+        fontScale: state.fontScale,
+        scope: state.scope,
+        tabs: state.tabs,
+        files: state.files
+      };
+      localStorage.setItem(storageKey, JSON.stringify(snap));
+      setStatus("SAVED", "Project saved.", "good");
+    }
+
+    function setStatus(mode, text, kind="") {
+      $("statusMode").textContent = mode;
+      $("statusText").textContent = text;
+      const dot = $("dotState");
+      dot.className = "dot" + (kind ? " "+kind : "");
+    }
+
+    function toast(msg) {
+      $("toastMsg").textContent = msg;
+      $("toast").style.display = "flex";
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => $("toast").style.display = "none", 2200);
+    }
+
+    function applyTheme(theme) {
+      state.theme = theme;
+      $("appRoot").setAttribute("data-theme", theme);
+    }
+
+    function applyFontScale(scale) {
+      state.fontScale = Number(scale) || 1;
+      document.documentElement.style.fontSize = (14 * state.fontScale) + "px";
+    }
+
+    function activeFile() {
+      return state.files.find(f => f.id === state.activeFileId) ?? null;
+    }
+
+    function selectedRow() {
+      const f = activeFile();
+      if (!f) return null;
+      return f.rows.find(r => r.id === state.selectedRowId) ?? null;
+    }
+
+    function fileProgress(file) {
+      const total = file.rows.length || 1;
+      const done = file.rows.filter(r => r.flag === "done").length;
+      return Math.round((done/total)*100);
+    }
+
+    function renderFiles() {
+      const filter = $("fileFilter").value.trim().toLowerCase();
+      const sort = $("fileSort").value;
+      let list = [...state.files];
+
+      if (filter) list = list.filter(f => f.name.toLowerCase().includes(filter));
+      if (sort === "name") list.sort((a,b)=>a.name.localeCompare(b.name));
+      if (sort === "progress") list.sort((a,b)=>fileProgress(b)-fileProgress(a));
+      if (sort === "recent") list.sort((a,b)=>b.updated-a.updated);
+
+      const wrap = $("fileList");
+      wrap.innerHTML = "";
+      list.forEach(f => {
+        const pct = fileProgress(f);
+        const row = document.createElement("div");
+        row.className = "fileRow";
+        row.id = `fileRow_${cssId(f.id)}`;
+        row.dataset.active = String(f.id === state.activeFileId);
+        row.innerHTML = `
+          <div class="fileName" id="fileName_${cssId(f.id)}">${escapeHtml(f.name)}</div>
+          <div class="filePct" id="filePct_${cssId(f.id)}">${pct}%</div>
+          <div class="fileBar" id="fileBar_${cssId(f.id)}"><div class="fileFill" id="fileFill_${cssId(f.id)}" style="width:${pct}%"></div></div>
+        `;
+        row.addEventListener("click", () => {
+          state.activeFileId = f.id;
+          state.selectedRowId = null;
+          renderFiles();
+          renderGrid();
+          syncUI();
+        });
+        wrap.appendChild(row);
+      });
+
+      $("projectName").textContent = state.projectName || "No project loaded";
+    }
+
+    function renderGrid() {
+      const f = activeFile();
+      const body = $("gridBody");
+      body.innerHTML = "";
+      if (!f) {
+        $("rowCount").textContent = "0";
+        return;
+      }
+      const q = $("globalSearch").value.trim().toLowerCase();
+      const scope = $("globalScope").value;
+
+      let rows = f.rows.map((r, i) => ({...r, _i: i+1}));
+      if (q) {
+        const match = (r) => {
+          const fields = [];
+          if (scope === "current" || scope === "all") fields.push(r.original, r.google, r.manual, r.atlas, r.trans2, r.speaker, r.meta, (r.tags||[]).join(" "));
+          if (scope === "original") fields.push(r.original, r.speaker, r.meta);
+          if (scope === "translated") fields.push(r.google, r.manual, r.atlas, r.trans2);
+          return fields.filter(Boolean).some(x => String(x).toLowerCase().includes(q));
+        };
+        rows = rows.filter(match);
+      }
+
+      $("rowCount").textContent = String(rows.length);
+
+      rows.forEach(r => {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.id = `row_${cssId(r.id)}`;
+        row.dataset.selected = String(r.id === state.selectedRowId);
+        row.innerHTML = `
+          <div class="cell idx" id="cellIndex_${cssId(r.id)}">${r._i}</div>
+          <div class="cell" id="cellOriginal_${cssId(r.id)}"><div class="text mono">${escapeHtml(r.original)}</div></div>
+          <div class="cell" id="cellGoogle_${cssId(r.id)}"><div class="text editable" id="edGoogle_${cssId(r.id)}" contenteditable="true" data-col="google">${escapeHtml(r.google||"")}</div></div>
+          <div class="cell" id="cellManual_${cssId(r.id)}"><div class="text editable" id="edManual_${cssId(r.id)}" contenteditable="true" data-col="manual">${escapeHtml(r.manual||"")}</div></div>
+          <div class="cell" id="cellAtlas_${cssId(r.id)}"><div class="text editable" id="edAtlas_${cssId(r.id)}" contenteditable="true" data-col="atlas">${escapeHtml(r.atlas||"")}</div></div>
+          <div class="cell" id="cellTrans2_${cssId(r.id)}"><div class="text editable" id="edTrans2_${cssId(r.id)}" contenteditable="true" data-col="trans2">${escapeHtml(r.trans2||"")}</div></div>
+          <div class="cell flag" id="cellFlag_${cssId(r.id)}">
+            <button class="flagBtn" id="flagBtn_${cssId(r.id)}" data-state="${r.flag}" title="Toggle flag">${flagGlyph(r.flag)}</button>
+          </div>
+        `;
+
+        row.addEventListener("click", (e) => {
+          if (e.target.closest(".editable")) return;
+          selectRow(r.id);
+        });
+
+        row.querySelectorAll(".editable").forEach(ed => {
+          ed.addEventListener("focus", ()=>selectRow(r.id));
+          ed.addEventListener("input", ()=>{
+            const col = ed.dataset.col;
+            pushUndo({type:"edit", fileId:f.id, rowId:r.id, col, prev:r[col] ?? "", next: ed.innerText});
+            r[col] = ed.innerText;
+            setDirty();
+            if (state.autosave) scheduleAutosave();
+          });
+          ed.addEventListener("keydown", (ev)=>{
+            if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+              ev.preventDefault();
+              markFlag(r.id, "done");
+            }
+          });
+        });
+
+        const btn = row.querySelector(".flagBtn");
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const next = r.flag === "todo" ? "review" : (r.flag === "review" ? "done" : "todo");
+          markFlag(r.id, next);
+        });
+
+        body.appendChild(row);
+      });
+
+      syncColumns();
+      if (state.selectedRowId && !f.rows.some(x=>x.id===state.selectedRowId)) state.selectedRowId = null;
+      syncPreview();
+    }
+
+    function syncColumns(){
+      $("tabGoogle").dataset.active = String(state.tabs.google);
+      $("tabManual").dataset.active = String(state.tabs.manual);
+      $("tabAtlas").dataset.active = String(state.tabs.atlas);
+      $("tabTrans2").dataset.active = String(state.tabs.trans2);
+
+      toggleCol("Google", state.tabs.google);
+      toggleCol("Manual", state.tabs.manual);
+      toggleCol("Atlas", state.tabs.atlas);
+      toggleCol("Trans2", state.tabs.trans2);
+
+      function toggleCol(name, on){
+        const head = $("h"+name);
+        if (head) head.style.display = on ? "" : "none";
+        document.querySelectorAll(`[id^="cell${name}_"]`).forEach(el => el.style.display = on ? "" : "none");
+        const header = $("gridHeader");
+        const any = ["Google","Manual","Atlas","Trans2"].map(n=>state.tabs[n.toLowerCase()]).filter(Boolean).length;
+        header.style.gridTemplateColumns = `44px 1.4fr ${any ? "1.2fr ".repeat(any) : ""}44px`;
+        document.querySelectorAll(".row").forEach(r=>{
+          r.style.gridTemplateColumns = header.style.gridTemplateColumns;
+        });
+      }
+    }
+
+    function selectRow(rowId){
+      state.selectedRowId = rowId;
+      document.querySelectorAll(".row").forEach(r => r.dataset.selected = "false");
+      const el = $("row_"+cssId(rowId));
+      if (el) el.dataset.selected = "true";
+      $("selIdx").textContent = rowId;
+      syncPreview();
+    }
+
+    function syncPreview(){
+      const f = activeFile();
+      const r = selectedRow();
+      $("fileText").textContent = f?.name ?? "—";
+      if (!r) {
+        $("speakerTag").textContent = "—";
+        $("previewText").textContent = "Select a row to preview.";
+        $("metaPre").textContent = "No selection.";
+        setFlagBadge("todo");
+        return;
+      }
+      $("speakerTag").textContent = r.speaker || "—";
+      const primary = (r.manual && r.manual.trim()) ? r.manual : (r.google && r.google.trim()) ? r.google : r.original;
+      $("previewText").textContent = primary;
+      $("metaPre").textContent = [
+        `File: ${f?.name ?? ""}`,
+        `Row: ${r.id}`,
+        `Flag: ${r.flag}`,
+        `Tags: ${(r.tags||[]).join(", ") || "—"}`,
+        `Meta: ${r.meta || "—"}`
+      ].join("\n");
+      setFlagBadge(r.flag);
+    }
+
+    function setFlagBadge(flag){
+      const dot = $("flagDot");
+      const text = $("flagText");
+      text.textContent = flag;
+      dot.className = "dot " + (flag === "done" ? "good" : flag === "review" ? "warn" : "");
+    }
+
+    function setDirty(){
+      setStatus("EDITING", "Unsaved changes.", "warn");
+    }
+
+    function markFlag(rowId, flag){
+      const f = activeFile();
+      if (!f) return;
+      const r = f.rows.find(x=>x.id===rowId);
+      if (!r) return;
+      pushUndo({type:"flag", fileId:f.id, rowId, prev:r.flag, next:flag});
+      r.flag = flag;
+      renderFiles();
+      renderGrid();
+      selectRow(rowId);
+      toast(flag === "done" ? "Marked done." : flag === "review" ? "Marked for review." : "Cleared flag.");
+      setDirty();
+      if (state.autosave) scheduleAutosave();
+    }
+
+    function pushUndo(op){
+      state.undo.push(op);
+      if (state.undo.length > 200) state.undo.shift();
+      state.redo.length = 0;
+    }
+
+    function applyOp(op, dir){
+      const f = state.files.find(x=>x.id===op.fileId);
+      if (!f) return;
+      const r = f.rows.find(x=>x.id===op.rowId);
+      if (!r) return;
+      if (op.type === "edit") {
+        const val = dir === "undo" ? op.prev : op.next;
+        r[op.col] = val;
+      } else if (op.type === "flag") {
+        r.flag = dir === "undo" ? op.prev : op.next;
+      }
+      state.activeFileId = f.id;
+      state.selectedRowId = r.id;
+      renderFiles();
+      renderGrid();
+      selectRow(r.id);
+      setDirty();
+    }
+
+    function undo(){
+      const op = state.undo.pop();
+      if (!op) return toast("Nothing to undo.");
+      state.redo.push(op);
+      applyOp(op, "undo");
+      toast("Undo.");
+    }
+
+    function redo(){
+      const op = state.redo.pop();
+      if (!op) return toast("Nothing to redo.");
+      state.undo.push(op);
+      applyOp(op, "redo");
+      toast("Redo.");
+    }
+
+    let autosaveTimer = null;
+    function scheduleAutosave(){
+      if (!state.autosave) return;
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(()=>save(), Math.max(5, state.autosaveIntervalSec) * 1000);
+    }
+
+    function syncUI(){
+      $("globalScope").value = state.scope;
+      $("btnAutosave").setAttribute("aria-pressed", String(state.autosave));
+      $("btnAutosave").classList.toggle("btnPrimary", state.autosave);
+      $("btnAutosave").textContent = state.autosave ? "Autosave: On" : "Autosave: Off";
+      $("btnPin").setAttribute("aria-pressed", String(state.pinned));
+      $("btnPin").classList.toggle("btnPrimary", state.pinned);
+      setStatus("READY", "Loaded.", "good");
+    }
+
+    function cssId(s){ return String(s).replace(/[^a-zA-Z0-9_-]/g,"_"); }
+    function escapeHtml(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    function flagGlyph(flag){ return flag === "done" ? "✓" : flag === "review" ? "!" : "·"; }
+
+    function openModal(){
+      $("modalOverlay").style.display = "flex";
+      $("setAutosaveInterval").value = String(state.autosaveIntervalSec);
+      $("setFontScale").value = String(state.fontScale);
+    }
+    function closeModal(){ $("modalOverlay").style.display = "none"; }
+
+    $("toastClose").addEventListener("click", ()=>$("toast").style.display="none");
+
+    $("btnTheme").addEventListener("click", ()=>{
+      applyTheme(state.theme === "dark" ? "light" : "dark");
+      save();
+      toast("Theme toggled.");
+    });
+
+    $("btnSettings").addEventListener("click", openModal);
+    $("modalClose").addEventListener("click", closeModal);
+    $("modalOverlay").addEventListener("click", (e)=>{ if (e.target === $("modalOverlay")) closeModal(); });
+
+    $("btnSaveSettings").addEventListener("click", ()=>{
+      state.autosaveIntervalSec = Math.max(5, Math.min(600, Number($("setAutosaveInterval").value) || 30));
+      applyFontScale($("setFontScale").value);
+      save();
+      closeModal();
+      toast("Settings saved.");
+    });
+
+    $("btnReset").addEventListener("click", ()=>{
+      localStorage.removeItem(storageKey);
+      location.reload();
+    });
+
+    $("btnOpenProject").addEventListener("click", ()=>{
+      state.projectName = prompt("Project name:", state.projectName) || state.projectName;
+      renderFiles();
+      save();
+    });
+
+    $("btnImport").addEventListener("click", ()=>$("filePicker").click());
+    $("filePicker").addEventListener("change", ()=>{
+      toast("Import placeholder. Hook your parser later.");
+    });
+
+    $("btnExport").addEventListener("click", ()=>{
+      const payload = JSON.stringify({project:state.projectName, files:state.files}, null, 2);
+      const blob = new Blob([payload], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = (state.projectName || "project").replace(/\s+/g,"_") + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setStatus("EXPORTED", "Exported JSON snapshot.", "good");
+    });
+
+    $("btnAutosave").addEventListener("click", ()=>{
+      state.autosave = !state.autosave;
+      syncUI();
+      save();
+      toast(state.autosave ? "Autosave enabled." : "Autosave disabled.");
+    });
+
+    $("fileFilter").addEventListener("input", renderFiles);
+    $("fileSort").addEventListener("change", renderFiles);
+
+    $("globalSearch").addEventListener("input", ()=>{
+      renderGrid();
+      setStatus("SEARCH", "Filtered rows.", "");
+    });
+
+    $("globalScope").addEventListener("change", ()=>{
+      state.scope = $("globalScope").value;
+      renderGrid();
+      save();
+    });
+
+    $("tabGoogle").addEventListener("click", ()=>{ state.tabs.google=!state.tabs.google; renderGrid(); save(); });
+    $("tabManual").addEventListener("click", ()=>{ state.tabs.manual=!state.tabs.manual; renderGrid(); save(); });
+    $("tabAtlas").addEventListener("click", ()=>{ state.tabs.atlas=!state.tabs.atlas; renderGrid(); save(); });
+    $("tabTrans2").addEventListener("click", ()=>{ state.tabs.trans2=!state.tabs.trans2; renderGrid(); save(); });
+
+    $("btnFindNext").addEventListener("click", ()=>{
+      const f = activeFile(); if (!f) return;
+      const q = $("globalSearch").value.trim().toLowerCase();
+      if (!q) return toast("Type something to search.");
+      const start = f.rows.findIndex(r=>r.id===state.selectedRowId);
+      const idx0 = start >= 0 ? start+1 : 0;
+      const pick = [...f.rows.slice(idx0), ...f.rows.slice(0, idx0)].find(r => {
+        const scope = $("globalScope").value;
+        const fields = [];
+        if (scope === "current" || scope === "all") fields.push(r.original, r.google, r.manual, r.atlas, r.trans2, r.speaker, r.meta, (r.tags||[]).join(" "));
+        if (scope === "original") fields.push(r.original, r.speaker, r.meta);
+        if (scope === "translated") fields.push(r.google, r.manual, r.atlas, r.trans2);
+        return fields.filter(Boolean).some(x=>String(x).toLowerCase().includes(q));
+      });
+      if (!pick) return toast("No match.");
+      selectRow(pick.id);
+      $("row_"+cssId(pick.id))?.scrollIntoView({block:"center"});
+      toast("Jumped to match.");
+    });
+
+    $("btnReplace").addEventListener("click", ()=>{
+      toast("Replace UI placeholder. Implement later.");
+    });
+
+    $("btnMarkDone").addEventListener("click", ()=>{
+      if (!state.selectedRowId) return toast("Select a row.");
+      markFlag(state.selectedRowId, "done");
+    });
+    $("btnMarkReview").addEventListener("click", ()=>{
+      if (!state.selectedRowId) return toast("Select a row.");
+      markFlag(state.selectedRowId, "review");
+    });
+    $("btnClearFlag").addEventListener("click", ()=>{
+      if (!state.selectedRowId) return toast("Select a row.");
+      markFlag(state.selectedRowId, "todo");
+    });
+
+    $("btnCopyOriginal").addEventListener("click", ()=>{
+      const r = selectedRow(); if (!r) return toast("Select a row.");
+      const f = activeFile();
+      const tgt = f.rows.find(x=>x.id===r.id);
+      pushUndo({type:"edit", fileId:f.id, rowId:r.id, col:"manual", prev:tgt.manual ?? "", next:tgt.original});
+      tgt.manual = tgt.original;
+      renderGrid();
+      selectRow(r.id);
+      toast("Copied original → manual.");
+      setDirty();
+      if (state.autosave) scheduleAutosave();
+    });
+
+    $("btnSwap").addEventListener("click", ()=>{
+      const f = activeFile(); const r = selectedRow();
+      if (!f || !r) return toast("Select a row.");
+      const a = r.manual ?? "", b = r.trans2 ?? "";
+      pushUndo({type:"edit", fileId:f.id, rowId:r.id, col:"manual", prev:a, next:b});
+      pushUndo({type:"edit", fileId:f.id, rowId:r.id, col:"trans2", prev:b, next:a});
+      r.manual = b; r.trans2 = a;
+      renderGrid(); selectRow(r.id);
+      toast("Swapped manual ↔ translation 2.");
+      setDirty();
+      if (state.autosave) scheduleAutosave();
+    });
+
+    $("btnUndo").addEventListener("click", undo);
+    $("btnRedo").addEventListener("click", redo);
+
+    $("btnPin").addEventListener("click", ()=>{
+      state.pinned = !state.pinned;
+      syncUI();
+      save();
+      toast(state.pinned ? "Pinned context." : "Unpinned context.");
+    });
+
+    $("btnFocusManual").addEventListener("click", ()=>{
+      const r = selectedRow(); if (!r) return toast("Select a row.");
+      const el = $("edManual_"+cssId(r.id));
+      el?.focus();
+      toast("Focused manual.");
+    });
+
+    $("btnAITranslate").addEventListener("click", ()=>{
+      toast("AI Translate placeholder. Hook your core later.");
+    });
+
+    document.addEventListener("keydown", (e)=>{
+      const key = e.key.toLowerCase();
+      const meta = e.metaKey || e.ctrlKey;
+
+      if (meta && key === "s") { e.preventDefault(); save(); toast("Saved."); return; }
+      if (meta && key === "f") { e.preventDefault(); $("globalSearch").focus(); return; }
+      if (meta && key === "z") { e.preventDefault(); undo(); return; }
+      if (meta && (key === "y" || (key === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
+
+      if (key === "arrowdown" || key === "arrowup") {
+        const f = activeFile(); if (!f) return;
+        const i = f.rows.findIndex(r=>r.id===state.selectedRowId);
+        const next = key === "arrowdown" ? i+1 : i-1;
+        const pick = f.rows[Math.max(0, Math.min(f.rows.length-1, next))] ?? f.rows[0];
+        if (!pick) return;
+        selectRow(pick.id);
+        $("row_"+cssId(pick.id))?.scrollIntoView({block:"nearest"});
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>
