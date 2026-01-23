@@ -1,4 +1,4 @@
-import { RENPY, maskTagsInText, TRANSLATOR_CREDIT } from "./renpy-tools.js";
+import { RENPY, maskTagsInText, unmaskTagsInText, TRANSLATOR_CREDIT } from "./renpy-tools.js";
 import { LANGS, translateBatch, postProcessTranslation } from "./engines.js";
 
 const $ = (id) => document.getElementById(id);
@@ -102,6 +102,22 @@ function escapeSnip(s) {
   return t.length > 260 ? t.slice(0, 260) + "…" : t;
 }
 
+async function writeClipboard(text) {
+  const s = String(text ?? "");
+  try {
+    await navigator.clipboard.writeText(s);
+    setJobUI(0, "Copied.", false);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = s;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    setJobUI(0, "Copied.", false);
+  }
+}
+
 function renderFiles() {
   const wrap = $("fileList");
   wrap.innerHTML = "";
@@ -150,6 +166,163 @@ function refreshGrid(resetScroll) {
   $("gridSpacer").style.height = `${total * ROW_H}px`;
 
   renderVirtualRows();
+}
+
+function filteredIndexMap() {
+  const m = new Map();
+  for (let k = 0; k < gridCache.filtered.length; k++) m.set(gridCache.filtered[k].r.id, k);
+  return m;
+}
+
+function scrollToFilteredIndex(k) {
+  const grid = $("grid");
+  grid.scrollTop = Math.max(0, k * ROW_H - ROW_H);
+  renderVirtualRows();
+}
+
+function findNext(dir) {
+  const q = $("q").value.trim();
+  if (!q) return setJobUI(0, "Type something to find.", false);
+
+  const f = activeFile();
+  if (!f) return;
+
+  const list = gridCache.filtered;
+  if (!list.length) return setJobUI(0, "No rows.", false);
+
+  const map = filteredIndexMap();
+  const cur = state.selectedRowId ? (map.get(state.selectedRowId) ?? -1) : -1;
+
+  const norm = (s) => String(s || "");
+  const needle = q;
+  const cmp = (text) => {
+    const hay = norm(text);
+    const cs = $("repCase")?.checked;
+    return cs ? hay.includes(needle) : hay.toLowerCase().includes(needle.toLowerCase());
+  };
+
+  const step = dir > 0 ? 1 : -1;
+  for (let t = 1; t <= list.length; t++) {
+    let k = cur + step * t;
+    if (k < 0) k += list.length;
+    if (k >= list.length) k -= list.length;
+
+    const r = list[k].r;
+    if (cmp(r.original) || cmp(r.machine) || cmp(r.manual)) {
+      state.selectedRowId = r.id;
+      saveState();
+      scrollToFilteredIndex(k);
+      syncEditor();
+      renderVirtualRows();
+      return setJobUI(0, "Found.", false);
+    }
+  }
+  setJobUI(0, "No match.", false);
+}
+
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildReplaceRegex(find, { regex, caseSensitive, wholeWord }) {
+  const src = regex ? find : escapeRegExp(find);
+  const body = wholeWord ? `\\b${src}\\b` : src;
+  const flags = caseSensitive ? "g" : "gi";
+  return new RegExp(body, flags);
+}
+
+function safeRenpyReplace(text, re, withStr) {
+  const masked = maskTagsInText(text);
+  const before = masked.masked;
+  const after = before.replace(re, withStr);
+  const out = unmaskTagsInText(after, masked.map);
+  return { out, changed: out !== String(text ?? "") };
+}
+
+function iterScopeRows(scope) {
+  const includeDone = $("repIncludeDone").checked;
+  const ok = (r) => includeDone ? true : r.flag !== "done";
+
+  if (scope === "selected") {
+    const r = selectedRow();
+    return r && ok(r) ? [r] : [];
+  }
+  if (scope === "file") {
+    const f = activeFile();
+    return f ? f.rows.filter(ok) : [];
+  }
+  return state.files.flatMap(f => f.rows.filter(ok));
+}
+
+function replaceRun() {
+  const find = $("repFind").value;
+  if (!find) return setJobUI(0, "Find is empty.", false);
+
+  const scope = $("repScope").value;
+  const field = $("repField").value;
+  const withStr = $("repWith").value;
+
+  const re = buildReplaceRegex(find, {
+    regex: $("repRegex").checked,
+    caseSensitive: $("repCase").checked,
+    wholeWord: $("repWhole").checked
+  });
+
+  const rows = iterScopeRows(scope);
+  if (!rows.length) return setJobUI(0, "Nothing to replace.", false);
+
+  const fields = field === "both" ? ["manual", "machine"] : [field];
+
+  let changed = 0;
+  for (const r of rows) {
+    for (const k of fields) {
+      const cur = r[k] || "";
+      if (!cur) continue;
+      const rr = safeRenpyReplace(cur, re, withStr);
+      if (rr.changed) {
+        r[k] = rr.out;
+        changed++;
+        if (r.flag === "done") r.flag = "review";
+        else if (r.flag === "todo") r.flag = "review";
+      }
+    }
+  }
+
+  const f = activeFile();
+  if (f) f.updated = Date.now();
+  saveState();
+  renderFiles();
+  renderVirtualRows();
+  syncEditor();
+  setJobUI(0, `Replaced in ${changed} field(s).`, false);
+}
+
+function replaceCount() {
+  const find = $("repFind").value;
+  if (!find) return setJobUI(0, "Find is empty.", false);
+
+  const re = buildReplaceRegex(find, {
+    regex: $("repRegex").checked,
+    caseSensitive: $("repCase").checked,
+    wholeWord: $("repWhole").checked
+  });
+
+  const scope = $("repScope").value;
+  const field = $("repField").value;
+  const rows = iterScopeRows(scope);
+  const fields = field === "both" ? ["manual", "machine"] : [field];
+
+  let hits = 0;
+  for (const r of rows) {
+    for (const k of fields) {
+      const cur = r[k] || "";
+      if (!cur) continue;
+      const masked = maskTagsInText(cur).masked;
+      const ms = masked.match(re);
+      if (ms) hits += ms.length;
+    }
+  }
+  setJobUI(0, `Matches: ${hits}`, false);
 }
 
 function renderVirtualRows() {
@@ -259,6 +432,10 @@ function buildFileFromRpy(name, source) {
 }
 
 async function importFiles(fileList) {
+  const okExt = (name) => /\.(rpy|txt|json|csv)$/i.test(name);
+  const arr = Array.from(fileList || []).filter(f => okExt(f.name));
+  if (!arr.length) { setJobUI(0, "Unsupported file type.", false); return; }
+
   const arr = Array.from(fileList || []);
   if (!arr.length) return;
 
@@ -300,7 +477,7 @@ async function importFiles(fileList) {
 }
 
 function collectRows(scope) {
-  const onlyPending = (r) => r.flag !== "done";
+  const onlyPending = (r) => r.flag !== "done" && !(r.machine && r.machine.trim());
   if (scope === "row") {
     const f = activeFile();
     const r = selectedRow();
@@ -539,6 +716,50 @@ function bind() {
   });
 
   $("btnExportZip").addEventListener("click", exportZip);
+  
+  $("btnCopyOriginal").addEventListener("click", async () => {
+    const r = selectedRow(); if (!r) return;
+    await writeClipboard(r.original || "");
+  });
+  
+  $("btnCopyMachine").addEventListener("click", async () => {
+    const r = selectedRow(); if (!r) return;
+    await writeClipboard(r.machine || "");
+  });
+  
+  $("btnPasteToManual").addEventListener("click", () => {
+    const f = activeFile(); const r = selectedRow();
+    if (!f || !r) return;
+    if (!r.machine?.trim()) return;
+    r.manual = r.machine;
+    f.updated = Date.now();
+    saveState();
+    renderVirtualRows();
+    renderFiles();
+    syncEditor();
+  });
+  
+  $("btnFindNext").addEventListener("click", () => findNext(+1));
+  $("btnFindPrev").addEventListener("click", () => findNext(-1));
+  
+  $("q").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); findNext(+1); }
+    if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); findNext(-1); }
+  });
+  
+  function openReplace() { $("replaceModal").classList.remove("hidden"); }
+  function closeReplace() { $("replaceModal").classList.add("hidden"); }
+  
+  $("btnReplace").addEventListener("click", () => {
+    $("repFind").value = $("q").value || "";
+    openReplace();
+  });
+  
+  $("btnCloseReplace").addEventListener("click", closeReplace);
+  $("replaceModal").addEventListener("click", (e) => { if (e.target === $("replaceModal")) closeReplace(); });
+  
+  $("btnRepRun").addEventListener("click", replaceRun);
+  $("btnRepCount").addEventListener("click", replaceCount);
 }
 
 function boot() {
