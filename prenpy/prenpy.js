@@ -8,6 +8,23 @@ const STORAGE_KEY = "rpyt_prod_v2";
 const ROW_H = 92;
 const OVERSCAN = 8;
 
+let manualEditSession = null;
+let saveDebounceT = null;
+let renderDebounceT = null;
+
+function debounceSave() {
+  clearTimeout(saveDebounceT);
+  saveDebounceT = setTimeout(() => saveState(), 250);
+}
+
+function debounceRender() {
+  clearTimeout(renderDebounceT);
+  renderDebounceT = setTimeout(() => {
+    renderVirtualRows();
+    renderFiles();
+  }, 120);
+}
+
 const state = {
   version: 2,
   projectName: "Ren'Py Project",
@@ -25,6 +42,21 @@ const state = {
   },
   job: null
 };
+
+const history = {
+  undo: [],
+  redo: [],
+  limit: 200
+};
+
+let ROW_INDEX = new Map();
+
+function rebuildIndex() {
+  ROW_INDEX = new Map();
+  for (const f of state.files) {
+    for (const r of f.rows) ROW_INDEX.set(r.id, { fileId: f.id, row: r });
+  }
+}
 
 function now() { return Date.now(); }
 
@@ -313,6 +345,58 @@ function countMatchesMasked(text, compiledRules) {
   return hits;
 }
 
+function pushHistory(op) {
+  if (!op || !op.changes?.length) return;
+  history.undo.push(op);
+  if (history.undo.length > history.limit) history.undo.shift();
+  history.redo.length = 0;
+  syncUndoRedoUI();
+}
+
+function applyHistory(op, dir) {
+  const usePrev = dir === "undo";
+  for (const ch of op.changes) {
+    const hit = ROW_INDEX.get(ch.rowId);
+    if (!hit) continue;
+    const r = hit.row;
+    r[ch.field] = usePrev ? ch.prev : ch.next;
+  }
+
+  const touched = new Set(op.changes.map(x => ROW_INDEX.get(x.rowId)?.fileId).filter(Boolean));
+  for (const fid of touched) {
+    const f = state.files.find(x => x.id === fid);
+    if (f) f.updated = Date.now();
+  }
+
+  saveState();
+  renderFiles();
+  renderVirtualRows();
+  syncEditor();
+  syncUndoRedoUI();
+}
+
+function undo() {
+  const op = history.undo.pop();
+  if (!op) return setJobUI(0, "Nothing to undo.", false);
+  history.redo.push(op);
+  applyHistory(op, "undo");
+  setJobUI(0, "Undo.", false);
+}
+
+function redo() {
+  const op = history.redo.pop();
+  if (!op) return setJobUI(0, "Nothing to redo.", false);
+  history.undo.push(op);
+  applyHistory(op, "redo");
+  setJobUI(0, "Redo.", false);
+}
+
+function syncUndoRedoUI() {
+  const u = $("btnUndo"), r = $("btnRedo");
+  if (u) u.disabled = history.undo.length === 0;
+  if (r) r.disabled = history.redo.length === 0;
+}
+
 function safeRenpyReplace(text, re, withStr) {
   const masked = maskTagsInText(text);
   const before = masked.masked;
@@ -556,6 +640,7 @@ async function importFiles(fileList) {
     if (s && Array.isArray(s.files)) {
       state.projectName = s.projectName || state.projectName;
       state.files = s.files;
+      rebuildIndex();
       state.activeFileId = state.files[0]?.id || null;
       state.selectedRowId = state.files[0]?.rows?.[0]?.id || null;
       saveState();
@@ -574,6 +659,7 @@ async function importFiles(fileList) {
 
   if (out.length) {
     state.files = out;
+    rebuildIndex();
     state.projectName = state.projectName || "Ren'Py Project";
     state.activeFileId = out[0].id;
     state.selectedRowId = out[0].rows[0]?.id || null;
@@ -698,16 +784,23 @@ async function runTranslate(scope) {
   }
 }
 
-function applyManualEdit() {
-  const f = activeFile();
-  const r = selectedRow();
-  if (!f || !r) return;
-  r.manual = $("edManual").value;
-  f.updated = now();
-  saveState();
-  renderVirtualRows();
-  renderFiles();
-  syncEditor();
+function commitManualSessionHard() {
+  if (!manualEditSession) return;
+  const { rowId, prev } = manualEditSession;
+  manualEditSession = null;
+
+  const hit = ROW_INDEX.get(rowId);
+  if (!hit) return;
+
+  const r = hit.row;
+  const next = r.manual || "";
+  if (next === prev) return;
+
+  pushHistory({
+    type: "edit",
+    ts: Date.now(),
+    changes: [{ rowId, field: "manual", prev, next }]
+  });
 }
 
 async function exportZip() {
@@ -886,10 +979,30 @@ function bind() {
     $("repWith").disabled = false;
     openReplace();
   });
+  
+  $("btnUndo").addEventListener("click", undo);
+  $("btnRedo").addEventListener("click", redo);
+  
+  document.addEventListener("keydown", (e) => {
+    const meta = e.ctrlKey || e.metaKey;
+    if (!meta) return;
+  
+    const ae = document.activeElement;
+    const inTextField = ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT");
+  
+    const k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey && !inTextField) {
+      e.preventDefault(); undo(); return;
+    }
+    if ((k === "y" || (k === "z" && e.shiftKey)) && !inTextField) {
+      e.preventDefault(); redo(); return;
+    }
+  });
 }
 
 function boot() {
   loadState();
+  rebuildIndex();
   bind();
 
   if (state.files.length) {
