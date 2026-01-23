@@ -21,9 +21,19 @@
 
     <div class="search">
       <input id="q" placeholder="Search / Find…" autocomplete="off" />
+      <select id="qField" aria-label="Find field">
+        <option value="all" selected>All</option>
+        <option value="original">Original</option>
+        <option value="machine">Machine</option>
+        <option value="manual">Manual</option>
+      </select>
       <button id="btnFindPrev" class="btn" type="button">Prev</button>
       <button id="btnFindNext" class="btn" type="button">Next</button>
       <button id="btnReplace" class="btn" type="button">Replace</button>
+      <div class="field" id="repRulesWrap" style="display:none">
+        <label>Rules</label>
+        <textarea id="repRules" style="height:180px"></textarea>
+      </div>
     </div>
 
     <div class="jobbar">
@@ -216,6 +226,20 @@
           </div>
           <div class="field">
             <label><input id="repIncludeDone" type="checkbox" /> Include done</label>
+          </div>
+        </div>
+        
+        <div class="row2">
+          <div class="field">
+            <label>Mode</label>
+            <select id="repMode">
+              <option value="single" selected>Single</option>
+              <option value="multi">Multi rules</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Rules format (multi)</label>
+            <div class="hint"><span class="mono">find => replace</span> (one per line). Empty / # comment ignored.</div>
           </div>
         </div>
   
