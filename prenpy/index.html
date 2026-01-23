@@ -6,880 +6,1124 @@
   <title>Ren'Py Translator Workbench</title>
   <style>
     :root{
-      --bg:#0b0f14; --panel:#0f1620; --panel2:#0c131c; --line:#1f2a3a; --text:#e8eef9; --muted:#9fb0c6;
-      --accent:#7c5cff; --good:#1fda8a; --warn:#ffb020; --bad:#ff4d4d;
-      --chip:#111a26; --sel:#13233a; --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --bg:#0b0f14; --panel:#0f1621; --panel2:#0c121b; --line:#1d2a3a;
+      --text:#e6edf7; --muted:#95a4b8; --accent:#7c5cff; --good:#2dd4bf; --warn:#fbbf24; --bad:#fb7185;
+      --shadow: 0 10px 35px rgba(0,0,0,.45);
       --r:14px;
-    }
-    [data-theme="light"]{
-      --bg:#f6f8fb; --panel:#ffffff; --panel2:#fbfcff; --line:#e5eaf3; --text:#182235; --muted:#5c6b84;
-      --chip:#f2f5fb; --sel:#eaf0ff; --shadow: 0 10px 30px rgba(18,34,62,.12);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.35 var(--sans);overflow:hidden}
+    body{margin:0;background:radial-gradient(1200px 800px at 20% -10%, rgba(124,92,255,.25), transparent 55%) , var(--bg); color:var(--text); font-family:var(--sans)}
     button,input,select,textarea{font:inherit;color:inherit}
     a{color:inherit}
-
-    #appRoot{height:100%;display:grid;grid-template-rows:56px 1fr 170px;grid-template-columns:320px 1fr}
-    #topBar{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--panel2))}
-    #topBarLeft,#topBarRight{display:flex;align-items:center;gap:10px}
-    #topBarLeft{flex:1}
-    #appTitle{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
-    #appTitleLogo{width:12px;height:12px;border-radius:4px;background:var(--accent);box-shadow:0 0 0 4px rgba(124,92,255,.18)}
-    #appTitleText{font-weight:650;letter-spacing:.2px}
-    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--chip);padding:8px 10px;border-radius:12px;cursor:pointer;user-select:none}
-    .btn:hover{filter:brightness(1.06)}
-    .btn:active{transform:translateY(1px)}
-    .btnPrimary{background:rgba(124,92,255,.18);border-color:rgba(124,92,255,.35)}
-    .btnGood{background:rgba(31,218,138,.14);border-color:rgba(31,218,138,.35)}
-    .btnWarn{background:rgba(255,176,32,.14);border-color:rgba(255,176,32,.35)}
-    .btnBad{background:rgba(255,77,77,.12);border-color:rgba(255,77,77,.32)}
-    .pill{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--muted);display:inline-flex;gap:8px;align-items:center}
-    .kbd{font:12px var(--mono);padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.12)}
-    [data-theme="light"] .kbd{background:rgba(0,0,0,.04)}
-    .icon{width:16px;height:16px;display:inline-block}
-    .sep{width:1px;height:26px;background:var(--line);margin:0 2px}
-    #globalSearchWrap{flex:1;display:flex;align-items:center;gap:10px;min-width:280px}
-    #globalSearch{flex:1;border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 12px;outline:none}
-    #globalSearch:focus{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
-    #globalScope{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 10px;outline:none}
-
-    #leftPane{grid-row:2;grid-column:1;display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;padding:12px;border-right:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel))}
-    #projectBar{display:flex;gap:10px;align-items:center}
-    #projectName{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip);color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    #leftTools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    #filterWrap{display:flex;gap:10px;align-items:center}
-    #fileFilter{flex:1;border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 12px;outline:none}
-    #fileSort{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 10px;outline:none}
-
-    #fileList{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:auto}
-    .fileRow{display:grid;grid-template-columns:1fr 64px 74px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
-    .fileRow:last-child{border-bottom:none}
-    .fileRow:hover{background:rgba(124,92,255,.06)}
-    .fileRow[data-active="true"]{background:var(--sel)}
-    .fileName{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    .filePct{justify-self:end;font:12px var(--mono);color:var(--muted)}
-    .fileBar{height:8px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.10);overflow:hidden}
-    [data-theme="light"] .fileBar{background:rgba(0,0,0,.03)}
-    .fileFill{height:100%;background:linear-gradient(90deg,var(--accent),rgba(124,92,255,.4));width:0%}
-    #leftFooter{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted)}
-    #statusChip{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip);min-width:0}
-    #statusText{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    #hotkeysChip{display:flex;gap:8px;align-items:center}
-
-    #mainPane{grid-row:2;grid-column:2;display:grid;grid-template-rows:auto 1fr;gap:10px;padding:12px;min-width:0}
-    #toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    #toolbar .btn{padding:8px 10px}
-    #viewTabs{display:flex;gap:8px;align-items:center}
-    .tab{padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--chip);cursor:pointer;color:var(--muted)}
-    .tab[data-active="true"]{color:var(--text);border-color:rgba(124,92,255,.45);background:rgba(124,92,255,.12)}
-    #quickTools{display:flex;gap:10px;align-items:center;margin-left:auto}
-    #pageInfo{color:var(--muted);font:12px var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
-
-    #gridWrap{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:hidden;min-width:0}
-    #gridHeader{display:grid;grid-template-columns:44px 1.4fr 1.2fr 1.2fr 1.2fr 1.2fr 44px;gap:0;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel))}
-    .hcell{padding:10px 10px;font-weight:650;color:var(--muted);border-right:1px solid var(--line);display:flex;align-items:center;gap:8px}
-    .hcell:last-child{border-right:none;justify-content:center}
-    #gridBody{height:calc(100vh - 56px - 170px - 12px - 12px - 10px - 44px);overflow:auto}
-    .row{display:grid;grid-template-columns:44px 1.4fr 1.2fr 1.2fr 1.2fr 1.2fr 44px;border-bottom:1px solid var(--line);min-width:0}
-    .row:last-child{border-bottom:none}
-    .cell{padding:10px 10px;border-right:1px solid var(--line);min-width:0}
-    .cell:last-child{border-right:none}
-    .idx{font:12px var(--mono);color:var(--muted);display:flex;align-items:flex-start;justify-content:center;padding-top:12px}
-    .text{white-space:pre-wrap;word-break:break-word}
+    .app{height:100%; display:grid; grid-template-rows:56px 1fr 34px; gap:10px; padding:10px}
+    .topbar{
+      display:flex; align-items:center; gap:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--line); border-radius:var(--r); padding:10px 12px; box-shadow:var(--shadow)
+    }
+    .brand{display:flex; align-items:center; gap:10px; padding-right:10px; border-right:1px solid var(--line)}
+    .logo{width:30px;height:30px;border-radius:10px;background:
+      radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.35), transparent 60%),
+      linear-gradient(135deg, rgba(124,92,255,.95), rgba(45,212,191,.9));
+      box-shadow:0 10px 25px rgba(124,92,255,.25)
+    }
+    .brand h1{font-size:14px;margin:0;letter-spacing:.4px}
+    .pill{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03)}
+    .btn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:12px; border:1px solid var(--line);
+      background:rgba(255,255,255,.03); cursor:pointer; transition:.15s transform,.15s background,.15s border-color
+    }
+    .btn:hover{transform:translateY(-1px); background:rgba(255,255,255,.06); border-color:rgba(124,92,255,.55)}
+    .btn.primary{background:rgba(124,92,255,.18); border-color:rgba(124,92,255,.5)}
+    .btn.danger{background:rgba(251,113,133,.12); border-color:rgba(251,113,133,.35)}
+    .btn.good{background:rgba(45,212,191,.10); border-color:rgba(45,212,191,.35)}
+    .spacer{flex:1}
+    .field{display:flex; gap:8px; align-items:center}
+    .input{
+      background:rgba(255,255,255,.03); border:1px solid var(--line); border-radius:12px;
+      padding:8px 10px; outline:none; min-width:220px
+    }
+    .input:focus{border-color:rgba(124,92,255,.6); box-shadow:0 0 0 3px rgba(124,92,255,.18)}
+    .select{
+      background:rgba(255,255,255,.03); border:1px solid var(--line); border-radius:12px;
+      padding:8px 10px; outline:none
+    }
+    .main{display:grid; grid-template-columns:300px 1fr 360px; gap:10px; min-height:0}
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); min-height:0; overflow:hidden
+    }
+    .panelHeader{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.02)
+    }
+    .panelHeader h2{margin:0; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted)}
+    .panelBody{height:100%; min-height:0}
+    .left{display:grid; grid-template-rows:auto 1fr auto}
+    .treeControls{display:flex; gap:8px; align-items:center; width:100%}
+    .tree{padding:6px; overflow:auto; height:100%}
+    .treeItem{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent;
+      color:var(--text)
+    }
+    .treeItem:hover{background:rgba(255,255,255,.04)}
+    .treeItem.active{background:rgba(124,92,255,.12); border-color:rgba(124,92,255,.35)}
+    .badge{margin-left:auto; font-size:12px; color:var(--muted)}
+    .percent{
+      font-size:12px; padding:2px 8px; border-radius:999px;
+      border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted)
+    }
+    .leftFooter{padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+    .center{display:grid; grid-template-rows:auto 1fr}
+    .gridControls{display:flex; gap:8px; align-items:center; width:100%}
+    .tabs{display:flex; gap:6px; align-items:center}
+    .tab{
+      padding:6px 10px; border-radius:999px; border:1px solid var(--line);
+      background:rgba(255,255,255,.02); cursor:pointer; font-size:12px; color:var(--muted)
+    }
+    .tab.active{background:rgba(124,92,255,.14); border-color:rgba(124,92,255,.45); color:var(--text)}
+    .tableWrap{overflow:auto; height:100%}
+    table{width:100%; border-collapse:separate; border-spacing:0; min-width:980px}
+    thead th{
+      position:sticky; top:0; z-index:2;
+      background:rgba(10,14,20,.92); backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line); padding:10px; text-align:left; font-size:12px; color:var(--muted)
+    }
+    tbody td{
+      border-bottom:1px solid rgba(29,42,58,.65);
+      padding:10px; vertical-align:top
+    }
+    tbody tr:hover td{background:rgba(255,255,255,.02)}
+    tbody tr.selected td{background:rgba(124,92,255,.10)}
+    .colCheck{width:38px}
+    .colId{width:120px; font-family:var(--mono); color:var(--muted); font-size:12px}
+    .cellText{white-space:pre-wrap; line-height:1.35}
+    .cellMeta{display:flex; gap:8px; align-items:center; margin-top:6px; color:var(--muted); font-size:12px}
+    .tag{
+      font-size:11px; padding:2px 8px; border-radius:999px;
+      border:1px solid var(--line); background:rgba(255,255,255,.02); color:var(--muted)
+    }
+    .edit{
+      width:100%; min-height:56px; resize:vertical;
+      background:rgba(255,255,255,.02); border:1px solid var(--line);
+      border-radius:12px; padding:10px; outline:none
+    }
+    .edit:focus{border-color:rgba(124,92,255,.6); box-shadow:0 0 0 3px rgba(124,92,255,.16)}
+    .right{display:grid; grid-template-rows:auto 1fr}
+    .rightBody{display:grid; grid-template-rows:1fr 1fr 1fr; gap:10px; padding:10px; overflow:auto; height:100%}
+    .card{
+      border:1px solid var(--line); border-radius:var(--r);
+      background:rgba(255,255,255,.02); overflow:hidden; min-height:0
+    }
+    .cardHeader{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+    .cardBody{padding:10px 12px; overflow:auto; height:100%}
+    .kv{display:grid; grid-template-columns:110px 1fr; gap:8px; font-size:13px; color:var(--text)}
+    .kv div:nth-child(odd){color:var(--muted)}
     .mono{font-family:var(--mono)}
-    .flag{display:flex;align-items:center;justify-content:center;padding:0}
-    .flagBtn{width:28px;height:28px;border-radius:10px;border:1px solid var(--line);background:var(--chip);cursor:pointer}
-    .flagBtn[data-state="todo"]{box-shadow:inset 0 0 0 0 rgba(0,0,0,0)}
-    .flagBtn[data-state="done"]{border-color:rgba(31,218,138,.5);background:rgba(31,218,138,.12)}
-    .flagBtn[data-state="review"]{border-color:rgba(255,176,32,.5);background:rgba(255,176,32,.12)}
-    .row[data-selected="true"]{background:var(--sel)}
-    .editable{border:1px solid transparent;border-radius:10px;padding:8px 8px;background:transparent;outline:none}
-    .editable[contenteditable="true"]:focus{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 4px rgba(124,92,255,.14);background:rgba(124,92,255,.06)}
-    .muted{color:var(--muted)}
-    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--muted);font:12px var(--mono)}
-    .dot{width:8px;height:8px;border-radius:999px;background:var(--muted);opacity:.7}
-    .dot.good{background:var(--good)}
-    .dot.warn{background:var(--warn)}
-    .dot.bad{background:var(--bad)}
-
-    #bottomPane{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:320px 1fr;gap:0;border-top:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel))}
-    #bottomLeft{border-right:1px solid var(--line);padding:12px;display:grid;grid-template-rows:auto 1fr}
-    #metaTitle{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    #metaTitle h3{margin:0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.3px;text-transform:uppercase}
-    #metaBox{margin-top:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);overflow:hidden}
-    #metaBox pre{margin:0;padding:10px 12px;white-space:pre-wrap;word-break:break-word;font:12px/1.4 var(--mono);color:var(--muted)}
-    #bottomRight{padding:12px;display:grid;grid-template-rows:auto 1fr;gap:10px;min-width:0}
-    #previewHeader{display:flex;align-items:center;gap:10px;justify-content:space-between}
-    #previewHeader h3{margin:0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.3px;text-transform:uppercase}
-    #previewBox{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:auto;min-width:0}
-    #previewBoxInner{padding:12px 14px;min-width:0}
-    #speakerLine{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-    #speakerTag{padding:6px 10px;border-radius:12px;border:1px solid var(--line);background:var(--chip);font-weight:700}
-    #previewText{white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.45}
-    #toast{position:fixed;right:14px;bottom:14px;min-width:240px;max-width:420px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);display:none;gap:10px;align-items:flex-start}
-    #toastIcon{width:10px;height:10px;border-radius:999px;background:var(--accent);margin-top:5px}
-    #toastMsg{color:var(--text)}
-    #toastClose{margin-left:auto;border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:6px 8px;cursor:pointer}
-
-    #modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px}
-    #modal{width:min(820px,95vw);border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden}
-    #modalHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
-    #modalTitle{font-weight:750}
-    #modalClose{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:8px 10px;cursor:pointer}
-    #modalBody{padding:14px;display:grid;gap:10px}
-    .field{display:grid;gap:6px}
-    .field label{color:var(--muted);font-size:12px}
-    .field input,.field select{border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:10px 12px;outline:none}
-    .field input:focus,.field select:focus{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
-    #modalFooter{display:flex;gap:10px;justify-content:flex-end;padding:12px 14px;border-top:1px solid var(--line)}
-    .hide{display:none !important}
+    .statusbar{
+      display:flex; align-items:center; gap:10px;
+      background:rgba(255,255,255,.03); border:1px solid var(--line);
+      border-radius:var(--r); padding:8px 12px
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--good);box-shadow:0 0 0 3px rgba(45,212,191,.12)}
+    .statusText{color:var(--muted); font-size:12px}
+    .kbd{font-family:var(--mono); font-size:11px; padding:2px 6px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.02); color:var(--muted)}
+    .modalOverlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px}
+    .modalOverlay.show{display:flex}
+    .modal{
+      width:min(860px, 100%); max-height:min(80vh, 860px); overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(124,92,255,.35); border-radius:18px; box-shadow:var(--shadow)
+    }
+    .modalHeader{display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+    .modalHeader h3{margin:0; font-size:13px; letter-spacing:.4px}
+    .modalBody{padding:12px 14px; overflow:auto; max-height:calc(80vh - 120px)}
+    .modalFooter{display:flex; justify-content:flex-end; gap:8px; padding:12px 14px; border-top:1px solid var(--line)}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .small{font-size:12px;color:var(--muted)}
+    .hr{height:1px;background:var(--line);margin:10px 0}
   </style>
 </head>
 <body>
-  <div id="appRoot" data-theme="dark">
-    <header id="topBar">
-      <div id="topBarLeft">
-        <div id="appTitle">
-          <div id="appTitleLogo"></div>
-          <div id="appTitleText">Ren'Py Translator Workbench</div>
+  <div id="app" class="app">
+    <div id="topbar" class="topbar">
+      <div class="brand" id="brand">
+        <div class="logo" id="logo"></div>
+        <div>
+          <h1 id="appTitle">Ren'Py Translator Workbench</h1>
+          <div id="projectMeta" class="small">Project: <span id="projectName">Untitled</span> • Lang: <span id="projectLang">en</span></div>
         </div>
-        <div class="sep"></div>
-        <button id="btnOpenProject" class="btn btnPrimary" type="button">Open Project</button>
-        <button id="btnImport" class="btn" type="button">Import Files</button>
-        <button id="btnExport" class="btn btnGood" type="button">Export</button>
-        <button id="btnAutosave" class="btn" type="button" aria-pressed="true">Autosave</button>
       </div>
 
-      <div id="globalSearchWrap">
-        <input id="globalSearch" placeholder="Search (Ctrl+F) — text, tags, file" autocomplete="off" />
-        <select id="globalScope" aria-label="Search scope">
-          <option value="current">Current file</option>
-          <option value="all" selected>All files</option>
-          <option value="original">Original only</option>
-          <option value="translated">Translations only</option>
+      <button id="btnOpen" class="btn primary" type="button">Open</button>
+      <button id="btnSave" class="btn good" type="button">Save</button>
+      <button id="btnExport" class="btn" type="button">Export</button>
+      <button id="btnImport" class="btn" type="button">Import</button>
+      <button id="btnUndo" class="btn" type="button">Undo</button>
+      <button id="btnRedo" class="btn" type="button">Redo</button>
+
+      <div class="pill" id="pillMode">
+        <span class="small">Mode</span>
+        <select id="selectMode" class="select">
+          <option value="translate" selected>Translate</option>
+          <option value="review">Review</option>
+          <option value="qa">QA</option>
         </select>
       </div>
 
-      <div id="topBarRight">
-        <button id="btnTheme" class="btn" type="button">Theme</button>
-        <button id="btnSettings" class="btn" type="button">Settings</button>
-        <div class="pill"><span class="kbd">Ctrl</span><span class="kbd">S</span><span class="muted">Save</span></div>
-      </div>
-    </header>
+      <div class="spacer"></div>
 
-    <aside id="leftPane">
-      <div id="projectBar">
-        <div id="projectName" title="No project loaded">No project loaded</div>
-        <button id="btnNewFile" class="btn" type="button">New</button>
+      <div class="field" id="fieldSearch">
+        <input id="inputQuickSearch" class="input" placeholder="Search (Ctrl+F)" />
+        <button id="btnFindReplace" class="btn" type="button">Find/Replace</button>
       </div>
 
-      <div id="leftTools">
-        <div id="filterWrap" style="flex:1;min-width:0">
-          <input id="fileFilter" placeholder="Filter files…" autocomplete="off" />
-          <select id="fileSort" aria-label="Sort files">
-            <option value="name">Name</option>
-            <option value="progress">Progress</option>
-            <option value="recent">Recent</option>
-          </select>
-        </div>
-        <button id="btnBatch" class="btn btnWarn" type="button">Batch</button>
-      </div>
+      <button id="btnSettings" class="btn" type="button">Settings</button>
+    </div>
 
-      <div id="fileList" role="listbox" aria-label="Files"></div>
-
-      <div id="leftFooter">
-        <div id="statusChip">
-          <span class="badge"><span class="dot" id="dotState"></span><span id="statusMode">READY</span></span>
-          <span id="statusText">Load a project or import files.</span>
-        </div>
-        <div id="hotkeysChip" class="pill">
-          <span class="kbd">↑</span><span class="kbd">↓</span>
-          <span class="muted">Navigate</span>
-        </div>
-      </div>
-    </aside>
-
-    <main id="mainPane">
-      <div id="toolbar">
-        <div id="viewTabs">
-          <div id="tabGoogle" class="tab" data-active="true">Google</div>
-          <div id="tabManual" class="tab" data-active="true">Manual Translation</div>
-          <div id="tabAtlas" class="tab" data-active="true">Atlas</div>
-          <div id="tabTrans2" class="tab" data-active="true">Translation 2</div>
-        </div>
-
-        <div class="sep"></div>
-
-        <button id="btnFindNext" class="btn" type="button">Find Next</button>
-        <button id="btnReplace" class="btn" type="button">Replace</button>
-        <button id="btnMarkDone" class="btn btnGood" type="button">Mark Done</button>
-        <button id="btnMarkReview" class="btn btnWarn" type="button">Needs Review</button>
-        <button id="btnClearFlag" class="btn" type="button">Clear</button>
-
-        <div id="quickTools">
-          <button id="btnCopyOriginal" class="btn" type="button">Copy Original</button>
-          <button id="btnSwap" class="btn" type="button">Swap ↔</button>
-          <button id="btnUndo" class="btn" type="button">Undo</button>
-          <button id="btnRedo" class="btn" type="button">Redo</button>
-          <div id="pageInfo">Rows: <span id="rowCount">0</span> · Selected: <span id="selIdx">—</span></div>
-        </div>
-      </div>
-
-      <section id="gridWrap" aria-label="Translation grid">
-        <div id="gridHeader">
-          <div id="hIndex" class="hcell">#</div>
-          <div id="hOriginal" class="hcell">Original Text</div>
-          <div id="hGoogle" class="hcell">Google</div>
-          <div id="hManual" class="hcell">Manual Translation</div>
-          <div id="hAtlas" class="hcell">Atlas</div>
-          <div id="hTrans2" class="hcell">Translation 2</div>
-          <div id="hFlag" class="hcell">✓</div>
-        </div>
-        <div id="gridBody"></div>
-      </section>
-    </main>
-
-    <section id="bottomPane" aria-label="Preview">
-      <div id="bottomLeft">
-        <div id="metaTitle">
-          <h3 id="metaHeader">Context</h3>
-          <button id="btnPin" class="btn" type="button" aria-pressed="false">Pin</button>
-        </div>
-        <div id="metaBox"><pre id="metaPre">No selection.</pre></div>
-      </div>
-
-      <div id="bottomRight">
-        <div id="previewHeader">
-          <h3 id="previewHeaderText">Game Preview</h3>
-          <div style="display:flex;gap:10px;align-items:center">
-            <button id="btnFocusManual" class="btn btnPrimary" type="button">Focus Manual</button>
-            <button id="btnAITranslate" class="btn btnWarn" type="button">AI Translate</button>
+    <div id="main" class="main">
+      <div id="panelLeft" class="panel left">
+        <div class="panelHeader" id="leftHeader">
+          <h2 id="leftTitle">Files</h2>
+          <div class="treeControls" id="treeControls">
+            <input id="inputFileFilter" class="input" placeholder="Filter files…" style="min-width:0;flex:1" />
           </div>
         </div>
-        <div id="previewBox">
-          <div id="previewBoxInner">
-            <div id="speakerLine">
-              <div id="speakerTag">—</div>
-              <div class="badge" id="flagBadge"><span class="dot" id="flagDot"></span><span id="flagText">todo</span></div>
-              <div class="badge" id="fileBadge"><span class="dot"></span><span id="fileText">—</span></div>
+        <div id="fileTree" class="tree panelBody" role="tree"></div>
+        <div id="leftFooter" class="leftFooter">
+          <span id="statFiles" class="percent">0 files</span>
+          <span id="statRows" class="percent">0 rows</span>
+          <span id="statProgress" class="percent">0% done</span>
+        </div>
+      </div>
+
+      <div id="panelCenter" class="panel center">
+        <div class="panelHeader" id="centerHeader">
+          <h2 id="centerTitle">Strings</h2>
+          <div class="gridControls" id="gridControls">
+            <div class="tabs" id="tabs">
+              <div class="tab active" id="tabAll" data-tab="all">All</div>
+              <div class="tab" id="tabUntranslated" data-tab="untranslated">Untranslated</div>
+              <div class="tab" id="tabTranslated" data-tab="translated">Translated</div>
+              <div class="tab" id="tabFlagged" data-tab="flagged">Flagged</div>
             </div>
-            <div id="previewText">Select a row to preview.</div>
+            <div class="spacer"></div>
+            <button id="btnFlag" class="btn" type="button">Flag</button>
+            <button id="btnCopySource" class="btn" type="button">Copy Source</button>
+            <button id="btnApplyTM" class="btn" type="button">Apply TM</button>
           </div>
         </div>
-      </div>
-    </section>
-  </div>
 
-  <input id="filePicker" type="file" multiple accept=".json,.txt,.rpy,.csv" class="hide" />
-
-  <div id="toast">
-    <div id="toastIcon"></div>
-    <div id="toastMsg"></div>
-    <button id="toastClose" type="button">Close</button>
-  </div>
-
-  <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div id="modal">
-      <div id="modalHeader">
-        <div id="modalTitle">Settings</div>
-        <button id="modalClose" type="button">Close</button>
-      </div>
-      <div id="modalBody">
-        <div class="field">
-          <label for="setLocale">UI Language</label>
-          <select id="setLocale">
-            <option value="en" selected>English</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="setAutosaveInterval">Autosave interval (seconds)</label>
-          <input id="setAutosaveInterval" type="number" min="5" max="600" value="30" />
-        </div>
-        <div class="field">
-          <label for="setFontScale">Font scale</label>
-          <select id="setFontScale">
-            <option value="0.95">0.95</option>
-            <option value="1" selected>1.00</option>
-            <option value="1.05">1.05</option>
-            <option value="1.1">1.10</option>
-          </select>
+        <div id="tableWrap" class="tableWrap panelBody">
+          <table id="stringsTable">
+            <thead id="stringsThead">
+              <tr>
+                <th id="thCheck" class="colCheck"><input id="checkAll" type="checkbox" /></th>
+                <th id="thId" class="colId">Key</th>
+                <th id="thSpeaker" style="width:140px">Speaker</th>
+                <th id="thSource">Source</th>
+                <th id="thTarget">Translation</th>
+              </tr>
+            </thead>
+            <tbody id="stringsTbody"></tbody>
+          </table>
         </div>
       </div>
-      <div id="modalFooter">
-        <button id="btnReset" class="btn btnBad" type="button">Reset</button>
-        <button id="btnSaveSettings" class="btn btnGood" type="button">Save</button>
+
+      <div id="panelRight" class="panel right">
+        <div class="panelHeader" id="rightHeader">
+          <h2 id="rightTitle">Inspector</h2>
+          <div class="spacer"></div>
+          <button id="btnAddToGlossary" class="btn" type="button">Add to Glossary</button>
+        </div>
+
+        <div id="rightBody" class="rightBody panelBody">
+          <div id="cardContext" class="card">
+            <div id="cardContextHeader" class="cardHeader">Context</div>
+            <div id="cardContextBody" class="cardBody">
+              <div class="kv" id="contextKv">
+                <div>File</div><div id="ctxFile" class="mono">—</div>
+                <div>Line</div><div id="ctxLine" class="mono">—</div>
+                <div>Label</div><div id="ctxLabel" class="mono">—</div>
+                <div>Tags</div><div id="ctxTags">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="cardTM" class="card">
+            <div id="cardTMHeader" class="cardHeader">Translation Memory</div>
+            <div id="cardTMBody" class="cardBody">
+              <div class="small" id="tmHint">Select a row, then click “Apply TM”. TM is stored locally (IndexedDB).</div>
+              <div class="hr"></div>
+              <div id="tmMatches" class="small">No matches.</div>
+            </div>
+          </div>
+
+          <div id="cardPreview" class="card">
+            <div id="cardPreviewHeader" class="cardHeader">Preview</div>
+            <div id="cardPreviewBody" class="cardBody">
+              <div class="small" id="previewHint">UI preview only. Game rendering/hooking comes later.</div>
+              <div class="hr"></div>
+              <div id="previewBox" style="border:1px solid var(--line); border-radius:14px; padding:12px; background:rgba(0,0,0,.25)">
+                <div id="previewSpeaker" class="mono" style="color:var(--muted); margin-bottom:8px">—</div>
+                <div id="previewText" style="white-space:pre-wrap; line-height:1.35">Select a string to preview.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
+    </div>
+
+    <div id="statusbar" class="statusbar">
+      <div id="statusDot" class="dot"></div>
+      <div id="statusText" class="statusText">Ready.</div>
+      <div class="spacer"></div>
+      <span class="kbd" id="kbdSave">Ctrl+S</span>
+      <span class="kbd" id="kbdFind">Ctrl+F</span>
+      <span class="kbd" id="kbdFlag">F</span>
+      <span class="kbd" id="kbdApplyTm">T</span>
     </div>
   </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
+  <input id="filePicker" type="file" accept=".json" style="display:none" />
+  <input id="importPicker" type="file" accept=".json,.csv" style="display:none" />
 
-    const state = {
-      projectName: "Demo Project",
+  <div id="modalOverlay" class="modalOverlay" aria-hidden="true">
+    <div id="modal" class="modal" role="dialog" aria-modal="true">
+      <div id="modalHeader" class="modalHeader">
+        <h3 id="modalTitle">Find & Replace</h3>
+        <div class="spacer"></div>
+        <button id="btnModalClose" class="btn danger" type="button">Close</button>
+      </div>
+      <div id="modalBody" class="modalBody"></div>
+      <div id="modalFooter" class="modalFooter"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    project: {
+      name: "Untitled",
+      lang: "en",
+      files: [],
+      rows: [],
+    },
+    view: {
       activeFileId: null,
-      selectedRowId: null,
-      pinned: false,
-      theme: "dark",
-      autosave: true,
-      autosaveIntervalSec: 30,
-      fontScale: 1,
-      scope: "all",
-      tabs: { google:true, manual:true, atlas:true, trans2:true },
-      undo: [],
-      redo: [],
-      files: []
+      tab: "all",
+      quickSearch: "",
+      selectedRowIds: new Set(),
+      focusedRowId: null,
+    },
+    history: { undo: [], redo: [] },
+    tm: { db: null, lastMatches: [] },
+    glossary: {},
+  };
+
+  const ids = {
+    app: $("app"),
+    fileTree: $("fileTree"),
+    stringsTbody: $("stringsTbody"),
+    projectName: $("projectName"),
+    projectLang: $("projectLang"),
+    statFiles: $("statFiles"),
+    statRows: $("statRows"),
+    statProgress: $("statProgress"),
+    statusText: $("statusText"),
+    inputFileFilter: $("inputFileFilter"),
+    inputQuickSearch: $("inputQuickSearch"),
+    checkAll: $("checkAll"),
+    filePicker: $("filePicker"),
+    importPicker: $("importPicker"),
+    modalOverlay: $("modalOverlay"),
+    modalBody: $("modalBody"),
+    modalFooter: $("modalFooter"),
+    modalTitle: $("modalTitle"),
+
+    ctxFile: $("ctxFile"),
+    ctxLine: $("ctxLine"),
+    ctxLabel: $("ctxLabel"),
+    ctxTags: $("ctxTags"),
+    tmMatches: $("tmMatches"),
+    previewSpeaker: $("previewSpeaker"),
+    previewText: $("previewText"),
+  };
+
+  const setStatus = (t) => { ids.statusText.textContent = t; };
+
+  const nowId = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+  const deepClone = (x) => JSON.parse(JSON.stringify(x));
+  const snapshot = () => deepClone({ project: state.project, view: { ...state.view, selectedRowIds: Array.from(state.view.selectedRowIds) }});
+  const restore = (snap) => {
+    state.project = snap.project;
+    state.view = snap.view;
+    state.view.selectedRowIds = new Set(snap.view.selectedRowIds || []);
+  };
+
+  const pushHistory = () => {
+    state.history.undo.push(snapshot());
+    state.history.redo.length = 0;
+    if (state.history.undo.length > 80) state.history.undo.shift();
+  };
+
+  const undo = () => {
+    if (!state.history.undo.length) return;
+    state.history.redo.push(snapshot());
+    restore(state.history.undo.pop());
+    renderAll();
+    setStatus("Undone.");
+  };
+
+  const redo = () => {
+    if (!state.history.redo.length) return;
+    state.history.undo.push(snapshot());
+    restore(state.history.redo.pop());
+    renderAll();
+    setStatus("Redone.");
+  };
+
+  const persist = () => {
+    localStorage.setItem("rpw_project", JSON.stringify(state.project));
+    localStorage.setItem("rpw_view", JSON.stringify({ ...state.view, selectedRowIds: Array.from(state.view.selectedRowIds) }));
+    localStorage.setItem("rpw_glossary", JSON.stringify(state.glossary));
+  };
+
+  const loadPersisted = () => {
+    const p = localStorage.getItem("rpw_project");
+    const v = localStorage.getItem("rpw_view");
+    const g = localStorage.getItem("rpw_glossary");
+    if (p) state.project = JSON.parse(p);
+    if (v) {
+      const vv = JSON.parse(v);
+      state.view = { ...state.view, ...vv, selectedRowIds: new Set(vv.selectedRowIds || []) };
+    }
+    if (g) state.glossary = JSON.parse(g);
+  };
+
+  const download = (name, text, mime="application/json") => {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const normalize = (s) => (s ?? "").toString();
+  const includesCI = (a,b) => normalize(a).toLowerCase().includes(normalize(b).toLowerCase());
+
+  const progressPct = () => {
+    const rows = state.project.rows || [];
+    if (!rows.length) return 0;
+    const done = rows.filter(r => normalize(r.target).trim().length > 0).length;
+    return Math.round((done / rows.length) * 100);
+  };
+
+  const openModal = (title, bodyEl, footerEl) => {
+    ids.modalTitle.textContent = title;
+    ids.modalBody.innerHTML = "";
+    ids.modalFooter.innerHTML = "";
+    ids.modalBody.appendChild(bodyEl);
+    ids.modalFooter.appendChild(footerEl);
+    ids.modalOverlay.classList.add("show");
+    ids.modalOverlay.setAttribute("aria-hidden","false");
+  };
+
+  const closeModal = () => {
+    ids.modalOverlay.classList.remove("show");
+    ids.modalOverlay.setAttribute("aria-hidden","true");
+  };
+
+  const initTM = async () => {
+    state.tm.db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open("rpw_tm", 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        const store = db.createObjectStore("tm", { keyPath: "k" });
+        store.createIndex("src", "src", { unique: false });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  };
+
+  const tmPut = async (src, tgt, meta={}) => {
+    if (!state.tm.db) return;
+    const k = (src||"").trim();
+    const v = (tgt||"").trim();
+    if (!k || !v) return;
+    await new Promise((resolve, reject) => {
+      const tx = state.tm.db.transaction("tm", "readwrite");
+      tx.objectStore("tm").put({ k, src: k, tgt: v, meta, ts: Date.now() });
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  };
+
+  const tmFind = async (src) => {
+    if (!state.tm.db) return [];
+    const key = (src||"").trim();
+    if (!key) return [];
+    return await new Promise((resolve, reject) => {
+      const tx = state.tm.db.transaction("tm", "readonly");
+      const req = tx.objectStore("tm").get(key);
+      req.onsuccess = () => resolve(req.result ? [req.result] : []);
+      req.onerror = () => reject(req.error);
+    });
+  };
+
+  const getFilteredRows = () => {
+    const { activeFileId, tab, quickSearch } = state.view;
+    const fileOk = (r) => !activeFileId || r.fileId === activeFileId;
+    const tabOk = (r) => {
+      const has = normalize(r.target).trim().length > 0;
+      if (tab === "untranslated") return !has;
+      if (tab === "translated") return has;
+      if (tab === "flagged") return !!r.flagged;
+      return true;
+    };
+    const searchOk = (r) => {
+      if (!quickSearch.trim()) return true;
+      return (
+        includesCI(r.key, quickSearch) ||
+        includesCI(r.speaker, quickSearch) ||
+        includesCI(r.source, quickSearch) ||
+        includesCI(r.target, quickSearch) ||
+        includesCI((r.tags||[]).join(" "), quickSearch) ||
+        includesCI(r.label, quickSearch)
+      );
+    };
+    return (state.project.rows || []).filter(r => fileOk(r) && tabOk(r) && searchOk(r));
+  };
+
+  const renderTree = () => {
+    const q = normalize(ids.inputFileFilter.value).trim().toLowerCase();
+    const files = (state.project.files || []).filter(f => !q || normalize(f.name).toLowerCase().includes(q));
+    ids.fileTree.innerHTML = "";
+    files.forEach(f => {
+      const rows = (state.project.rows||[]).filter(r => r.fileId === f.id);
+      const done = rows.filter(r => normalize(r.target).trim().length > 0).length;
+      const pct = rows.length ? Math.round((done/rows.length)*100) : 0;
+
+      const el = document.createElement("div");
+      el.id = `file_${f.id}`;
+      el.className = "treeItem" + (state.view.activeFileId === f.id ? " active" : "");
+      el.setAttribute("role","treeitem");
+      el.innerHTML = `
+        <span class="mono">📄</span>
+        <span>${escapeHtml(f.name)}</span>
+        <span class="badge">${rows.length} strings</span>
+        <span class="percent">${pct}%</span>
+      `;
+      el.onclick = () => {
+        pushHistory();
+        state.view.activeFileId = f.id;
+        state.view.selectedRowIds.clear();
+        state.view.focusedRowId = null;
+        renderAll();
+        setStatus(`File: ${f.name}`);
+      };
+      ids.fileTree.appendChild(el);
+    });
+  };
+
+  const renderTable = () => {
+    const rows = getFilteredRows();
+    ids.stringsTbody.innerHTML = "";
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.id = `row_${r.id}`;
+      tr.className = state.view.selectedRowIds.has(r.id) ? "selected" : "";
+      tr.innerHTML = `
+        <td class="colCheck"><input id="chk_${r.id}" type="checkbox" ${state.view.selectedRowIds.has(r.id) ? "checked":""} /></td>
+        <td class="colId">${escapeHtml(r.key || r.id)}</td>
+        <td><div class="cellText">${escapeHtml(r.speaker||"")}</div></td>
+        <td>
+          <div class="cellText" id="src_${r.id}">${escapeHtml(r.source||"")}</div>
+          <div class="cellMeta">
+            ${r.flagged ? `<span class="tag" style="border-color:rgba(251,113,133,.5);color:rgba(251,113,133,.95)">FLAG</span>`:""}
+            ${(r.tags||[]).slice(0,3).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}
+            ${((r.tags||[]).length>3) ? `<span class="tag">+${(r.tags||[]).length-3}</span>`:""}
+          </div>
+        </td>
+        <td>
+          <textarea id="tgt_${r.id}" class="edit" spellcheck="false" placeholder="Type translation…">${escapeHtmlTextarea(r.target||"")}</textarea>
+          <div class="cellMeta">
+            <span class="tag mono">${escapeHtml(r.fileName||"")}</span>
+            <span class="tag mono">${escapeHtml((r.line ?? "—").toString())}</span>
+            <span class="tag">${escapeHtml(r.label||"")}</span>
+          </div>
+        </td>
+      `;
+
+      const chk = tr.querySelector(`#chk_${cssEscape(r.id)}`);
+      const ta = tr.querySelector(`#tgt_${cssEscape(r.id)}`);
+
+      const selectRow = (multi=false) => {
+        if (!multi) state.view.selectedRowIds.clear();
+        if (state.view.selectedRowIds.has(r.id) && multi) state.view.selectedRowIds.delete(r.id);
+        else state.view.selectedRowIds.add(r.id);
+        state.view.focusedRowId = r.id;
+        renderAll({ keepScroll:true });
+        syncInspector();
+      };
+
+      tr.onclick = (e) => {
+        if (e.target === ta || e.target === chk) return;
+        selectRow(e.ctrlKey || e.metaKey);
+      };
+
+      chk.onchange = (e) => {
+        selectRow(true);
+      };
+
+      ta.onfocus = () => {
+        if (!state.view.selectedRowIds.has(r.id)) {
+          state.view.selectedRowIds.clear();
+          state.view.selectedRowIds.add(r.id);
+          state.view.focusedRowId = r.id;
+          renderAll({ keepScroll:true });
+          syncInspector();
+        }
+      };
+
+      ta.oninput = async () => {
+        const v = ta.value;
+        const row = state.project.rows.find(x => x.id === r.id);
+        if (!row) return;
+        if (!state._typing) { pushHistory(); state._typing = true; setTimeout(()=>state._typing=false, 600); }
+        row.target = v;
+        persist();
+        syncStats();
+        setStatus("Edited.");
+        await tmPut(row.source, row.target, { file: row.fileName, key: row.key });
+      };
+
+      ids.stringsTbody.appendChild(tr);
+    });
+
+    ids.checkAll.checked = rows.length && rows.every(r => state.view.selectedRowIds.has(r.id));
+  };
+
+  const syncStats = () => {
+    const files = state.project.files || [];
+    const rows = state.project.rows || [];
+    ids.projectName.textContent = state.project.name || "Untitled";
+    ids.projectLang.textContent = state.project.lang || "en";
+    ids.statFiles.textContent = `${files.length} files`;
+    ids.statRows.textContent = `${rows.length} rows`;
+    ids.statProgress.textContent = `${progressPct()}% done`;
+  };
+
+  const syncInspector = async () => {
+    const id = state.view.focusedRowId || Array.from(state.view.selectedRowIds)[0];
+    const row = (state.project.rows || []).find(r => r.id === id);
+    if (!row) {
+      ids.ctxFile.textContent = "—";
+      ids.ctxLine.textContent = "—";
+      ids.ctxLabel.textContent = "—";
+      ids.ctxTags.textContent = "—";
+      ids.tmMatches.textContent = "No matches.";
+      ids.previewSpeaker.textContent = "—";
+      ids.previewText.textContent = "Select a string to preview.";
+      return;
+    }
+    ids.ctxFile.textContent = row.fileName || "—";
+    ids.ctxLine.textContent = (row.line ?? "—").toString();
+    ids.ctxLabel.textContent = row.label || "—";
+    ids.ctxTags.textContent = (row.tags && row.tags.length) ? row.tags.join(", ") : "—";
+    ids.previewSpeaker.textContent = row.speaker ? row.speaker : "Narration";
+    ids.previewText.textContent = row.target?.trim() ? row.target : row.source;
+
+    const matches = await tmFind(row.source);
+    state.tm.lastMatches = matches;
+    ids.tmMatches.textContent = matches.length
+      ? `Match: ${matches[0].tgt}`
+      : "No matches.";
+  };
+
+  const renderAll = (opt={}) => {
+    const wrap = $("tableWrap");
+    const st = opt.keepScroll ? { top: wrap.scrollTop, left: wrap.scrollLeft } : null;
+    renderTree();
+    renderTable();
+    syncStats();
+    if (st) { wrap.scrollTop = st.top; wrap.scrollLeft = st.left; }
+    persist();
+  };
+
+  const escapeHtml = (s) => normalize(s).replace(/[&<>"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+  const escapeHtmlTextarea = (s) => escapeHtml(s).replace(/\n/g, "\n");
+  const cssEscape = (s) => (window.CSS && CSS.escape) ? CSS.escape(s) : s.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+  const sampleProject = () => {
+    const f1 = { id: "f1", name: "script.rpy" };
+    const f2 = { id: "f2", name: "event_001.rpy" };
+    const rows = [
+      { id: nowId(), fileId:"f1", fileName:f1.name, key:"l_0001", speaker:"Masachika", source:"Either way, I'm sure it'll be plenty enjoyable.", target:"", line:153, label:"dialogue", tags:["dialogue"], flagged:false },
+      { id: nowId(), fileId:"f1", fileName:f1.name, key:"l_0002", speaker:"Alya", source:"Thank you for the meal!", target:"", line:282, label:"dialogue", tags:["dialogue"], flagged:false },
+      { id: nowId(), fileId:"f2", fileName:f2.name, key:"l_0101", speaker:"Narration", source:"You linger outside for a moment before going in.", target:"", line:298, label:"narration", tags:["narration"], flagged:false },
+    ];
+    state.project = { name:"Demo Project", lang:"vi", files:[f1,f2], rows };
+    state.view.activeFileId = "f1";
+    state.view.selectedRowIds.clear();
+    state.view.focusedRowId = rows[0].id;
+  };
+
+  const exportProject = () => {
+    const out = {
+      schema: "rpw.project.v1",
+      name: state.project.name,
+      lang: state.project.lang,
+      files: state.project.files,
+      rows: state.project.rows,
+      glossary: state.glossary,
+      exportedAt: new Date().toISOString()
+    };
+    download(`${(state.project.name||"project").replace(/\s+/g,"_")}.json`, JSON.stringify(out, null, 2));
+    setStatus("Exported JSON.");
+  };
+
+  const importProjectJson = async (text) => {
+    const obj = JSON.parse(text);
+    if (obj.schema && obj.schema.startsWith("rpw.project")) {
+      pushHistory();
+      state.project = { name: obj.name || "Untitled", lang: obj.lang || "en", files: obj.files || [], rows: obj.rows || [] };
+      state.glossary = obj.glossary || {};
+      state.view.activeFileId = state.project.files?.[0]?.id ?? null;
+      state.view.selectedRowIds.clear();
+      state.view.focusedRowId = state.project.rows?.[0]?.id ?? null;
+      renderAll();
+      await syncInspector();
+      setStatus("Imported project JSON.");
+      return;
+    }
+    throw new Error("Unsupported JSON format.");
+  };
+
+  const openFilePicker = () => ids.filePicker.click();
+  const openImportPicker = () => ids.importPicker.click();
+
+  const buildFindReplaceModal = () => {
+    const body = document.createElement("div");
+    body.className = "grid2";
+
+    const left = document.createElement("div");
+    left.innerHTML = `
+      <div class="small">Scope</div>
+      <div class="pill" style="justify-content:space-between;margin-top:6px">
+        <span class="small">Active file only</span>
+        <input id="frScopeFile" type="checkbox" checked />
+      </div>
+      <div class="pill" style="justify-content:space-between;margin-top:8px">
+        <span class="small">Target only</span>
+        <input id="frTargetOnly" type="checkbox" checked />
+      </div>
+      <div class="hr"></div>
+      <div class="small">Find</div>
+      <input id="frFind" class="input" style="width:100%;margin-top:6px" placeholder="Text to find" />
+      <div class="small" style="margin-top:10px">Replace</div>
+      <input id="frReplace" class="input" style="width:100%;margin-top:6px" placeholder="Replacement" />
+      <div class="pill" style="justify-content:space-between;margin-top:8px">
+        <span class="small">Case sensitive</span>
+        <input id="frCase" type="checkbox" />
+      </div>
+    `;
+
+    const right = document.createElement("div");
+    right.innerHTML = `
+      <div class="small">Results</div>
+      <div id="frResults" style="margin-top:6px;border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:44vh;background:rgba(0,0,0,.25)"></div>
+      <div class="small" style="margin-top:10px">Tip: Double-click a result to select the row.</div>
+    `;
+
+    body.appendChild(left);
+    body.appendChild(right);
+
+    const footer = document.createElement("div");
+    footer.style.display = "flex";
+    footer.style.gap = "8px";
+    footer.innerHTML = `
+      <button id="frBtnScan" class="btn">Scan</button>
+      <button id="frBtnReplaceAll" class="btn primary">Replace All</button>
+    `;
+
+    const scan = () => {
+      const find = normalize(body.querySelector("#frFind").value);
+      const rep = normalize(body.querySelector("#frReplace").value);
+      const inFile = body.querySelector("#frScopeFile").checked;
+      const targetOnly = body.querySelector("#frTargetOnly").checked;
+      const cs = body.querySelector("#frCase").checked;
+      const resultsEl = body.querySelector("#frResults");
+
+      const rows = (state.project.rows || []).filter(r => !inFile || !state.view.activeFileId || r.fileId === state.view.activeFileId);
+      const hay = (r) => targetOnly ? normalize(r.target) : (normalize(r.source) + "\n" + normalize(r.target));
+      const test = (txt) => {
+        if (!find) return false;
+        if (cs) return txt.includes(find);
+        return txt.toLowerCase().includes(find.toLowerCase());
+      };
+
+      const hits = rows.filter(r => test(hay(r))).slice(0, 500);
+      resultsEl.innerHTML = hits.length ? "" : `<div class="small" style="padding:10px;color:var(--muted)">No hits.</div>`;
+      hits.forEach(r => {
+        const item = document.createElement("div");
+        item.id = `frHit_${r.id}`;
+        item.style.padding = "10px";
+        item.style.borderBottom = "1px solid var(--line)";
+        item.style.cursor = "pointer";
+        item.innerHTML = `
+          <div class="small mono">${escapeHtml(r.fileName||"")} • ${escapeHtml(r.key||r.id)}</div>
+          <div style="margin-top:6px;white-space:pre-wrap">${escapeHtml((targetOnly?r.target:r.source) || "")}</div>
+        `;
+        item.ondblclick = () => {
+          closeModal();
+          pushHistory();
+          state.view.activeFileId = r.fileId;
+          state.view.selectedRowIds.clear();
+          state.view.selectedRowIds.add(r.id);
+          state.view.focusedRowId = r.id;
+          renderAll();
+          syncInspector();
+          const ta = $("tgt_"+r.id);
+          if (ta) { ta.scrollIntoView({ block:"center" }); ta.focus(); }
+          setStatus("Selected search hit.");
+        };
+        resultsEl.appendChild(item);
+      });
+
+      return { find, rep, hits, inFile, targetOnly, cs };
     };
 
-    const demo = () => ([
-      {
-        id:"Map001.txt",
-        name:"Map001.txt",
-        updated: Date.now(),
-        rows: [
-          { id:"r1", speaker:"Blue-haired adventurer", original:"\\c[2]Blue-haired adventurer\\c[0]\nBoth adventurers and alchemists,\nIt is troublesome to go back and forth.\nI wish I could come back instantly.", google:"", manual:"", atlas:"", trans2:"", flag:"todo", meta:"Map001.txt / line 1", tags:["dialogue"] },
-          { id:"r2", speaker:"Blue-haired adventurer", original:"\\c[2]Blue-haired adventurer\\c[0]\nI wish I had something if I had a level.\nBut, will not you make Rinon-chan ...?", google:"", manual:"", atlas:"", trans2:"", flag:"todo", meta:"Map001.txt / line 2", tags:["dialogue"] },
-          { id:"r3", speaker:"Narration", original:"...", google:"...", manual:"...", atlas:"...", trans2:"...", flag:"done", meta:"Map001.txt / line 3", tags:["narration"] }
-        ]
-      },
-      {
-        id:"Map152.txt",
-        name:"Map152.txt",
-        updated: Date.now()-86400000,
-        rows: [
-          { id:"a1", speaker:"Selphie", original:"セルフィ\nできた！いくわよ！", google:"Selphie\ndid it! Say!", manual:"Selphie\nIt's done! Let's go!", atlas:"", trans2:"", flag:"review", meta:"Map152.txt / events/2/pages/0/21/Dialogue", tags:["event"] },
-          { id:"a2", speaker:"Warrior", original:"\\c[2]戦士\\c[0]\n……！もう俺たちしか残ってないぞ！術はまだなのか！？", google:"\\c[2] warrior \\c[0]\n...! There are only us left! Is the operation still not done!?", manual:"", atlas:"", trans2:"", flag:"todo", meta:"Map152.txt / line 3", tags:["battle"] }
-        ]
-      }
-    ]);
+    footer.querySelector("#frBtnScan").onclick = () => { scan(); setStatus("Scanned."); };
 
-    const storageKey = "rpyt_workbench_v1";
-
-    function load() {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        try {
-          const s = JSON.parse(saved);
-          Object.assign(state, s);
-        } catch {}
-      }
-      if (!state.files?.length) state.files = demo();
-      if (!state.activeFileId) state.activeFileId = state.files[0]?.id ?? null;
-      applyTheme(state.theme);
-      applyFontScale(state.fontScale);
-      renderFiles();
-      renderGrid();
-      syncUI();
-      toast("Ready.");
-    }
-
-    function save() {
-      const snap = {
-        projectName: state.projectName,
-        activeFileId: state.activeFileId,
-        selectedRowId: state.selectedRowId,
-        pinned: state.pinned,
-        theme: state.theme,
-        autosave: state.autosave,
-        autosaveIntervalSec: state.autosaveIntervalSec,
-        fontScale: state.fontScale,
-        scope: state.scope,
-        tabs: state.tabs,
-        files: state.files
-      };
-      localStorage.setItem(storageKey, JSON.stringify(snap));
-      setStatus("SAVED", "Project saved.", "good");
-    }
-
-    function setStatus(mode, text, kind="") {
-      $("statusMode").textContent = mode;
-      $("statusText").textContent = text;
-      const dot = $("dotState");
-      dot.className = "dot" + (kind ? " "+kind : "");
-    }
-
-    function toast(msg) {
-      $("toastMsg").textContent = msg;
-      $("toast").style.display = "flex";
-      clearTimeout(toast._t);
-      toast._t = setTimeout(() => $("toast").style.display = "none", 2200);
-    }
-
-    function applyTheme(theme) {
-      state.theme = theme;
-      $("appRoot").setAttribute("data-theme", theme);
-    }
-
-    function applyFontScale(scale) {
-      state.fontScale = Number(scale) || 1;
-      document.documentElement.style.fontSize = (14 * state.fontScale) + "px";
-    }
-
-    function activeFile() {
-      return state.files.find(f => f.id === state.activeFileId) ?? null;
-    }
-
-    function selectedRow() {
-      const f = activeFile();
-      if (!f) return null;
-      return f.rows.find(r => r.id === state.selectedRowId) ?? null;
-    }
-
-    function fileProgress(file) {
-      const total = file.rows.length || 1;
-      const done = file.rows.filter(r => r.flag === "done").length;
-      return Math.round((done/total)*100);
-    }
-
-    function renderFiles() {
-      const filter = $("fileFilter").value.trim().toLowerCase();
-      const sort = $("fileSort").value;
-      let list = [...state.files];
-
-      if (filter) list = list.filter(f => f.name.toLowerCase().includes(filter));
-      if (sort === "name") list.sort((a,b)=>a.name.localeCompare(b.name));
-      if (sort === "progress") list.sort((a,b)=>fileProgress(b)-fileProgress(a));
-      if (sort === "recent") list.sort((a,b)=>b.updated-a.updated);
-
-      const wrap = $("fileList");
-      wrap.innerHTML = "";
-      list.forEach(f => {
-        const pct = fileProgress(f);
-        const row = document.createElement("div");
-        row.className = "fileRow";
-        row.id = `fileRow_${cssId(f.id)}`;
-        row.dataset.active = String(f.id === state.activeFileId);
-        row.innerHTML = `
-          <div class="fileName" id="fileName_${cssId(f.id)}">${escapeHtml(f.name)}</div>
-          <div class="filePct" id="filePct_${cssId(f.id)}">${pct}%</div>
-          <div class="fileBar" id="fileBar_${cssId(f.id)}"><div class="fileFill" id="fileFill_${cssId(f.id)}" style="width:${pct}%"></div></div>
-        `;
-        row.addEventListener("click", () => {
-          state.activeFileId = f.id;
-          state.selectedRowId = null;
-          renderFiles();
-          renderGrid();
-          syncUI();
-        });
-        wrap.appendChild(row);
+    footer.querySelector("#frBtnReplaceAll").onclick = async () => {
+      const { find, rep, hits, targetOnly, cs } = scan();
+      if (!find || !hits.length) return;
+      pushHistory();
+      const rx = cs ? new RegExp(escapeRegExp(find), "g") : new RegExp(escapeRegExp(find), "gi");
+      hits.forEach(r => {
+        const row = state.project.rows.find(x => x.id === r.id);
+        if (!row) return;
+        if (targetOnly) row.target = normalize(row.target).replace(rx, rep);
+        else row.target = normalize(row.target).replace(rx, rep);
       });
+      renderAll();
+      await syncInspector();
+      setStatus(`Replaced in ${hits.length} row(s).`);
+    };
 
-      $("projectName").textContent = state.projectName || "No project loaded";
-    }
+    return { body, footer };
+  };
 
-    function renderGrid() {
-      const f = activeFile();
-      const body = $("gridBody");
-      body.innerHTML = "";
-      if (!f) {
-        $("rowCount").textContent = "0";
-        return;
-      }
-      const q = $("globalSearch").value.trim().toLowerCase();
-      const scope = $("globalScope").value;
+  const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-      let rows = f.rows.map((r, i) => ({...r, _i: i+1}));
-      if (q) {
-        const match = (r) => {
-          const fields = [];
-          if (scope === "current" || scope === "all") fields.push(r.original, r.google, r.manual, r.atlas, r.trans2, r.speaker, r.meta, (r.tags||[]).join(" "));
-          if (scope === "original") fields.push(r.original, r.speaker, r.meta);
-          if (scope === "translated") fields.push(r.google, r.manual, r.atlas, r.trans2);
-          return fields.filter(Boolean).some(x => String(x).toLowerCase().includes(q));
-        };
-        rows = rows.filter(match);
-      }
-
-      $("rowCount").textContent = String(rows.length);
-
-      rows.forEach(r => {
-        const row = document.createElement("div");
-        row.className = "row";
-        row.id = `row_${cssId(r.id)}`;
-        row.dataset.selected = String(r.id === state.selectedRowId);
-        row.innerHTML = `
-          <div class="cell idx" id="cellIndex_${cssId(r.id)}">${r._i}</div>
-          <div class="cell" id="cellOriginal_${cssId(r.id)}"><div class="text mono">${escapeHtml(r.original)}</div></div>
-          <div class="cell" id="cellGoogle_${cssId(r.id)}"><div class="text editable" id="edGoogle_${cssId(r.id)}" contenteditable="true" data-col="google">${escapeHtml(r.google||"")}</div></div>
-          <div class="cell" id="cellManual_${cssId(r.id)}"><div class="text editable" id="edManual_${cssId(r.id)}" contenteditable="true" data-col="manual">${escapeHtml(r.manual||"")}</div></div>
-          <div class="cell" id="cellAtlas_${cssId(r.id)}"><div class="text editable" id="edAtlas_${cssId(r.id)}" contenteditable="true" data-col="atlas">${escapeHtml(r.atlas||"")}</div></div>
-          <div class="cell" id="cellTrans2_${cssId(r.id)}"><div class="text editable" id="edTrans2_${cssId(r.id)}" contenteditable="true" data-col="trans2">${escapeHtml(r.trans2||"")}</div></div>
-          <div class="cell flag" id="cellFlag_${cssId(r.id)}">
-            <button class="flagBtn" id="flagBtn_${cssId(r.id)}" data-state="${r.flag}" title="Toggle flag">${flagGlyph(r.flag)}</button>
+  const buildSettingsModal = () => {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <div class="grid2">
+        <div>
+          <div class="small">Project</div>
+          <div class="hr"></div>
+          <div class="small">Name</div>
+          <input id="setName" class="input" style="width:100%;margin-top:6px" value="${escapeHtmlTextarea(state.project.name||"")}" />
+          <div class="small" style="margin-top:10px">Language</div>
+          <input id="setLang" class="input" style="width:100%;margin-top:6px" value="${escapeHtmlTextarea(state.project.lang||"en")}" />
+          <div class="small" style="margin-top:10px">Auto-save</div>
+          <div class="pill" style="justify-content:space-between;margin-top:6px">
+            <span class="small">Enabled</span>
+            <input id="setAutosave" type="checkbox" checked />
           </div>
-        `;
+        </div>
+        <div>
+          <div class="small">Engines (placeholder)</div>
+          <div class="hr"></div>
+          <div class="small">Provider</div>
+          <select id="setProvider" class="select" style="width:100%;margin-top:6px">
+            <option>Manual</option>
+            <option>Google</option>
+            <option>DeepL</option>
+            <option>OpenAI</option>
+            <option>Custom REST</option>
+          </select>
+          <div class="small" style="margin-top:10px">API Key</div>
+          <input id="setApiKey" class="input" style="width:100%;margin-top:6px" placeholder="Stored locally (not sent anywhere in this scaffold)" />
+          <div class="small" style="margin-top:10px">Rate limit</div>
+          <input id="setRps" class="input" style="width:100%;margin-top:6px" value="2" />
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="small">Glossary entries: <span class="mono">${Object.keys(state.glossary||{}).length}</span></div>
+    `;
 
-        row.addEventListener("click", (e) => {
-          if (e.target.closest(".editable")) return;
-          selectRow(r.id);
-        });
+    const footer = document.createElement("div");
+    footer.style.display = "flex";
+    footer.style.gap = "8px";
+    footer.innerHTML = `
+      <button id="setBtnClear" class="btn danger">Clear Local Data</button>
+      <button id="setBtnApply" class="btn primary">Apply</button>
+    `;
 
-        row.querySelectorAll(".editable").forEach(ed => {
-          ed.addEventListener("focus", ()=>selectRow(r.id));
-          ed.addEventListener("input", ()=>{
-            const col = ed.dataset.col;
-            pushUndo({type:"edit", fileId:f.id, rowId:r.id, col, prev:r[col] ?? "", next: ed.innerText});
-            r[col] = ed.innerText;
-            setDirty();
-            if (state.autosave) scheduleAutosave();
-          });
-          ed.addEventListener("keydown", (ev)=>{
-            if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
-              ev.preventDefault();
-              markFlag(r.id, "done");
-            }
-          });
-        });
+    footer.querySelector("#setBtnClear").onclick = () => {
+      localStorage.removeItem("rpw_project");
+      localStorage.removeItem("rpw_view");
+      localStorage.removeItem("rpw_glossary");
+      setStatus("Cleared local data.");
+    };
 
-        const btn = row.querySelector(".flagBtn");
-        btn.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          const next = r.flag === "todo" ? "review" : (r.flag === "review" ? "done" : "todo");
-          markFlag(r.id, next);
-        });
-
-        body.appendChild(row);
-      });
-
-      syncColumns();
-      if (state.selectedRowId && !f.rows.some(x=>x.id===state.selectedRowId)) state.selectedRowId = null;
-      syncPreview();
-    }
-
-    function syncColumns(){
-      $("tabGoogle").dataset.active = String(state.tabs.google);
-      $("tabManual").dataset.active = String(state.tabs.manual);
-      $("tabAtlas").dataset.active = String(state.tabs.atlas);
-      $("tabTrans2").dataset.active = String(state.tabs.trans2);
-
-      toggleCol("Google", state.tabs.google);
-      toggleCol("Manual", state.tabs.manual);
-      toggleCol("Atlas", state.tabs.atlas);
-      toggleCol("Trans2", state.tabs.trans2);
-
-      function toggleCol(name, on){
-        const head = $("h"+name);
-        if (head) head.style.display = on ? "" : "none";
-        document.querySelectorAll(`[id^="cell${name}_"]`).forEach(el => el.style.display = on ? "" : "none");
-        const header = $("gridHeader");
-        const any = ["Google","Manual","Atlas","Trans2"].map(n=>state.tabs[n.toLowerCase()]).filter(Boolean).length;
-        header.style.gridTemplateColumns = `44px 1.4fr ${any ? "1.2fr ".repeat(any) : ""}44px`;
-        document.querySelectorAll(".row").forEach(r=>{
-          r.style.gridTemplateColumns = header.style.gridTemplateColumns;
-        });
-      }
-    }
-
-    function selectRow(rowId){
-      state.selectedRowId = rowId;
-      document.querySelectorAll(".row").forEach(r => r.dataset.selected = "false");
-      const el = $("row_"+cssId(rowId));
-      if (el) el.dataset.selected = "true";
-      $("selIdx").textContent = rowId;
-      syncPreview();
-    }
-
-    function syncPreview(){
-      const f = activeFile();
-      const r = selectedRow();
-      $("fileText").textContent = f?.name ?? "—";
-      if (!r) {
-        $("speakerTag").textContent = "—";
-        $("previewText").textContent = "Select a row to preview.";
-        $("metaPre").textContent = "No selection.";
-        setFlagBadge("todo");
-        return;
-      }
-      $("speakerTag").textContent = r.speaker || "—";
-      const primary = (r.manual && r.manual.trim()) ? r.manual : (r.google && r.google.trim()) ? r.google : r.original;
-      $("previewText").textContent = primary;
-      $("metaPre").textContent = [
-        `File: ${f?.name ?? ""}`,
-        `Row: ${r.id}`,
-        `Flag: ${r.flag}`,
-        `Tags: ${(r.tags||[]).join(", ") || "—"}`,
-        `Meta: ${r.meta || "—"}`
-      ].join("\n");
-      setFlagBadge(r.flag);
-    }
-
-    function setFlagBadge(flag){
-      const dot = $("flagDot");
-      const text = $("flagText");
-      text.textContent = flag;
-      dot.className = "dot " + (flag === "done" ? "good" : flag === "review" ? "warn" : "");
-    }
-
-    function setDirty(){
-      setStatus("EDITING", "Unsaved changes.", "warn");
-    }
-
-    function markFlag(rowId, flag){
-      const f = activeFile();
-      if (!f) return;
-      const r = f.rows.find(x=>x.id===rowId);
-      if (!r) return;
-      pushUndo({type:"flag", fileId:f.id, rowId, prev:r.flag, next:flag});
-      r.flag = flag;
-      renderFiles();
-      renderGrid();
-      selectRow(rowId);
-      toast(flag === "done" ? "Marked done." : flag === "review" ? "Marked for review." : "Cleared flag.");
-      setDirty();
-      if (state.autosave) scheduleAutosave();
-    }
-
-    function pushUndo(op){
-      state.undo.push(op);
-      if (state.undo.length > 200) state.undo.shift();
-      state.redo.length = 0;
-    }
-
-    function applyOp(op, dir){
-      const f = state.files.find(x=>x.id===op.fileId);
-      if (!f) return;
-      const r = f.rows.find(x=>x.id===op.rowId);
-      if (!r) return;
-      if (op.type === "edit") {
-        const val = dir === "undo" ? op.prev : op.next;
-        r[op.col] = val;
-      } else if (op.type === "flag") {
-        r.flag = dir === "undo" ? op.prev : op.next;
-      }
-      state.activeFileId = f.id;
-      state.selectedRowId = r.id;
-      renderFiles();
-      renderGrid();
-      selectRow(r.id);
-      setDirty();
-    }
-
-    function undo(){
-      const op = state.undo.pop();
-      if (!op) return toast("Nothing to undo.");
-      state.redo.push(op);
-      applyOp(op, "undo");
-      toast("Undo.");
-    }
-
-    function redo(){
-      const op = state.redo.pop();
-      if (!op) return toast("Nothing to redo.");
-      state.undo.push(op);
-      applyOp(op, "redo");
-      toast("Redo.");
-    }
-
-    let autosaveTimer = null;
-    function scheduleAutosave(){
-      if (!state.autosave) return;
-      clearTimeout(autosaveTimer);
-      autosaveTimer = setTimeout(()=>save(), Math.max(5, state.autosaveIntervalSec) * 1000);
-    }
-
-    function syncUI(){
-      $("globalScope").value = state.scope;
-      $("btnAutosave").setAttribute("aria-pressed", String(state.autosave));
-      $("btnAutosave").classList.toggle("btnPrimary", state.autosave);
-      $("btnAutosave").textContent = state.autosave ? "Autosave: On" : "Autosave: Off";
-      $("btnPin").setAttribute("aria-pressed", String(state.pinned));
-      $("btnPin").classList.toggle("btnPrimary", state.pinned);
-      setStatus("READY", "Loaded.", "good");
-    }
-
-    function cssId(s){ return String(s).replace(/[^a-zA-Z0-9_-]/g,"_"); }
-    function escapeHtml(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-    function flagGlyph(flag){ return flag === "done" ? "✓" : flag === "review" ? "!" : "·"; }
-
-    function openModal(){
-      $("modalOverlay").style.display = "flex";
-      $("setAutosaveInterval").value = String(state.autosaveIntervalSec);
-      $("setFontScale").value = String(state.fontScale);
-    }
-    function closeModal(){ $("modalOverlay").style.display = "none"; }
-
-    $("toastClose").addEventListener("click", ()=>$("toast").style.display="none");
-
-    $("btnTheme").addEventListener("click", ()=>{
-      applyTheme(state.theme === "dark" ? "light" : "dark");
-      save();
-      toast("Theme toggled.");
-    });
-
-    $("btnSettings").addEventListener("click", openModal);
-    $("modalClose").addEventListener("click", closeModal);
-    $("modalOverlay").addEventListener("click", (e)=>{ if (e.target === $("modalOverlay")) closeModal(); });
-
-    $("btnSaveSettings").addEventListener("click", ()=>{
-      state.autosaveIntervalSec = Math.max(5, Math.min(600, Number($("setAutosaveInterval").value) || 30));
-      applyFontScale($("setFontScale").value);
-      save();
+    footer.querySelector("#setBtnApply").onclick = () => {
+      pushHistory();
+      state.project.name = body.querySelector("#setName").value.trim() || "Untitled";
+      state.project.lang = body.querySelector("#setLang").value.trim() || "en";
+      persist();
+      syncStats();
+      setStatus("Settings applied.");
       closeModal();
-      toast("Settings saved.");
-    });
+    };
 
-    $("btnReset").addEventListener("click", ()=>{
-      localStorage.removeItem(storageKey);
-      location.reload();
-    });
+    return { body, footer };
+  };
 
-    $("btnOpenProject").addEventListener("click", ()=>{
-      state.projectName = prompt("Project name:", state.projectName) || state.projectName;
-      renderFiles();
-      save();
-    });
-
-    $("btnImport").addEventListener("click", ()=>$("filePicker").click());
-    $("filePicker").addEventListener("change", ()=>{
-      toast("Import placeholder. Hook your parser later.");
-    });
-
-    $("btnExport").addEventListener("click", ()=>{
-      const payload = JSON.stringify({project:state.projectName, files:state.files}, null, 2);
-      const blob = new Blob([payload], {type:"application/json"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = (state.projectName || "project").replace(/\s+/g,"_") + ".json";
-      a.click();
-      URL.revokeObjectURL(a.href);
-      setStatus("EXPORTED", "Exported JSON snapshot.", "good");
-    });
-
-    $("btnAutosave").addEventListener("click", ()=>{
-      state.autosave = !state.autosave;
-      syncUI();
-      save();
-      toast(state.autosave ? "Autosave enabled." : "Autosave disabled.");
-    });
-
-    $("fileFilter").addEventListener("input", renderFiles);
-    $("fileSort").addEventListener("change", renderFiles);
-
-    $("globalSearch").addEventListener("input", ()=>{
-      renderGrid();
-      setStatus("SEARCH", "Filtered rows.", "");
-    });
-
-    $("globalScope").addEventListener("change", ()=>{
-      state.scope = $("globalScope").value;
-      renderGrid();
-      save();
-    });
-
-    $("tabGoogle").addEventListener("click", ()=>{ state.tabs.google=!state.tabs.google; renderGrid(); save(); });
-    $("tabManual").addEventListener("click", ()=>{ state.tabs.manual=!state.tabs.manual; renderGrid(); save(); });
-    $("tabAtlas").addEventListener("click", ()=>{ state.tabs.atlas=!state.tabs.atlas; renderGrid(); save(); });
-    $("tabTrans2").addEventListener("click", ()=>{ state.tabs.trans2=!state.tabs.trans2; renderGrid(); save(); });
-
-    $("btnFindNext").addEventListener("click", ()=>{
-      const f = activeFile(); if (!f) return;
-      const q = $("globalSearch").value.trim().toLowerCase();
-      if (!q) return toast("Type something to search.");
-      const start = f.rows.findIndex(r=>r.id===state.selectedRowId);
-      const idx0 = start >= 0 ? start+1 : 0;
-      const pick = [...f.rows.slice(idx0), ...f.rows.slice(0, idx0)].find(r => {
-        const scope = $("globalScope").value;
-        const fields = [];
-        if (scope === "current" || scope === "all") fields.push(r.original, r.google, r.manual, r.atlas, r.trans2, r.speaker, r.meta, (r.tags||[]).join(" "));
-        if (scope === "original") fields.push(r.original, r.speaker, r.meta);
-        if (scope === "translated") fields.push(r.google, r.manual, r.atlas, r.trans2);
-        return fields.filter(Boolean).some(x=>String(x).toLowerCase().includes(q));
-      });
-      if (!pick) return toast("No match.");
-      selectRow(pick.id);
-      $("row_"+cssId(pick.id))?.scrollIntoView({block:"center"});
-      toast("Jumped to match.");
-    });
-
-    $("btnReplace").addEventListener("click", ()=>{
-      toast("Replace UI placeholder. Implement later.");
-    });
-
-    $("btnMarkDone").addEventListener("click", ()=>{
-      if (!state.selectedRowId) return toast("Select a row.");
-      markFlag(state.selectedRowId, "done");
-    });
-    $("btnMarkReview").addEventListener("click", ()=>{
-      if (!state.selectedRowId) return toast("Select a row.");
-      markFlag(state.selectedRowId, "review");
-    });
-    $("btnClearFlag").addEventListener("click", ()=>{
-      if (!state.selectedRowId) return toast("Select a row.");
-      markFlag(state.selectedRowId, "todo");
-    });
-
-    $("btnCopyOriginal").addEventListener("click", ()=>{
-      const r = selectedRow(); if (!r) return toast("Select a row.");
-      const f = activeFile();
-      const tgt = f.rows.find(x=>x.id===r.id);
-      pushUndo({type:"edit", fileId:f.id, rowId:r.id, col:"manual", prev:tgt.manual ?? "", next:tgt.original});
-      tgt.manual = tgt.original;
-      renderGrid();
-      selectRow(r.id);
-      toast("Copied original → manual.");
-      setDirty();
-      if (state.autosave) scheduleAutosave();
-    });
-
-    $("btnSwap").addEventListener("click", ()=>{
-      const f = activeFile(); const r = selectedRow();
-      if (!f || !r) return toast("Select a row.");
-      const a = r.manual ?? "", b = r.trans2 ?? "";
-      pushUndo({type:"edit", fileId:f.id, rowId:r.id, col:"manual", prev:a, next:b});
-      pushUndo({type:"edit", fileId:f.id, rowId:r.id, col:"trans2", prev:b, next:a});
-      r.manual = b; r.trans2 = a;
-      renderGrid(); selectRow(r.id);
-      toast("Swapped manual ↔ translation 2.");
-      setDirty();
-      if (state.autosave) scheduleAutosave();
-    });
-
-    $("btnUndo").addEventListener("click", undo);
-    $("btnRedo").addEventListener("click", redo);
-
-    $("btnPin").addEventListener("click", ()=>{
-      state.pinned = !state.pinned;
-      syncUI();
-      save();
-      toast(state.pinned ? "Pinned context." : "Unpinned context.");
-    });
-
-    $("btnFocusManual").addEventListener("click", ()=>{
-      const r = selectedRow(); if (!r) return toast("Select a row.");
-      const el = $("edManual_"+cssId(r.id));
-      el?.focus();
-      toast("Focused manual.");
-    });
-
-    $("btnAITranslate").addEventListener("click", ()=>{
-      toast("AI Translate placeholder. Hook your core later.");
-    });
-
-    document.addEventListener("keydown", (e)=>{
-      const key = e.key.toLowerCase();
-      const meta = e.metaKey || e.ctrlKey;
-
-      if (meta && key === "s") { e.preventDefault(); save(); toast("Saved."); return; }
-      if (meta && key === "f") { e.preventDefault(); $("globalSearch").focus(); return; }
-      if (meta && key === "z") { e.preventDefault(); undo(); return; }
-      if (meta && (key === "y" || (key === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
-
-      if (key === "arrowdown" || key === "arrowup") {
-        const f = activeFile(); if (!f) return;
-        const i = f.rows.findIndex(r=>r.id===state.selectedRowId);
-        const next = key === "arrowdown" ? i+1 : i-1;
-        const pick = f.rows[Math.max(0, Math.min(f.rows.length-1, next))] ?? f.rows[0];
-        if (!pick) return;
-        selectRow(pick.id);
-        $("row_"+cssId(pick.id))?.scrollIntoView({block:"nearest"});
+  const applyTMToSelection = async () => {
+    const idsSel = Array.from(state.view.selectedRowIds);
+    if (!idsSel.length) return setStatus("No rows selected.");
+    pushHistory();
+    let applied = 0;
+    for (const id of idsSel) {
+      const row = state.project.rows.find(r => r.id === id);
+      if (!row) continue;
+      if (normalize(row.target).trim()) continue;
+      const matches = await tmFind(row.source);
+      if (matches.length) {
+        row.target = matches[0].tgt;
+        applied++;
       }
+    }
+    renderAll();
+    await syncInspector();
+    setStatus(applied ? `Applied TM to ${applied} row(s).` : "No TM matches to apply.");
+  };
+
+  const toggleFlagSelection = () => {
+    const idsSel = Array.from(state.view.selectedRowIds);
+    if (!idsSel.length) return setStatus("No rows selected.");
+    pushHistory();
+    const rows = idsSel.map(id => state.project.rows.find(r => r.id === id)).filter(Boolean);
+    const to = !rows.every(r => r.flagged);
+    rows.forEach(r => r.flagged = to);
+    renderAll({ keepScroll:true });
+    syncInspector();
+    setStatus(to ? "Flagged selection." : "Unflagged selection.");
+  };
+
+  const copySource = async () => {
+    const id = state.view.focusedRowId || Array.from(state.view.selectedRowIds)[0];
+    const row = state.project.rows.find(r => r.id === id);
+    if (!row) return;
+    await navigator.clipboard.writeText(row.source || "");
+    setStatus("Copied source.");
+  };
+
+  const addToGlossary = () => {
+    const id = state.view.focusedRowId || Array.from(state.view.selectedRowIds)[0];
+    const row = state.project.rows.find(r => r.id === id);
+    if (!row) return setStatus("Select a row.");
+    const src = normalize(row.source).trim();
+    const tgt = normalize(row.target).trim();
+    if (!src || !tgt) return setStatus("Need both source and translation to add.");
+    pushHistory();
+    state.glossary[src] = tgt;
+    persist();
+    setStatus("Added to glossary.");
+  };
+
+  const wireUI = () => {
+    $("btnOpen").onclick = openFilePicker;
+    $("btnSave").onclick = () => { persist(); setStatus("Saved locally."); };
+    $("btnExport").onclick = exportProject;
+    $("btnImport").onclick = openImportPicker;
+    $("btnUndo").onclick = undo;
+    $("btnRedo").onclick = redo;
+
+    $("btnFindReplace").onclick = () => {
+      const { body, footer } = buildFindReplaceModal();
+      openModal("Find & Replace", body, footer);
+      setStatus("Find/Replace opened.");
+    };
+
+    $("btnSettings").onclick = () => {
+      const { body, footer } = buildSettingsModal();
+      openModal("Settings", body, footer);
+    };
+
+    $("btnApplyTM").onclick = applyTMToSelection;
+    $("btnFlag").onclick = toggleFlagSelection;
+    $("btnCopySource").onclick = copySource;
+    $("btnAddToGlossary").onclick = addToGlossary;
+
+    $("btnModalClose").onclick = closeModal;
+    ids.modalOverlay.onclick = (e) => { if (e.target === ids.modalOverlay) closeModal(); };
+
+    ids.inputFileFilter.oninput = renderTree;
+    ids.inputQuickSearch.oninput = () => {
+      state.view.quickSearch = ids.inputQuickSearch.value;
+      renderTable();
+      syncStats();
+    };
+
+    ids.checkAll.onchange = () => {
+      pushHistory();
+      const rows = getFilteredRows();
+      if (ids.checkAll.checked) rows.forEach(r => state.view.selectedRowIds.add(r.id));
+      else rows.forEach(r => state.view.selectedRowIds.delete(r.id));
+      renderAll({ keepScroll:true });
+      syncInspector();
+      setStatus("Selection updated.");
+    };
+
+    document.querySelectorAll("[data-tab]").forEach(t => {
+      t.onclick = () => {
+        pushHistory();
+        document.querySelectorAll("[data-tab]").forEach(x => x.classList.remove("active"));
+        t.classList.add("active");
+        state.view.tab = t.dataset.tab;
+        state.view.selectedRowIds.clear();
+        state.view.focusedRowId = null;
+        renderAll();
+        syncInspector();
+        setStatus(`Tab: ${t.textContent}`);
+      };
     });
 
-    load();
-  </script>
+    ids.filePicker.onchange = async () => {
+      const f = ids.filePicker.files?.[0];
+      ids.filePicker.value = "";
+      if (!f) return;
+      try {
+        const text = await f.text();
+        await importProjectJson(text);
+      } catch (e) {
+        setStatus("Open failed.");
+        alert("Unsupported file.\n\nExpected: rpw.project.v1 JSON.");
+      }
+    };
+
+    ids.importPicker.onchange = async () => {
+      const f = ids.importPicker.files?.[0];
+      ids.importPicker.value = "";
+      if (!f) return;
+      const name = f.name.toLowerCase();
+      try {
+        if (name.endsWith(".json")) {
+          await importProjectJson(await f.text());
+          return;
+        }
+        if (name.endsWith(".csv")) {
+          const txt = await f.text();
+          importCsv(txt);
+          setStatus("Imported CSV.");
+          return;
+        }
+        alert("Import supports JSON/CSV only.");
+      } catch {
+        alert("Import failed.");
+      }
+    };
+
+    window.addEventListener("keydown", async (e) => {
+      const k = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && k === "s") { e.preventDefault(); persist(); setStatus("Saved locally."); }
+      if ((e.ctrlKey || e.metaKey) && k === "f") { e.preventDefault(); $("btnFindReplace").click(); }
+      if ((e.ctrlKey || e.metaKey) && k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      if (((e.ctrlKey || e.metaKey) && (k === "y" || (k==="z" && e.shiftKey)))) { e.preventDefault(); redo(); }
+      if (k === "f" && !e.ctrlKey && !e.metaKey && !isTyping()) { e.preventDefault(); toggleFlagSelection(); }
+      if (k === "t" && !e.ctrlKey && !e.metaKey && !isTyping()) { e.preventDefault(); await applyTMToSelection(); }
+      if (k === "escape") closeModal();
+    });
+  };
+
+  const isTyping = () => {
+    const el = document.activeElement;
+    return el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT");
+  };
+
+  const importCsv = (csv) => {
+    const lines = csv.split(/\r?\n/).filter(Boolean);
+    const header = (lines.shift() || "").split(",").map(s=>s.trim());
+    const idx = (name) => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+    const iFile = idx("file"), iKey = idx("key"), iSpeaker = idx("speaker"), iSource = idx("source"), iTarget = idx("target"), iLine = idx("line"), iLabel = idx("label"), iTags = idx("tags");
+    const mapFile = new Map();
+    const files = [];
+    const rows = [];
+    lines.forEach(line => {
+      const cols = parseCsvLine(line);
+      const fileName = cols[iFile] || "unknown.rpy";
+      if (!mapFile.has(fileName)) {
+        const f = { id: nowId(), name: fileName };
+        mapFile.set(fileName, f.id);
+        files.push(f);
+      }
+      rows.push({
+        id: nowId(),
+        fileId: mapFile.get(fileName),
+        fileName,
+        key: cols[iKey] || "",
+        speaker: cols[iSpeaker] || "",
+        source: cols[iSource] || "",
+        target: cols[iTarget] || "",
+        line: cols[iLine] ? Number(cols[iLine]) : null,
+        label: cols[iLabel] || "",
+        tags: (cols[iTags] || "").split("|").map(s=>s.trim()).filter(Boolean),
+        flagged: false
+      });
+    });
+    pushHistory();
+    state.project.files = files;
+    state.project.rows = rows;
+    state.view.activeFileId = files[0]?.id ?? null;
+    state.view.selectedRowIds.clear();
+    state.view.focusedRowId = rows[0]?.id ?? null;
+    renderAll();
+    syncInspector();
+  };
+
+  const parseCsvLine = (line) => {
+    const out = [];
+    let cur = "", inQ = false;
+    for (let i=0;i<line.length;i++){
+      const c = line[i];
+      if (c === '"' && line[i+1] === '"'){ cur += '"'; i++; continue; }
+      if (c === '"'){ inQ = !inQ; continue; }
+      if (c === "," && !inQ){ out.push(cur); cur=""; continue; }
+      cur += c;
+    }
+    out.push(cur);
+    return out;
+  };
+
+  const init = async () => {
+    await initTM();
+    loadPersisted();
+    if (!state.project.files?.length) sampleProject();
+    wireUI();
+    renderAll();
+    await syncInspector();
+    setStatus("Ready.");
+  };
+
+  init();
+})();
+</script>
 </body>
 </html>
