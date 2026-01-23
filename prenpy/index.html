@@ -44,6 +44,8 @@
       </select>
       <button id="btnTranslate" class="btn warn" type="button">Translate</button>
       <button id="btnStop" class="btn bad" type="button" disabled>Stop</button>
+      <button id="btnUndo" class="btn" type="button">Undo</button>
+      <button id="btnRedo" class="btn" type="button">Redo</button>
       <div class="meter">
         <div id="meterFill" class="meterFill"></div>
       </div>
@@ -241,6 +243,13 @@
             <label>Rules format (multi)</label>
             <div class="hint"><span class="mono">find => replace</span> (one per line). Empty / # comment ignored.</div>
           </div>
+        </div>
+        
+        <div class="field">
+          <label>
+            <input id="repFillManual" type="checkbox" />
+            Fill Manual from Machine if empty (before replace)
+          </label>
         </div>
   
         <div class="hint">
