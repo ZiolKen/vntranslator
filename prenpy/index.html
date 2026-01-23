@@ -3,270 +3,159 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ren'Py Translator Workbench</title>
-  <link rel="stylesheet" href="./prenpy.css">
+  <title>Pro Ren'Py Translator | VN Translator</title>
+  <link rel="stylesheet" href="./prenpy.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
-  <div id="appRoot" data-theme="dark">
-    <header id="topBar">
-      <div id="topBarLeft">
-        <div id="appTitle">
-          <div id="appTitleLogo"></div>
-          <div id="appTitleText">Ren'Py Translator Workbench</div>
-        </div>
-        <div class="sep"></div>
-        <button id="btnOpenProject" class="btn btnPrimary" type="button">Open Project</button>
-        <button id="btnImport" class="btn" type="button">Import Files</button>
-        <button id="btnExport" class="btn btnGood" type="button">Export</button>
-        <button id="btnAutosave" class="btn" type="button" aria-pressed="true">Autosave</button>
-      </div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="title">Ren'Py Translator</span>
+    </div>
 
-      <div id="globalSearchWrap">
-        <input id="globalSearch" placeholder="Search (Ctrl+F) — text, tags, file" autocomplete="off" />
-        <select id="globalScope" aria-label="Search scope">
-          <option value="current">Current file</option>
-          <option value="all" selected>All files</option>
-          <option value="original">Original only</option>
-          <option value="translated">Translations only</option>
-        </select>
-      </div>
+    <div class="actions">
+      <button id="btnImport" class="btn primary" type="button">Import .rpy</button>
+      <button id="btnExportZip" class="btn good" type="button">Export ZIP</button>
+      <button id="btnSettings" class="btn" type="button">Settings</button>
+    </div>
 
-      <div id="topBarRight">
-        <button id="btnTheme" class="btn" type="button">Theme</button>
-        <button id="btnSettings" class="btn" type="button">Settings</button>
-        <div class="pill"><span class="kbd">Ctrl</span><span class="kbd">S</span><span class="muted">Save</span></div>
-      </div>
-    </header>
+    <div class="search">
+      <input id="q" placeholder="Search in current file…" autocomplete="off" />
+    </div>
 
-    <aside id="leftPane">
-      <div id="projectBar">
-        <div id="projectName" title="No project loaded">No project loaded</div>
-        <button id="btnNewFile" class="btn" type="button">New</button>
+    <div class="jobbar">
+      <select id="jobScope">
+        <option value="row">Row</option>
+        <option value="file" selected>File</option>
+        <option value="all">All</option>
+      </select>
+      <button id="btnTranslate" class="btn warn" type="button">Translate</button>
+      <button id="btnStop" class="btn bad" type="button" disabled>Stop</button>
+      <div class="meter">
+        <div id="meterFill" class="meterFill"></div>
       </div>
+      <div id="jobText" class="jobText">Ready.</div>
+    </div>
+  </header>
 
-      <div id="leftTools">
-        <div id="filterWrap" style="flex:1;min-width:0">
-          <input id="fileFilter" placeholder="Filter files…" autocomplete="off" />
-          <select id="fileSort" aria-label="Sort files">
-            <option value="name">Name</option>
-            <option value="progress">Progress</option>
-            <option value="recent">Recent</option>
-          </select>
-        </div>
-        <button id="btnBatch" class="btn btnWarn" type="button">Batch</button>
+  <div class="layout">
+    <aside class="left">
+      <div class="leftHeader">
+        <div class="project" id="projectName">No project</div>
+        <button id="btnClear" class="btn" type="button">Reset</button>
       </div>
-
-      <div id="fileList" role="listbox" aria-label="Files"></div>
-
-      <div id="leftFooter">
-        <div id="statusChip">
-          <span class="badge"><span class="dot" id="dotState"></span><span id="statusMode">READY</span></span>
-          <span id="statusText">Load a project or import files.</span>
-        </div>
-        <div id="hotkeysChip" class="pill">
-          <span class="kbd">↑</span><span class="kbd">↓</span>
-          <span class="muted">Navigate</span>
-        </div>
-      </div>
+      <div id="fileList" class="fileList" role="listbox" aria-label="Files"></div>
     </aside>
 
-    <main id="mainPane">
-      <div id="toolbar">
-        <div id="viewTabs">
-          <div id="tabGoogle" class="tab" data-active="true">Google</div>
-          <div id="tabManual" class="tab" data-active="true">Manual Translation</div>
-          <div id="tabAtlas" class="tab" data-active="true">Atlas</div>
-          <div id="tabTrans2" class="tab" data-active="true">Translation 2</div>
-        </div>
-
-        <div class="sep"></div>
-
-        <button id="btnFindNext" class="btn" type="button">Find Next</button>
-        <button id="btnReplace" class="btn" type="button">Replace</button>
-        <button id="btnMarkDone" class="btn btnGood" type="button">Mark Done</button>
-        <button id="btnMarkReview" class="btn btnWarn" type="button">Needs Review</button>
-        <button id="btnClearFlag" class="btn" type="button">Clear</button>
-
-        <div id="quickTools">
-          <button id="btnCopyOriginal" class="btn" type="button">Copy Original</button>
-          <button id="btnSwap" class="btn" type="button">Swap ↔</button>
-          <button id="btnUndo" class="btn" type="button">Undo</button>
-          <button id="btnRedo" class="btn" type="button">Redo</button>
-          <div id="pageInfo">Rows: <span id="rowCount">0</span> · Selected: <span id="selIdx">—</span></div>
-        </div>
+    <main class="main">
+      <div class="gridHeader">
+        <div class="h idx">#</div>
+        <div class="h">Original</div>
+        <div class="h">Machine</div>
+        <div class="h">Manual</div>
+        <div class="h flag">✓</div>
       </div>
 
-      <section id="gridWrap" aria-label="Translation grid">
-        <div id="gridHeader">
-          <div id="hIndex" class="hcell">#</div>
-          <div id="hOriginal" class="hcell">Original Text</div>
-          <div id="hGoogle" class="hcell">Google</div>
-          <div id="hManual" class="hcell">Manual Translation</div>
-          <div id="hAtlas" class="hcell">Atlas</div>
-          <div id="hTrans2" class="hcell">Translation 2</div>
-          <div id="hFlag" class="hcell">✓</div>
+      <div id="grid" class="grid" tabindex="0">
+        <div id="gridSpacer" class="gridSpacer"></div>
+        <div id="gridWindow" class="gridWindow"></div>
+      </div>
+
+      <section class="editor">
+        <div class="editorHeader">
+          <div class="meta">
+            <span id="metaFile" class="chip">—</span>
+            <span id="metaLine" class="chip">—</span>
+            <span id="metaFlag" class="chip">todo</span>
+          </div>
+          <div class="editorActions">
+            <button id="btnMarkTodo" class="btn" type="button">Todo</button>
+            <button id="btnMarkReview" class="btn warn" type="button">Review</button>
+            <button id="btnMarkDone" class="btn good" type="button">Done</button>
+          </div>
         </div>
-        <div id="gridBody"></div>
+
+        <div class="editorBody">
+          <div class="col">
+            <label>Original</label>
+            <textarea id="edOriginal" readonly></textarea>
+          </div>
+          <div class="col">
+            <label>Machine</label>
+            <textarea id="edMachine" readonly></textarea>
+          </div>
+          <div class="col">
+            <label>Manual</label>
+            <textarea id="edManual"></textarea>
+          </div>
+        </div>
       </section>
     </main>
-
-    <section id="bottomPane" aria-label="Preview">
-      <div id="bottomLeft">
-        <div id="metaTitle">
-          <h3 id="metaHeader">Context</h3>
-          <button id="btnPin" class="btn" type="button" aria-pressed="false">Pin</button>
-        </div>
-        <div id="metaBox"><pre id="metaPre">No selection.</pre></div>
-      </div>
-
-      <div id="bottomRight">
-        <div id="previewHeader">
-          <h3 id="previewHeaderText">Game Preview</h3>
-          <div style="display:flex;gap:10px;align-items:center">
-            <button id="btnFocusManual" class="btn btnPrimary" type="button">Focus Manual</button>
-            <button id="btnAITranslate" class="btn btnWarn" type="button">AI Translate</button>
-          </div>
-        </div>
-        <div id="previewBox">
-          <div id="previewBoxInner">
-            <div id="speakerLine">
-              <div id="speakerTag">—</div>
-              <div class="badge" id="flagBadge"><span class="dot" id="flagDot"></span><span id="flagText">todo</span></div>
-              <div class="badge" id="fileBadge"><span class="dot"></span><span id="fileText">—</span></div>
-            </div>
-            <div id="previewText">Select a row to preview.</div>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 
-  <input id="filePicker" type="file" multiple accept=".json,.txt,.rpy,.csv" class="hide" />
+  <input id="filePicker" type="file" multiple accept=".rpy,.json" hidden />
 
-  <div id="toast">
-    <div id="toastIcon"></div>
-    <div id="toastMsg"></div>
-    <button id="toastClose" type="button">Close</button>
-  </div>
-
-  <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div id="modal">
-      <div id="modalHeader">
-        <div id="modalTitle">Settings</div>
-        <button id="modalClose" type="button">Close</button>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <div class="modalHead">
+        <div class="modalTitle">Settings</div>
+        <button id="btnCloseModal" class="btn" type="button">Close</button>
       </div>
-      <div id="modalBody">
+
+      <div class="modalBody">
         <div class="field">
-          <label for="setTargetLang">Target language</label>
-          <select id="setTargetLang">
-            <option value="English">English</option>
-            <option value="Chinese (Simplified)">Chinese (Simplified)</option>
-            <option value="Hindi">Hindi</option>
-            <option value="Spanish">Spanish</option>
-            <option value="French">French</option>
-            <option value="Arabic">Arabic</option>
-            <option value="Portuguese">Portuguese</option>
-            <option value="Russian">Russian</option>
-            <option value="German">German</option>
-            <option value="Japanese">Japanese</option>
-            <option value="Bahasa Indonesia">Indonesian</option>
-            <option value="Malay">Malay</option>
-            <option value="Vietnamese">Vietnamese</option>
-            <option value="Filipino">Filipino</option>
-            <option value="Korean">Korean</option>
-          </select>
-        </div>
-        
-        <div class="field">
-          <label for="setEngine">Engine</label>
+          <label>Engine</label>
           <select id="setEngine">
             <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
             <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
-            <option value="libre">🌐 Lingva (Free - Stable)</option>
+            <option value="lingva">🌐 Lingva (Free - Stable)</option>
           </select>
         </div>
-        
+
         <div class="field">
-          <label for="setApiKey">API key (never exported)</label>
-          <input id="setApiKey" type="password" placeholder="Stored locally (session by default)" />
+          <label>Target language</label>
+          <select id="setLang"></select>
         </div>
-        
+
         <div class="field">
-          <label for="setRememberKey">Remember API key (localStorage)</label>
-          <select id="setRememberKey">
-            <option value="0" selected>No (recommended)</option>
-            <option value="1">Yes</option>
-          </select>
+          <label>API key (only for DeepSeek/DeepL)</label>
+          <input id="setKey" type="password" autocomplete="off" placeholder="Paste key here…" />
         </div>
-        
-        <div class="field">
-          <label for="setExtractMode">Ren'Py extract mode</label>
-          <select id="setExtractMode">
-            <option value="safe" selected>Safe</option>
-            <option value="balanced">Balanced</option>
-            <option value="aggressive">Aggressive</option>
-          </select>
+
+        <div class="row2">
+          <div class="field">
+            <label>Extraction mode</label>
+            <select id="setMode">
+              <option value="safe" selected>safe</option>
+              <option value="balanced">balanced</option>
+              <option value="aggressive">aggressive</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Batch size</label>
+            <input id="setBatch" type="number" min="1" max="80" value="24" />
+          </div>
         </div>
-        
-        <div class="field">
-          <label for="setOutputCol">Write AI output to column</label>
-          <select id="setOutputCol">
-            <option value="google" selected>Google (Machine)</option>
-            <option value="atlas">Atlas</option>
-            <option value="trans2">Translation 2</option>
-          </select>
+
+        <div class="row2">
+          <div class="field">
+            <label>Concurrency</label>
+            <input id="setConc" type="number" min="1" max="4" value="2" />
+          </div>
+          <div class="field">
+            <label>Retry</label>
+            <input id="setRetry" type="number" min="0" max="6" value="4" />
+          </div>
         </div>
-        
-        <div class="field">
-          <label for="setBatchSize">Batch size</label>
-          <input id="setBatchSize" type="number" min="1" max="80" value="20" />
-        </div>
-        
-        <div class="field">
-          <label for="setConcurrency">Concurrency</label>
-          <input id="setConcurrency" type="number" min="1" max="8" value="3" />
-        </div>
-        
-        <div class="field">
-          <label for="setTimeoutMs">Request timeout (ms)</label>
-          <input id="setTimeoutMs" type="number" min="5000" max="180000" value="60000" />
-        </div>
-        
-        <div class="field">
-          <label for="setDeepseekRoute">DeepSeek route</label>
-          <input id="setDeepseekRoute" type="text" value="/api/deepseek-proxy" />
-        </div>
-        
-        <div class="field">
-          <label for="setDeeplRoute">DeepL route</label>
-          <input id="setDeeplRoute" type="text" value="/api/deepl-trans" />
-        </div>
-        
-        <div class="field">
-          <label for="setLocale">UI Language</label>
-          <select id="setLocale">
-            <option value="en" selected>English</option>
-          </select>
-        </div>
-        
-        <div class="field">
-          <label for="setAutosaveInterval">Autosave interval (seconds)</label>
-          <input id="setAutosaveInterval" type="number" min="5" max="600" value="30" />
-        </div>
-        
-        <div class="field">
-          <label for="setFontScale">Font scale</label>
-          <select id="setFontScale">
-            <option value="0.95">0.95</option>
-            <option value="1" selected>1.00</option>
-            <option value="1.05">1.05</option>
-            <option value="1.1">1.10</option>
-          </select>
+
+        <div class="hint">
+          Ren'Py interpolation like <span class="mono">[playername]</span> must be preserved. 3
         </div>
       </div>
-      <div id="modalFooter">
-        <button id="btnReset" class="btn btnBad" type="button">Reset</button>
-        <button id="btnSaveSettings" class="btn btnGood" type="button">Save</button>
+
+      <div class="modalFoot">
+        <button id="btnSaveSettings" class="btn good" type="button">Save</button>
       </div>
     </div>
   </div>
