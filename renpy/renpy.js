@@ -40,7 +40,7 @@
   };
 
   const TRANSLATOR_CREDIT =
-    '# Translated by VNTranslator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+    '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
   
   const RENPH_RE = /⟦\s*RENPH\s*(?:\{\s*(\d+)\s*\}|(\d+))\s*⟧/g;
   const RENPH_TEST_RE = /⟦\s*RENPH\s*(?:\{\s*\d+\s*\}|\d+)\s*⟧/;
