@@ -2,7 +2,7 @@
     const pageSize = 50;
     
     const TRANSLATOR_CREDIT =
-        '# Translated by VNTranslator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+        '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
     
     function safeJsonParse(data, fallback) {
       try {
