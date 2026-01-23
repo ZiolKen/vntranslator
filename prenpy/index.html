@@ -20,7 +20,10 @@
     </div>
 
     <div class="search">
-      <input id="q" placeholder="Search in current file…" autocomplete="off" />
+      <input id="q" placeholder="Search / Find…" autocomplete="off" />
+      <button id="btnFindPrev" class="btn" type="button">Prev</button>
+      <button id="btnFindNext" class="btn" type="button">Next</button>
+      <button id="btnReplace" class="btn" type="button">Replace</button>
     </div>
 
     <div class="jobbar">
@@ -72,6 +75,9 @@
             <button id="btnMarkTodo" class="btn" type="button">Todo</button>
             <button id="btnMarkReview" class="btn warn" type="button">Review</button>
             <button id="btnMarkDone" class="btn good" type="button">Done</button>
+            <button id="btnCopyOriginal" class="btn" type="button">Copy Original</button>
+            <button id="btnCopyMachine" class="btn" type="button">Copy Machine</button>
+            <button id="btnPasteToManual" class="btn primary" type="button">Machine → Manual</button>
           </div>
         </div>
 
@@ -93,7 +99,7 @@
     </main>
   </div>
 
-  <input id="filePicker" type="file" multiple accept=".rpy,.json" hidden />
+  <input id="filePicker" type="file" multiple accept="*/*" hidden />
 
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modalCard">
@@ -149,12 +155,78 @@
         </div>
 
         <div class="hint">
-          Ren'Py interpolation like <span class="mono">[playername]</span> must be preserved. 3
+          Ren'Py interpolation like <span class="mono">[playername]</span> must be preserved.
         </div>
       </div>
 
       <div class="modalFoot">
         <button id="btnSaveSettings" class="btn good" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="replaceModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <div class="modalHead">
+        <div class="modalTitle">Replace</div>
+        <button id="btnCloseReplace" class="btn" type="button">Close</button>
+      </div>
+  
+      <div class="modalBody">
+        <div class="field">
+          <label>Find</label>
+          <input id="repFind" type="text" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Replace with</label>
+          <input id="repWith" type="text" autocomplete="off" />
+        </div>
+  
+        <div class="row2">
+          <div class="field">
+            <label>Scope</label>
+            <select id="repScope">
+              <option value="selected" selected>Selected row</option>
+              <option value="file">Current file</option>
+              <option value="all">All files</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Field</label>
+            <select id="repField">
+              <option value="manual" selected>Manual</option>
+              <option value="machine">Machine</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+        </div>
+  
+        <div class="row2">
+          <div class="field">
+            <label><input id="repCase" type="checkbox" /> Case sensitive</label>
+          </div>
+          <div class="field">
+            <label><input id="repWhole" type="checkbox" /> Whole word</label>
+          </div>
+        </div>
+  
+        <div class="row2">
+          <div class="field">
+            <label><input id="repRegex" type="checkbox" /> Regex</label>
+          </div>
+          <div class="field">
+            <label><input id="repIncludeDone" type="checkbox" /> Include done</label>
+          </div>
+        </div>
+  
+        <div class="hint">
+          Replace is Ren'Py-safe (it will protect <span class="mono">{tags}</span> and <span class="mono">[vars]</span>).
+        </div>
+      </div>
+  
+      <div class="modalFoot" style="gap:10px">
+        <button id="btnRepCount" class="btn" type="button">Count</button>
+        <button id="btnRepRun" class="btn good" type="button">Replace</button>
       </div>
     </div>
   </div>
