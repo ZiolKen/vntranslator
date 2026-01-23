@@ -1,1110 +1,1215 @@
-        (function () {
-          'use strict';
-        
-          const el = {
-            fileInput: document.getElementById('fileInput'),
-            translateBtn: document.getElementById('translateBtn'),
-            translateLabel: document.getElementById('translateLabel'),
-            spinner: document.getElementById('spinner'),
-            progressBar: document.getElementById('progressBar'),
-            progressText: document.getElementById('progressText'),
-            logBox: document.getElementById('logBox'),
-            previewBtn: document.getElementById('previewBtn'),
-            downloadFinal: document.getElementById('downloadFinal'),
-            downloadProgress: document.getElementById('downloadProgress'),
-            modelSelect: document.getElementById('modelSelect'),
-            apiKeyContainer: document.getElementById('apiKeyContainer'),
-            apiKey: document.getElementById('apiKey'),
-            controlBtns: document.getElementById('controlBtns'),
-            stopBtn: document.getElementById('stopBtn'),
-            resumeBtn: document.getElementById('resumeBtn'),
-            libreWarningModal: document.getElementById('libreWarningModal'),
-            libreWarningClose: document.querySelector('#libreWarningModal .close-modal'),
-            confirmLibre: document.getElementById('confirmLibre'),
-            langTarget: document.getElementById('langTarget'),
-            deeplKeyContainer: document.getElementById('deeplKeyContainer'),
-            deeplApiKey: document.getElementById('deeplApiKey'),
-          };
-        
-          const state = {
-            fileName: null,
-            originalText: '',
-            originalLines: [],
-            dialogs: [],
-            batches: [],
-            isTranslating: false,
-            isPaused: false,
-            currentBatchIndex: 0,
-            logEntries: [],
-          };
-        
-          const TRANSLATOR_CREDIT =
-            '# Translated by VNsTranslator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
-        
-          function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-          }
-        
-        function languageLabel(codeOrName) {
-          const v = String(codeOrName || '').toLowerCase().trim();
-        
-          if (['id', 'indonesian', 'bahasa indonesia'].includes(v)) return 'Indonesian';
-          if (['en', 'english', 'en-us', 'en-gb'].includes(v)) return 'English';
-          if (['ms', 'malay', 'ms-my'].includes(v)) return 'Malay';
-          if (['vi', 'vietnamese', 'vi-vn'].includes(v)) return 'Vietnamese';
-          if (['tl', 'fil', 'filipino', 'tagalog'].includes(v)) return 'Filipino';
-        
-          if (['zh', 'zh-cn', 'chinese (simplified)', 'simplified chinese', 'chinese'].includes(v))
-            return 'Chinese (Simplified)';
-          if (['hi', 'hindi'].includes(v)) return 'Hindi';
-          if (['es', 'spanish'].includes(v)) return 'Spanish';
-          if (['fr', 'french'].includes(v)) return 'French';
-          if (['ar', 'arabic'].includes(v)) return 'Arabic';
-          if (['pt', 'portuguese', 'pt-br', 'pt-pt'].includes(v)) return 'Portuguese';
-          if (['ru', 'russian'].includes(v)) return 'Russian';
-          if (['de', 'german'].includes(v)) return 'German';
-          if (['ja', 'japanese'].includes(v)) return 'Japanese';
-          if (['ko', 'korean'].includes(v)) return 'Korean';
-        
-          return codeOrName || '';
+(function () {
+  'use strict';
+
+  const el = {
+    fileInput: document.getElementById('fileInput'),
+    translateBtn: document.getElementById('translateBtn'),
+    translateLabel: document.getElementById('translateLabel'),
+    spinner: document.getElementById('spinner'),
+    progressBar: document.getElementById('progressBar'),
+    progressText: document.getElementById('progressText'),
+    logBox: document.getElementById('logBox'),
+    previewBtn: document.getElementById('previewBtn'),
+    downloadFinal: document.getElementById('downloadFinal'),
+    downloadProgress: document.getElementById('downloadProgress'),
+    modelSelect: document.getElementById('modelSelect'),
+    apiKeyContainer: document.getElementById('apiKeyContainer'),
+    apiKey: document.getElementById('apiKey'),
+    controlBtns: document.getElementById('controlBtns'),
+    stopBtn: document.getElementById('stopBtn'),
+    resumeBtn: document.getElementById('resumeBtn'),
+    libreWarningModal: document.getElementById('libreWarningModal'),
+    libreWarningClose: document.querySelector('#libreWarningModal .close-modal'),
+    confirmLibre: document.getElementById('confirmLibre'),
+    langTarget: document.getElementById('langTarget'),
+    deeplKeyContainer: document.getElementById('deeplKeyContainer'),
+    deeplApiKey: document.getElementById('deeplApiKey'),
+  };
+
+  const state = {
+    fileName: null,
+    originalText: '',
+    originalLines: [],
+    dialogs: [],
+    batches: [],
+    isTranslating: false,
+    isPaused: false,
+    currentBatchIndex: 0,
+    logEntries: [],
+    translationCache: new Map(),
+  };
+
+  const TRANSLATOR_CREDIT =
+    '# Translated by VNsTranslator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function languageLabel(codeOrName) {
+    const v = String(codeOrName || '').toLowerCase().trim();
+    if (['id', 'indonesian', 'bahasa indonesia'].includes(v)) return 'Indonesian';
+    if (['en', 'english', 'en-us', 'en-gb'].includes(v)) return 'English';
+    if (['ms', 'malay', 'ms-my'].includes(v)) return 'Malay';
+    if (['vi', 'vietnamese', 'vi-vn'].includes(v)) return 'Vietnamese';
+    if (['tl', 'fil', 'filipino', 'tagalog'].includes(v)) return 'Filipino';
+    if (['zh', 'zh-cn', 'chinese (simplified)', 'simplified chinese', 'chinese'].includes(v))
+      return 'Chinese (Simplified)';
+    if (['hi', 'hindi'].includes(v)) return 'Hindi';
+    if (['es', 'spanish'].includes(v)) return 'Spanish';
+    if (['fr', 'french'].includes(v)) return 'French';
+    if (['ar', 'arabic'].includes(v)) return 'Arabic';
+    if (['pt', 'portuguese', 'pt-br', 'pt-pt'].includes(v)) return 'Portuguese';
+    if (['ru', 'russian'].includes(v)) return 'Russian';
+    if (['de', 'german'].includes(v)) return 'German';
+    if (['ja', 'japanese'].includes(v)) return 'Japanese';
+    if (['ko', 'korean'].includes(v)) return 'Korean';
+    return codeOrName || '';
+  }
+
+  function getDeepLLangCode(lang) {
+    if (!lang) return 'EN-US';
+    const low = String(lang).toLowerCase().trim();
+    if (low === 'bahasa indonesia' || low === 'indonesian' || low === 'id') return 'ID';
+    if (low === 'english' || low === 'en') return 'EN-US';
+    if (low === 'malay' || low === 'ms') return 'MS';
+    if (low === 'vietnamese' || low === 'vi') return 'VI';
+    if (low === 'filipino' || low === 'tl' || low === 'tagalog') return 'TL';
+    if (low === 'chinese (simplified)' || low === 'simplified chinese' || low === 'zh' || low === 'zh-cn')
+      return 'ZH';
+    if (low === 'hindi' || low === 'hi') return 'HI';
+    if (low === 'spanish' || low === 'es') return 'ES';
+    if (low === 'french' || low === 'fr') return 'FR';
+    if (low === 'arabic' || low === 'ar') return 'AR';
+    if (low === 'portuguese' || low === 'pt') return 'PT';
+    if (low === 'russian' || low === 'ru') return 'RU';
+    if (low === 'german' || low === 'de') return 'DE';
+    if (low === 'japanese' || low === 'ja') return 'JA';
+    if (low === 'korean' || low === 'ko') return 'KO';
+    return 'EN-US';
+  }
+
+  function needsDeepLQualityModel(targetCode) {
+    return ['MS', 'TL', 'HI'].includes(String(targetCode || '').toUpperCase());
+  }
+
+  function estimateTokens(text) {
+    if (typeof TextEncoder === 'undefined') return Math.ceil((text || '').length / 4);
+    const bytes = new TextEncoder().encode(text || '');
+    return Math.ceil(bytes.length / 4);
+  }
+
+  function createBatches(dialogs, options) {
+    const maxLines = options.maxLines ?? 64;
+    const maxTokens = options.maxTokens ?? 2000;
+    const batches = [];
+    let current = [];
+    let tokens = 0;
+
+    for (const d of dialogs) {
+      const t = d.maskedQuote || d.quote || '';
+      const cost = estimateTokens(t) + 12;
+      if (current.length && (current.length >= maxLines || tokens + cost > maxTokens)) {
+        batches.push(current);
+        current = [];
+        tokens = 0;
+      }
+      current.push(d);
+      tokens += cost;
+    }
+    if (current.length) batches.push(current);
+    return batches;
+  }
+
+  function log(message, level = 'info') {
+    const entryText = String(message);
+    state.logEntries.push(entryText);
+    if (!el.logBox) return;
+
+    const p = document.createElement('p');
+    p.textContent = entryText;
+    p.style.color =
+      level === 'error' ? '#ff1b1b' :
+      level === 'warn' ? '#f1f759' :
+      level === 'success' ? '#39ff14' :
+      '#00ffff';
+
+    el.logBox.appendChild(p);
+    el.logBox.scrollTop = el.logBox.scrollHeight;
+  }
+
+  function maskTagsInText(text) {
+    if (!text) return { masked: text, map: {} };
+    const map = {};
+    let counter = 0;
+    let result = '';
+    let lastIndex = 0;
+    const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+    let m;
+
+    while ((m = re.exec(text)) !== null) {
+      const originalTag = m[0];
+      const placeholder = '__RENPLH_' + (counter++) + '__';
+      result += text.slice(lastIndex, m.index) + placeholder;
+      lastIndex = m.index + originalTag.length;
+      map[placeholder] = originalTag;
+    }
+    result += text.slice(lastIndex);
+    return { masked: result, map };
+  }
+
+  function unmaskTagsInText(text, map) {
+    if (!text || !map) return text;
+    let result = text;
+    for (const ph in map) {
+      if (!Object.prototype.hasOwnProperty.call(map, ph)) continue;
+      result = result.split(ph).join(map[ph]);
+    }
+    return result;
+  }
+
+  function countTagsByType(text) {
+    const result = { square: 0, curly: 0 };
+    if (!text) return result;
+    const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+    const matches = text.match(re);
+    if (!matches) return result;
+    for (const m of matches) {
+      if (m[0] === '[') result.square++;
+      else if (m[0] === '{') result.curly++;
+    }
+    return result;
+  }
+
+  function validateTagConsistency(originalText, translatedText, lineNumber) {
+    const src = countTagsByType(originalText);
+    const tgt = countTagsByType(translatedText);
+
+    if (/__RENPLH_\d+__/.test(translatedText)) {
+      log(`*️⃣ [Line ${lineNumber}] Placeholder __RENPLH_*__ still appears in translation.`, 'warn');
+    }
+    if (src.square !== tgt.square) {
+      log(`*️⃣ [Line ${lineNumber}] Square tag mismatch: ${src.square} vs ${tgt.square}.`, 'warn');
+    }
+    if (src.curly !== tgt.curly) {
+      log(`*️⃣ [Line ${lineNumber}] Curly tag mismatch: ${src.curly} vs ${tgt.curly}.`, 'warn');
+    }
+  }
+
+  function setTranslateButtonBusy(isBusy, labelWhenBusy = '🔁 Translating...') {
+    if (!el.translateBtn || !el.translateLabel || !el.spinner) return;
+    if (isBusy) {
+      el.translateBtn.disabled = true;
+      el.translateLabel.textContent = labelWhenBusy;
+      el.spinner.style.display = 'inline-block';
+    } else {
+      el.translateBtn.disabled = false;
+      el.translateLabel.textContent = '▶️ Start Translating';
+      el.spinner.style.display = 'none';
+    }
+  }
+
+  function resetTranslateUIAfterFinish() {
+    state.isTranslating = false;
+    state.isPaused = false;
+    setTranslateButtonBusy(false);
+    if (el.controlBtns) el.controlBtns.style.display = 'none';
+    if (el.stopBtn) el.stopBtn.disabled = true;
+    if (el.resumeBtn) el.resumeBtn.disabled = true;
+  }
+
+  function updateProgress() {
+    const total = state.dialogs.length;
+    const done = state.dialogs.reduce((acc, d) => acc + (d.translated != null ? 1 : 0), 0);
+
+    if (el.progressBar) {
+      el.progressBar.max = total || 1;
+      el.progressBar.value = done;
+    }
+    if (el.progressText) {
+      el.progressText.textContent = `${done} / ${total || 0} lines translated`;
+    }
+  }
+
+  function updateControlButtons() {
+    if (!el.controlBtns || !el.stopBtn || !el.resumeBtn) return;
+
+    if (!state.isTranslating) {
+      el.controlBtns.style.display = 'none';
+      el.stopBtn.disabled = true;
+      el.resumeBtn.disabled = true;
+      return;
+    }
+    el.controlBtns.style.display = 'flex';
+    el.stopBtn.disabled = state.isPaused;
+    el.resumeBtn.disabled = !state.isPaused;
+  }
+
+  const RENPY = (() => {
+    const PREFIX_CHARS = new Set(['r','R','u','U','b','B','f','F']);
+    const SCRIPT_SKIP_HEADS = new Set([
+      'label','init','python','transform','style','screen','key',
+      'define','default','translate','old','new',
+      'return','jump','call','if','elif','else','for','while','try','except','finally',
+      'pass','break','continue','import','from','$','renpy','action',
+      'outlines','outline_scaling','text_font','font','text_color','text_size','color',
+      'xpos','ypos','xalign','yalign','align','anchor','pos','xysize','size','zorder','tag'
+    ]);
+
+    const ASSET_HEADS = new Set([
+      'play','queue','stop','voice','sound','sound2','ambience','music'
+    ]);
+
+    const SCREEN_ALLOWED_HEADS = new Set(['text','textbutton','label','vtext','htext']);
+
+    const NON_TRANSLATABLE_ATTRS = new Set([
+      'style','font','text_font','background','hover_sound','activate_sound','selected_sound','insensitive_sound',
+      'channel','play','start_image','image','add','xysize','xpos','ypos','align','anchor','zorder','tag'
+    ]);
+
+    const NON_TRANSLATABLE_CALLS = new Set([
+      'jump','call','showmenu','openurl','fileaction','setvariable','setscreenvariable',
+      'renpy.call','renpy.jump','renpy.call_in_new_context','renpy.invoke_in_new_context'
+    ]);
+
+    let HAS_UNICODE_PROPS = true;
+    try { new RegExp('\\p{L}', 'u'); } catch { HAS_UNICODE_PROPS = false; }
+
+    function isWordChar(ch) {
+      return /[A-Za-z0-9_]/.test(ch);
+    }
+
+    function buildLineStarts(source) {
+      const starts = [0];
+      for (let i = 0; i < source.length; i++) {
+        if (source[i] === '\n') starts.push(i + 1);
+      }
+      return starts;
+    }
+
+    function offsetToLine(lineStarts, offset) {
+      let lo = 0;
+      let hi = lineStarts.length - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const v = lineStarts[mid];
+        if (v <= offset) lo = mid + 1;
+        else hi = mid - 1;
+      }
+      return Math.max(0, Math.min(hi, lineStarts.length - 1));
+    }
+
+    function computeBlockMasks(lines) {
+      const n = lines.length;
+      const inPython = new Array(n).fill(false);
+      const inScreen = new Array(n).fill(false);
+      const inMenu = new Array(n).fill(false);
+      const inStyle = new Array(n).fill(false);
+      const inTransform = new Array(n).fill(false);
+
+      const stack = [];
+
+      function popTo(indent) {
+        while (stack.length && indent <= stack[stack.length - 1].indent) {
+          stack.pop();
         }
-        
-        function getDeepLLangCode(lang) {
-          if (!lang) return 'EN-US';
-        
-          const low = String(lang).toLowerCase().trim();
-          if (low === 'bahasa indonesia' || low === 'indonesian' || low === 'id') return 'ID';
-          if (low === 'english' || low === 'en') return 'EN-US';
-          if (low === 'malay' || low === 'ms') return 'MS';
-          if (low === 'vietnamese' || low === 'vi') return 'VI';
-          if (low === 'filipino' || low === 'tl' || low === 'tagalog') return 'TL';
-          if (low === 'chinese (simplified)' || low === 'simplified chinese' || low === 'zh' || low === 'zh-cn') return 'ZH';
-          if (low === 'hindi' || low === 'hi') return 'HI';
-          if (low === 'spanish' || low === 'es') return 'ES';
-          if (low === 'french' || low === 'fr') return 'FR';
-          if (low === 'arabic' || low === 'ar') return 'AR';
-          if (low === 'portuguese' || low === 'pt') return 'PT';
-          if (low === 'russian' || low === 'ru') return 'RU';
-          if (low === 'german' || low === 'de') return 'DE';
-          if (low === 'japanese' || low === 'ja') return 'JA';
-          if (low === 'korean' || low === 'ko') return 'KO';
-        
-          return 'EN-US';
+      }
+
+      for (let i = 0; i < n; i++) {
+        const raw = lines[i];
+        const stripped = raw.trim();
+        const indent = (raw.match(/^\s*/)?.[0]?.length) || 0;
+
+        if (stripped && !raw.trimStart().startsWith('#')) {
+          popTo(indent);
+
+          if (/^\s*(init\s+python|python)\s*:\s*$/.test(raw)) {
+            stack.push({ type: 'python', indent });
+          } else if (/^\s*screen\s+[A-Za-z_]\w*\s*(\([^)]*\))?\s*:\s*$/.test(raw)) {
+            stack.push({ type: 'screen', indent });
+          } else if (/^\s*menu\s*:\s*$/.test(raw)) {
+            stack.push({ type: 'menu', indent });
+          } else if (/^\s*style\s+[A-Za-z_]\w*\s*:\s*$/.test(raw)) {
+            stack.push({ type: 'style', indent });
+          } else if (/^\s*transform\s+[A-Za-z_]\w*\s*:\s*$/.test(raw)) {
+            stack.push({ type: 'transform', indent });
+          }
         }
-        
-        function needsDeepLQualityModel(targetCode) {
-          return ['MS', 'TL', 'HI'].includes(
-            String(targetCode || '').toUpperCase()
-          );
+
+        const types = new Set(stack.map(x => x.type));
+        inPython[i] = types.has('python');
+        inScreen[i] = types.has('screen');
+        inMenu[i] = types.has('menu');
+        inStyle[i] = types.has('style');
+        inTransform[i] = types.has('transform');
+      }
+
+      return { inPython, inScreen, inMenu, inStyle, inTransform };
+    }
+
+    function scanStringLiterals(source, lineStarts) {
+      const out = [];
+      let i = 0;
+
+      while (i < source.length) {
+        const ch = source[i];
+
+        if (ch === '#') {
+          const nl = source.indexOf('\n', i);
+          if (nl === -1) break;
+          i = nl + 1;
+          continue;
         }
-        
-          function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.innerText = str;
-            return div.innerHTML;
-          }
-        
-          function estimateTokens(text) {
-            if (typeof TextEncoder === 'undefined') {
-              return Math.ceil(text.length / 4);
-            }
-            const bytes = new TextEncoder().encode(text);
-            return Math.ceil(bytes.length / 4);
-          }
-        
-          function createBatches(dialogs, options) {
-            const maxLines = options.maxLines ?? 64;
-            const maxTokens = options.maxTokens ?? 2000;
-            const batches = [];
 
-            let currentBatch = [];
-            let currentTokens = 0;
+        const prev = i > 0 ? source[i - 1] : '';
+        let prefix = '';
+        let quoteChar = '';
+        let openStart = i;
+        let openQuoteStart = -1;
 
-            for (let i = 0; i < dialogs.length; i++) {
-              const dialog = dialogs[i];
-              const text = dialog.maskedQuote || dialog.quote || '';
-              const tokens = estimateTokens(text) + 8; 
-
-              if (currentBatch.length > 0 &&
-                  (currentBatch.length >= maxLines || currentTokens + tokens > maxTokens)) {
-                batches.push(currentBatch);
-                currentBatch = [];
-                currentTokens = 0;
-              }
-
-              currentBatch.push(dialog);
-              currentTokens += tokens;
-            }
-
-            if (currentBatch.length > 0) {
-              batches.push(currentBatch);
-            }
-
-            return batches;
-          }
-
-          function log(message, level = 'info') {
-            const entryText = message;
-        
-            state.logEntries.push(entryText);
-        
-            if (!el.logBox) return;
-            const p = document.createElement('p');
-            p.textContent = entryText;
-            switch (level) {
-              case 'error':
-                p.style.color = '#ff1b1b';
-                break;
-              case 'warn':
-                p.style.color = '#f1f759';
-                break;
-              case 'success':
-                p.style.color = '#39ff14';
-                break;
-              default:
-                p.style.color = '#00ffff';
-                break;
-            }
-            el.logBox.appendChild(p);
-            el.logBox.scrollTop = el.logBox.scrollHeight;
-          }
-        
-          function maskTagsInText(text) {
-            if (!text) {
-              return { masked: text, map: {} };
-            }
-
-            const map = {};
-            let counter = 0;
-            let result = '';
-            let lastIndex = 0;
-
-            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
-            let m;
-
-            while ((m = re.exec(text)) !== null) {
-              const originalTag = m[0];
-              const placeholder = '__RENPLH_' + (counter++) + '__';
-
-              result += text.slice(lastIndex, m.index) + placeholder;
-              lastIndex = m.index + originalTag.length;
-
-              map[placeholder] = originalTag;
-            }
-
-            result += text.slice(lastIndex);
-
-            return { masked: result, map: map };
-          }
-
-          function unmaskTagsInText(text, map) {
-            if (!text || !map) return text;
-
-            let result = text;
-            for (const placeholder in map) {
-              if (!Object.prototype.hasOwnProperty.call(map, placeholder)) continue;
-              const originalTag = map[placeholder];
-              if (!placeholder) continue;
-              result = result.split(placeholder).join(originalTag);
-            }
-            return result;
-          }
-
-          function countTagsByType(text) {
-            const result = { square: 0, curly: 0 };
-            if (!text) return result;
-
-            const re = /\[[^\[\]]*\]|\{[^{}]*\}/g;
-            const matches = text.match(re);
-            if (!matches) return result;
-
-            for (let i = 0; i < matches.length; i++) {
-              const m = matches[i];
-              if (m[0] === '[') result.square++;
-              else if (m[0] === '{') result.curly++;
-            }
-
-            return result;
-          }
-
-          function validateTagConsistency(originalText, translatedText, lineNumber) {
-            const src = countTagsByType(originalText);
-            const tgt = countTagsByType(translatedText);
-
-            if (/__RENPLH_\d+__/.test(translatedText)) {
-              log(
-                '*️⃣ [Line ' + lineNumber + '] Placeholder __RENPLH_*__ still appears in translation. ' +
-                'The translation may have interfered with the placeholder, need to check again manually.',
-                'warn'
-              );
-            }
-
-            if (src.square !== tgt.square) {
-              log(
-                '*️⃣ [Line ' + lineNumber + '] Square tag mismatch: original has ' + src.square +
-                ' [tags], translation has ' + tgt.square + '.',
-                'warn'
-              );
-            }
-
-            if (src.curly !== tgt.curly) {
-              log(
-                '*️⃣ [Line ' + lineNumber + '] Curly tag mismatch: original has ' + src.curly +
-                ' {tags}, translation has ' + tgt.curly + '.',
-                'warn'
-              );
-            }
-          }
-        
-          function setTranslateButtonBusy(isBusy, labelWhenBusy = '🔁 Translating...') {
-            if (!el.translateBtn || !el.translateLabel || !el.spinner) return;
-        
-            if (isBusy) {
-              el.translateBtn.disabled = true;
-              el.translateLabel.textContent = labelWhenBusy;
-              el.spinner.style.display = 'inline-block';
-            } else {
-              el.translateBtn.disabled = false;
-              el.translateLabel.textContent = '▶️ Start Translating';
-              el.spinner.style.display = 'none';
-            }
-          }
-        
-          function resetTranslateUIAfterFinish() {
-            state.isTranslating = false;
-            state.isPaused = false;
-            setTranslateButtonBusy(false);
-            if (el.controlBtns) el.controlBtns.style.display = 'none';
-            if (el.stopBtn) el.stopBtn.disabled = true;
-            if (el.resumeBtn) el.resumeBtn.disabled = true;
-          }
-        
-          function updateProgress() {
-            const total = state.dialogs.length;
-            const done = state.dialogs.filter(d => d.translated != null).length;
-        
-            if (el.progressBar) {
-              el.progressBar.max = total || 1;
-              el.progressBar.value = done;
-            }
-        
-            if (el.progressText) {
-              el.progressText.textContent = `${done} / ${total || 0} lines translated`;
-            }
-          }
-        
-          function updateControlButtons() {
-            if (!el.controlBtns || !el.stopBtn || !el.resumeBtn) return;
-        
-            if (!state.isTranslating) {
-              el.controlBtns.style.display = 'none';
-              el.stopBtn.disabled = true;
-              el.resumeBtn.disabled = true;
-              return;
-            }
-        
-            el.controlBtns.style.display = 'flex';
-            el.stopBtn.disabled = state.isPaused;
-            el.resumeBtn.disabled = !state.isPaused;
-          }
-        
-          function isDialogLine(line) {
-              const trimmed = line.trim();
-              if (trimmed === '') return false;
-              if (/#/.test(trimmed)) return false;
-              if (/^(#|label\s|key\s|style\s|text_font\s|font\s|$\s|if\s|else\s|at\s|align\s|easeout\s|size\s|hovered\s|unhovered\s|import\s|config\s|with\s|def\s|move\s|background\s|text\s|add\s|action\s|screen\s|sound\s|outlines\s|outline_scaling\s|menu\s|jump\s|scene\s|init\s|show\s|hide\s|stop\s|play\s|queue\s|transform\s|define\s|image\s|window\s|voice\s|pause\s|call\s|return\s|renpy\s|python\s)/i.test(trimmed)) return false;
-              if (/^[\w\s]*=[^"]/.test(trimmed)) return false;
-              if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|pfb|pfm|ps|woff|woff2|eot|svg)["']?/i.test(trimmed)) return false;
-              if (/["'](images?|audio|music|voice|bg|sfx|movie|video|sounds?)\//i.test(trimmed)) return false;
-              const keywords = ["screen", "$", "background", "outlines", "outline_scaling", "easeout", "hovered", "unhovered", "font", "text", "text_font", "style", "key", "elif", "==", "=", "else", "at", "def", "config", "size", "add", "action", "show", "play", "image", "sound", "align", "import", "with", "move"];
-              const outsideQuotes = trimmed.replace(/"[^"]*"|'[^']*'/g, "");
-              if (keywords.some(kw => new RegExp(`\\b${kw}\\b`, "i").test(outsideQuotes))) return false;
-              if (/^[\w\s]*:\s*["'].*["']/.test(trimmed)) return true;
-              if (/^["'].*["']/.test(trimmed)) return true;
-              const q = trimmed.match(/(['"])(.*)\1/);
-              if (q) {
-                  const t = q[2].trim();
-                  if (t === "" || /^[.\s]+$/.test(t)) return false;
-              }
-              if (/{.*?}/.test(trimmed) && /[\w\-\?!'"]/i.test(trimmed)) return true;
-              if (/^[\w\s]*\s*".+?"\s*$/.test(trimmed)) return true;
-              return false;
-          }
-            
-          function extractDialogsFromLines(lines) {
-            const dialogs = [];
-
-            lines.forEach((line, index) => {
-              if (!isDialogLine(line)) return;
-
-              const match = line.match(/"((?:\\.|[^"\\])*)"/);
-              if (!match) return;
-
-              const dialogText = match[1];
-              if (dialogText.trim() === '' || /^[.\s]+$/.test(dialogText)) return;
-
-              const maskedInfo = maskTagsInText(dialogText);
-
-              dialogs.push({
-                index: index,
-                originalLine: line,
-                quote: dialogText,               
-                maskedQuote: maskedInfo.masked,    
-                placeholderMap: maskedInfo.map,    
-                translated: null
-              });
-            });
-
-            return dialogs;
-          }
-        
-        async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
-          const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
-          const languageName = languageLabel(targetLang);
-        
-          const userPromptLines = [
-            `Translate the following Ren'Py dialogue lines to ${languageName} (language code: ${targetLang}).`,
-            '',
-            'Rules:',
-            '- Some parts are placeholders like __RENPLH_0__. Keep them EXACTLY as-is and do NOT translate them.',
-            '- Preserve Ren\'Py syntax, variables, and tags (e.g. {color}, {size}, [variable], etc.).',
-            '- Do NOT change placeholders or variables.',
-            '- Do NOT reorder, merge, or split lines.',
-            '- Return ONLY the translated lines, one per line, in the same order.',
-            '- Do NOT add numbering, quotes, prefixes, or extra commentary.',
-            '',
-            'Lines:'
-          ];
-        
-          const prompt = userPromptLines.concat(lines).join('\n');
-        
-          const bodyForProxy = {
-            apiKey: apiKey,
-            model: 'deepseek-chat',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a professional game localization translator specializing in Ren\'Py visual novels.'
-              },
-              {
-                role: 'user',
-                content: prompt
-              }
-            ],
-            stream: false,
-          };
-        
-          let response;
-          try {
-            response = await fetch('/api/deepseek-proxy', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(bodyForProxy),
-            });
-          } catch (networkErr) {
-            console.error('DeepSeek proxy network error:', networkErr);
-            throw new Error('*️⃣ Network error when calling DeepSeek proxy: ' + networkErr.message);
-          }
-        
-          if (!response.ok) {
-            const text = await response.text().catch(() => '');
-            console.error('DeepSeek proxy HTTP error:', response.status, text);
-            throw new Error(`*️⃣ DeepSeek/proxy error ${response.status}: ${text}`);
-          }
-        
-          const data = await response.json();
-        
-          const content =
-            data &&
-            data.choices &&
-            data.choices[0] &&
-            data.choices[0].message &&
-            data.choices[0].message.content;
-        
-          if (!content) {
-            console.error('DeepSeek proxy full JSON:', data);
-            throw new Error('*️⃣ DeepSeek response did not contain any content.');
-          }
-        
-          const outLines = content
-            .split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(l => l !== '');
-        
-          if (outLines.length !== lines.length) {
-            log(
-              `*️⃣ Warning: expected ${lines.length} lines from DeepSeek but got ${outLines.length}. Mapping by order anyway.`,
-              'warn'
-            );
-          }
-        
-          return outLines;
-        }
-        
-        async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
-          const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
-          const targetCode = getDeepLLangCode(targetLang);
-        
-          const bodyForProxy = {
-            apiKey: apiKey,
-            text: lines,
-            target_lang: targetCode,
-            preserve_formatting: 1,
-            split_sentences: 0,
-            ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {}),
-          };
-        
-          let response;
-          try {
-            response = await fetch('/api/deepl-trans', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(bodyForProxy),
-            });
-          } catch (networkErr) {
-            console.error('DeepL proxy network error:', networkErr);
-            throw new Error('*️⃣ Network error when calling DeepL proxy: ' + networkErr.message);
-          }
-        
-          if (!response.ok) {
-            const text = await response.text().catch(() => '');
-            console.error('DeepL proxy HTTP error:', response.status, text);
-            throw new Error(`*️⃣ DeepL/proxy error ${response.status}: ${text}`);
-          }
-        
-          const data = await response.json();
-          const translations = Array.isArray(data?.translations) ? data.translations : [];
-        
-          const outLines = translations.map(t => (t && typeof t.text === 'string') ? t.text : '');
-        
-          if (outLines.length !== lines.length) {
-            log(
-              `*️⃣ Warning: expected ${lines.length} lines from DeepL but got ${outLines.length}. Mapping by order anyway.`,
-              'warn'
-            );
-          }
-        
-          return outLines;
-        }
-         
-        const LINGVA_LANG_MAP = {
-          'Bahasa Indonesia': 'id',
-          Indonesian: 'id',
-        
-          Vietnamese: 'vi',
-          'vi-VN': 'vi',
-        
-          English: 'en',
-          'en-US': 'en',
-          'en-GB': 'en',
-        
-          Malay: 'ms',
-        
-          Filipino: 'tl',
-          Filipina: 'tl',
-          Tagalog: 'tl',
-        
-          'Chinese (Simplified)': 'zh-CN',
-          'Simplified Chinese': 'zh-CN',
-          Chinese: 'zh-CN',
-        
-          Hindi: 'hi',
-          Spanish: 'es',
-          French: 'fr',
-          Arabic: 'ar',
-          Portuguese: 'pt',
-          Russian: 'ru',
-          German: 'de',
-          Japanese: 'ja',
-          Korean: 'ko',
-        };
-        
-          function getLingvaLangCode(lang) {
-            if (!lang) return 'en';
-        
-            const trimmed = String(lang).trim();
-        
-            if (/^[a-z]{2}(-[A-Za-z0-9]+)?$/i.test(trimmed)) {
-              return trimmed.toLowerCase();
-            }
-        
-            const key = Object.keys(LINGVA_LANG_MAP).find(
-              (k) => k.toLowerCase() === trimmed.toLowerCase()
-            );
-        
-            return key ? LINGVA_LANG_MAP[key] : trimmed;
-          }
-          
-          const LINGVA_BASE_URLS = [
-            'https://lingva.dialectapp.org',
-            'https://lingva.vercel.app',
-            'https://translate.plausibility.cloud',
-            'https://lingva.garudalinux.org',
-            'https://lingva.lunar.icu',
-            'https://lingva.ml',
-          ];
-          
-          async function lingvaFetch(path, init) {
-            let lastError;
-        
-            for (const base of LINGVA_BASE_URLS) {
-              const url = base.replace(/\/+$/, '') + path;
-        
-              try {
-                console.info('[Lingva] Trying:', url);
-                const res = await fetch(url, init);
-        
-                if (!res.ok) {
-                  console.warn(
-                    '[Lingva] HTTP error',
-                    res.status,
-                    res.statusText,
-                    'at',
-                    base
-                  );
-                  lastError = new Error(`*️⃣ HTTP ${res.status} from ${base}`);
-                  continue;
-                }
-        
-                return res;
-              } catch (err) {
-                console.warn('*️⃣ [Lingva] Network error at', base, err);
-                lastError = err;
-              }
-            }
-        
-            throw lastError || new Error('*️⃣ All Lingva endpoints failed');
-          }
-        
-          async function translateBatchLingva(batchDialogs, targetLang) {
-            const results = [];
-
-            for (let i = 0; i < batchDialogs.length; i++) {
-              const dialog = batchDialogs[i];
-              const text = dialog.maskedQuote || dialog.quote || '';
-              if (!text.trim()) {
-                results.push(text);
-                continue;
-              }
-
-              const langCode = getLingvaLangCode(targetLang);
-              
-              const path =
-                '/api/v1/auto/' +
-                encodeURIComponent(langCode) +
-                '/' +
-                encodeURIComponent(text);
-
-              const response = await lingvaFetch(path);
-              if (!response.ok) {
-                const t = await response.text();
-                throw new Error(`*️⃣ Lingva error ${response.status}: ${t}`);
-              }
-
-              const data = await response.json();
-              const translated =
-                data.translation ||
-                data.translatedText ||
-                data.result ||
-                '';
-
-              if (!translated) {
-                throw new Error('*️⃣ Lingva response did not contain a translation string.');
-              }
-
-              results.push(translated);
-
-              await delay(100);
-            }
-
-            return results;
-          }
-        
-          async function waitWhilePaused() {
-            while (state.isPaused && state.isTranslating) {
-              await delay(100);
-            }
-          }
-        
-          async function runTranslationLoop() {
-            const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
-            const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
-            const targetLang = el.langTarget ? el.langTarget.value : 'id';
-            const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
-
-            updateControlButtons();
-
-            while (
-              state.currentBatchIndex < state.batches.length &&
-              state.isTranslating
-            ) {
-              if (state.isPaused) {
-                log('⏸ Translation paused.', 'info');
-                await waitWhilePaused();
-                if (!state.isTranslating) {
-                  log('ℹ️ Translation cancelled while paused.', 'warn');
-                  return;
-                }
-                log('▶️ Resuming translation...', 'info');
-              }
-
-              const batchNum = state.currentBatchIndex + 1;
-              const totalBatches = state.batches.length;
-              const batchDialogs = state.batches[state.currentBatchIndex];
-
-              log(
-                `🔄 Translating batch ${batchNum}/${totalBatches} (${batchDialogs.length} lines)...`,
-                'info'
-              );
-
-              let translatedLines;
-              try {
-                if (model === 'deepseek') {
-                  translatedLines = await translateBatchDeepSeek(
-                    batchDialogs,
-                    targetLang,
-                    apiKey
-                  );
-                } else if (model === 'deepl') {
-                  translatedLines = await translateBatchDeepL(batchDialogs, targetLang, deeplApiKey);
-                } else {
-                  translatedLines = await translateBatchLingva(
-                    batchDialogs,
-                    targetLang
-                  );
-                }
-              } catch (err) {
-                log(
-                  `*️⃣ Error while translating batch ${batchNum}: ${err.message || err}`,
-                  'error'
-                );
-                throw err;
-              }
-
-              for (let i = 0; i < batchDialogs.length; i++) {
-                const dialog = batchDialogs[i];
-                const translatedMasked = translatedLines[i];
-                const realIndex = dialog.index + 1;
-
-                if (translatedMasked) {
-                  const fixed =
-                    unmaskTagsInText(translatedMasked, dialog.placeholderMap) || translatedMasked;
-
-                  validateTagConsistency(dialog.quote, fixed, realIndex);
-
-                  dialog.translated = fixed;
-
-                  const original = state.dialogs.find(x => x.index === dialog.index);
-                  if (original) original.translated = fixed;
-
-                  log(`✅ [${realIndex}] ${fixed}`, 'success');
-                } else {
-                  log(`*️⃣ [${realIndex}] Cannot translate`, 'warn');
-                }
-              }
-
-              state.currentBatchIndex++;
-              updateProgress();
-            }
-
-            if (state.currentBatchIndex >= state.batches.length) {
-              log('✅ Translation complete. You can now download the result.', 'success');
-              if (el.downloadFinal) el.downloadFinal.disabled = false;
-              if (el.previewBtn) el.previewBtn.disabled = false;
-            }
-
-            resetTranslateUIAfterFinish();
-          }
-        
-          async function startTranslation() {
-            if (state.isTranslating) {
-              log('ℹ️ A translation is already in progress.', 'warn');
-              return;
-            }
-        
-            if (!state.fileName || !state.originalLines.length) {
-              log('*️⃣ No .rpy file loaded. Please upload a file first.', 'error');
-              return;
-            }
-        
-            const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
-            const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
-            const targetLang = el.langTarget ? el.langTarget.value : 'id';
-        
-            if (model === 'deepseek' && !apiKey) {
-              log('*️⃣ Please provide your DeepSeek API key.', 'error');
-              return;
-            }
-        
-            const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
-        
-            if (model === 'deepl' && !deeplApiKey) {
-              log('*️⃣ Please provide your DeepL API key.', 'error');
-              return;
-            }
-        
-            log(
-              `ℹ️ Preparing translation using model "${model}" to ${languageLabel(
-                targetLang
-              )}...`,
-              'info'
-            );
-        
-            state.dialogs = extractDialogsFromLines(state.originalLines);
-        
-            if (!state.dialogs.length) {
-              log('*️⃣ No dialog lines were detected in this .rpy file.', 'error');
-              return;
-            }
-        
-            log(
-              `ℹ️ Detected ${state.dialogs.length} dialog lines. Creating translation batches...`,
-              'info'
-            );
-        
-            state.batches = createBatches(state.dialogs, {
-              maxLines: 48,
-              maxTokens: 1800,
-            });
-        
-            log(
-              `ℹ️ Created ${state.batches.length} batches for translation.`,
-              'info'
-            );
-        
-            state.currentBatchIndex = 0;
-            state.isTranslating = true;
-            state.isPaused = false;
-        
-            if (el.downloadFinal) el.downloadFinal.disabled = false;
-        
-            if (el.progressBar) {
-              el.progressBar.value = 0;
-              el.progressBar.max = state.dialogs.length;
-            }
-            updateProgress();
-        
-            setTranslateButtonBusy(true, '🔁 Translating...');
-            if (el.controlBtns) el.controlBtns.style.display = 'flex';
-            updateControlButtons();
-        
-            try {
-              await runTranslationLoop();
-            } catch (err) {
-              log('*️⃣ Translation stopped due to an error.', 'error');
-              resetTranslateUIAfterFinish();
-            }
-          }
-        
-          function buildOutputText() {
-            const map = new Map();
-            for (const d of state.dialogs) {
-              if (d.translated != null) {
-                map.set(d.index, d);
-              }
-            }
-        
-            const outLines = state.originalLines.map((line, idx) => {
-              const dialog = map.get(idx);
-              if (!dialog) return line;
-              if (dialog.translated == null) return line;
-        
-              const firstQuote = line.indexOf('"');
-              const lastQuote = line.lastIndexOf('"');
-              if (firstQuote === -1 || lastQuote <= firstQuote) return line;
-        
-              return (
-                line.slice(0, firstQuote + 1) +
-                dialog.translated +
-                line.slice(lastQuote)
-              );
-            });
-        
-            return outLines.join('\n');
-          }
-        
-          function handleDownloadFinal() {
-            const lines = [...state.originalLines];
-        
-            for (const d of state.dialogs) {
-                if (!d.translated) continue;
-        
-                let line = d.originalLine;
-                const idx = d.index;
-        
-                const first = line.indexOf('"');
-                const last = line.lastIndexOf('"');
-                if (first === -1 || last <= first) continue;
-        
-                const newLine =
-                    line.slice(0, first + 1) +
-                    d.translated +
-                    line.slice(last);
-        
-                lines[idx] = newLine;
-            }
-        
-            const outputText =
-              lines.join("\n") +
-              "\n\n" +
-              TRANSLATOR_CREDIT +
-              "\n";
-        
-            const blob = new Blob([outputText], {
-              type: "text/plain;charset=utf-8"
-            });
-        
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-        
-            const base = (state.fileName || "translated").replace(/\.rpy$/i, "");
-            a.download = base + "_translated.rpy";
-        
-            a.click();
-        
-            log("⬇️ Downloaded translated file.", "success");
-          }
-        
-          function handleDownloadProgress() {
-            const logText = state.logEntries.join('\n');
-            const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-        
-            const a = document.createElement('a');
-            a.download = 'translation_log.txt';
-            a.href = url;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        
-            log('⬇️ Downloaded translation log.', 'success');
-          }
-        
-          function handlePreview() {
-            if (!state.originalLines.length || !state.dialogs.length) {
-              alert('*️⃣ There is no data to preview yet. Please finish translating (or at least partially translate) first.');
-              return;
-            }
-        
-            const originalLines = state.originalLines.slice();
-        
-            const dialogIndexes = state.dialogs.map(d => {
-              const index = d.index;
-              const line = originalLines[index] || '';
-        
-              const indentMatch = line.match(/^\s*/);
-              const indent = indentMatch ? indentMatch[0] : '';
-              const withoutIndent = line.slice(indent.length);
-        
-              const m = withoutIndent.match(/(["'])(.*)\1/);
-              let pre = '';
-              let quoteChar = '"';
-              let post = '';
-        
-              if (m) {
-                quoteChar = m[1];
-                const before = withoutIndent.slice(0, m.index);
-                const after = withoutIndent.slice(m.index + m[0].length);
-                pre = before.trim();
-                post = after.trim();
-              }
-        
-              return {
-                index,
-                pre,
-                quote: quoteChar,
-                post,
-              };
-            });
-        
-            const detectedDialogs = state.dialogs.map(d => d.quote || '');
-            const translatedDialogs = state.dialogs.map(d => d.translated || '');
-        
-            try {
-              localStorage.setItem('originalLines', JSON.stringify(originalLines));
-              localStorage.setItem('dialogIndexes', JSON.stringify(dialogIndexes));
-              localStorage.setItem('detectedDialogs', JSON.stringify(detectedDialogs));
-              localStorage.setItem('translatedDialogs', JSON.stringify(translatedDialogs));
-        
-              if (el.apiKey) {
-                localStorage.setItem('deepseekApiKey', el.apiKey.value.trim() || '');
-              }
-              if (el.langTarget) {
-                localStorage.setItem('targetLang', el.langTarget.value);
-              }
-              if (el.modelSelect) {
-                localStorage.setItem('translationModel', el.modelSelect.value || 'deepseek');
-              }
-            } catch (err) {
-              console.error('Failed to write preview data to localStorage:', err);
-              alert('*️⃣ Unable to save preview data to localStorage (maybe due to quota or incognito mode).');
-              return;
-            }
-        
-            window.location.href = 'preview.html';
-          }
-        
-          function handleFileChange(evt) {
-            const file = evt.target.files && evt.target.files[0];
-            if (!file) return;
-        
-            if (!file.name.toLowerCase().endsWith('.rpy')) {
-              log('*️⃣ Please upload a .rpy file.', 'error');
-              evt.target.value = '';
-              if (el.translateBtn) el.translateBtn.disabled = true;
-              return;
-            }
-        
-            const reader = new FileReader();
-            reader.onload = e => {
-              state.fileName = file.name;
-              state.originalText = e.target.result || '';
-              state.originalLines = state.originalText.split(/\r?\n/);
-              state.dialogs = [];
-              state.batches = [];
-              state.isTranslating = false;
-              state.isPaused = false;
-              state.currentBatchIndex = 0;
-              state.logEntries = [];
-        
-              log(
-                `ℹ️ Loaded file "${file.name}" (${state.originalLines.length} lines).`,
-                'info'
-              );
-        
-              if (el.translateBtn) el.translateBtn.disabled = false;
-              if (el.downloadFinal) el.downloadFinal.disabled = true;
-              if (el.previewBtn) el.previewBtn.disabled = true;
-        
-              if (el.progressBar) {
-                el.progressBar.value = 0;
-                el.progressBar.max = 1;
-              }
-              if (el.progressText) {
-                el.progressText.textContent = '0 / 0 lines translated';
-              }
-            };
-            reader.onerror = () => {
-              log('*️⃣ Failed to read file.', 'error');
-            };
-            reader.readAsText(file, 'utf-8');
-          }
-        
-          function showLibreModal() {
-            if (!el.libreWarningModal) return;
-            el.libreWarningModal.style.display = 'flex';
-          }
-        
-          function hideLibreModal() {
-            if (!el.libreWarningModal) return;
-            el.libreWarningModal.style.display = 'none';
-          }
-        
-        function setupModelSelectBehavior() {
-          if (!el.modelSelect) return;
-        
-          const apply = () => {
-            const value = el.modelSelect.value;
-        
-            if (value === 'deepseek') {
-              if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'block';
-              if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
-            } else if (value === 'deepl') {
-              if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
-              if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'block';
-            } else {
-              if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
-              if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
-              showLibreModal();
-            }
-          };
-        
-          el.modelSelect.addEventListener('change', apply);
-          apply();
-        }
-        
-          function setupModalBehavior() {
-            if (el.libreWarningClose) {
-              el.libreWarningClose.addEventListener('click', hideLibreModal);
-            }
-            if (el.confirmLibre) {
-              el.confirmLibre.addEventListener('click', hideLibreModal);
-            }
-            if (el.libreWarningModal) {
-              el.libreWarningModal.addEventListener('click', e => {
-                if (e.target === el.libreWarningModal) {
-                  hideLibreModal();
-                }
-              });
-            }
-          }
-        
-          function init() {
-            if (el.fileInput) {
-              el.fileInput.addEventListener('change', handleFileChange);
-            }
-        
-            if (el.translateBtn) {
-              el.translateBtn.addEventListener('click', startTranslation);
-              el.translateBtn.disabled = true;
-            }
-        
-            if (el.stopBtn) {
-              el.stopBtn.addEventListener('click', () => {
-                if (!state.isTranslating) return;
-                state.isPaused = true;
-                updateControlButtons();
-              });
-            }
-        
-            if (el.resumeBtn) {
-              el.resumeBtn.addEventListener('click', () => {
-                if (!state.isTranslating) return;
-                state.isPaused = false;
-                updateControlButtons();
-              });
-            }
-        
-            if (el.downloadFinal) {
-              el.downloadFinal.addEventListener('click', handleDownloadFinal);
-              el.downloadFinal.disabled = true;
-            }
-        
-            if (el.downloadProgress) {
-              el.downloadProgress.addEventListener('click', handleDownloadProgress);
-            }
-        
-            if (el.previewBtn) {
-              el.previewBtn.addEventListener('click', handlePreview);
-              el.previewBtn.disabled = true;
-            }
-        
-            setupModelSelectBehavior();
-            setupModalBehavior();
-            updateControlButtons();
-            updateProgress();
-          }
-        
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
+        if (ch === '"' || ch === "'") {
+          quoteChar = ch;
+          openQuoteStart = i;
+        } else if (PREFIX_CHARS.has(ch) && !isWordChar(prev)) {
+          let j = i;
+          while (j < source.length && PREFIX_CHARS.has(source[j]) && (j - i) < 3) j++;
+          if (j < source.length && (source[j] === '"' || source[j] === "'")) {
+            prefix = source.slice(i, j);
+            quoteChar = source[j];
+            openQuoteStart = j;
           } else {
-            init();
+            i++;
+            continue;
           }
-        })();
+        } else {
+          i++;
+          continue;
+        }
 
-        document.addEventListener("contextmenu", e => e.preventDefault());
+        const triple = quoteChar + quoteChar + quoteChar;
+        const isTriple = source.startsWith(triple, openQuoteStart);
+        const delim = isTriple ? triple : quoteChar;
+        const contentStart = openQuoteStart + delim.length;
 
-        document.addEventListener("keydown", e => {
-          if (
-            e.key === "F12" ||
-            (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
-            (e.ctrlKey && e.key === "U")
-          ) {
-            e.preventDefault();
+        let contentEnd = -1;
+        let endOffset = -1;
+
+        if (isTriple) {
+          const close = source.indexOf(delim, contentStart);
+          if (close === -1) {
+            i = contentStart;
+            continue;
           }
+          contentEnd = close;
+          endOffset = close + delim.length;
+        } else {
+          let j = contentStart;
+          let esc = false;
+          while (j < source.length) {
+            const c = source[j];
+            if (c === '\n') break;
+            if (!esc && c === quoteChar) {
+              contentEnd = j;
+              endOffset = j + 1;
+              break;
+            }
+            if (c === '\\' && !esc) esc = true;
+            else esc = false;
+            j++;
+          }
+          if (endOffset === -1) {
+            i = contentStart;
+            continue;
+          }
+        }
+
+        out.push({
+          openStart,
+          openQuoteStart,
+          contentStart,
+          contentEnd,
+          endOffset,
+          prefix,
+          quoteChar,
+          isTriple,
+          startLine: offsetToLine(lineStarts, openStart),
+          endLine: offsetToLine(lineStarts, Math.max(openStart, endOffset - 1)),
+          value: source.slice(contentStart, contentEnd),
         });
 
-        console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
+        i = endOffset;
+      }
+
+      return out;
+    }
+
+    function stripMarkupForCheck(text) {
+      return String(text || '')
+        .replace(/\{[^{}]*\}/gs, '')
+        .replace(/\[[^\[\]]*\]/gs, '')
+        .trim();
+    }
+
+    function isMeaningfulText(text) {
+      const t = stripMarkupForCheck(text);
+      if (!t) return false;
+      if (HAS_UNICODE_PROPS) return /[\p{L}\p{N}]/u.test(t);
+      return /[A-Za-z0-9]/.test(t);
+    }
+
+    function isLikelyAssetString(text) {
+      const t = String(text || '').trim();
+      if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|woff|woff2|eot|svg)(\?.*)?$/i.test(t)) return true;
+      if ((t.includes('/') || t.includes('\\')) && /\.\w{2,4}(\?.*)?$/.test(t)) return true;
+      return false;
+    }
+
+    function isUrlString(text) {
+      const t = String(text || '').trim().toLowerCase();
+      return t.startsWith('http://') || t.startsWith('https://') || t.startsWith('mailto:') || t.startsWith('www.');
+    }
+
+    function getHeadToken(textBeforeFirstLiteral) {
+      const m = String(textBeforeFirstLiteral || '').trimStart().match(/^([A-Za-z_][\w\.]*)/);
+      return (m ? m[1].toLowerCase() : '');
+    }
+
+    function prevIdentifierAt(line, quotePosInLine) {
+      let j = quotePosInLine - 1;
+      while (j >= 0 && /\s/.test(line[j])) j--;
+      if (j >= 0 && line[j] === '(') {
+        j--;
+        while (j >= 0 && /\s/.test(line[j])) j--;
+      }
+      let k = j;
+      while (k >= 0 && /[A-Za-z0-9_\.]/.test(line[k])) k--;
+      return line.slice(k + 1, j + 1);
+    }
+
+    function isWrappedByUnderscore(source, openQuoteStart) {
+      let j = openQuoteStart - 1;
+      while (j >= 0 && /\s/.test(source[j])) j--;
+      if (j >= 0 && source[j] === '(') {
+        j--;
+        while (j >= 0 && /\s/.test(source[j])) j--;
+        if (j >= 0 && source[j] === '_') {
+          const k = j - 1;
+          if (k < 0 || !/[A-Za-z0-9_]/.test(source[k])) return true;
+        }
+      }
+      return false;
+    }
+
+    function isSayStatement(prefixTrimmed, fullLineTrimmed) {
+      if (!prefixTrimmed) return true;
+
+      const head = getHeadToken(prefixTrimmed);
+      if (!head) return false;
+
+      if (ASSET_HEADS.has(head)) return false;
+
+      if (SCRIPT_SKIP_HEADS.has(head)) {
+        if (head === 'show' && /^\s*show\s+text\b/i.test(fullLineTrimmed)) return true;
+        return false;
+      }
+
+      if (/\b(action|Jump|Call|ShowMenu|OpenURL|SetVariable|FileAction)\b/.test(prefixTrimmed)) return false;
+
+      if (/(^|[^=!<>])=([^=]|$)/.test(prefixTrimmed)) return false;
+
+      if (prefixTrimmed.includes(':')) return false;
+
+      return true;
+    }
+
+    function menuOptionColonPos(line, afterIndex) {
+      const cut = line.includes('#') ? line.slice(0, line.indexOf('#')) : line;
+      const pos = cut.indexOf(':', afterIndex);
+      if (pos === -1) return null;
+      if (cut.slice(pos + 1).trim() !== '') return null;
+      return pos;
+    }
+
+    function escapeForRenpyString(text, quoteChar, isTriple) {
+      let t = String(text ?? '');
+      if (!isTriple) {
+        t = t.replace(/\r?\n/g, '\\n');
+        if (quoteChar === '"') t = t.replace(/"/g, '\\"');
+        else t = t.replace(/'/g, "\\'");
+        return t;
+      }
+      if (quoteChar === '"') return t.replace(/"""/g, '\\"""');
+      return t.replace(/'''/g, "\\'''");
+    }
+
+    function extractDialogs(source) {
+      const lines = source.split(/\r?\n/);
+      const lineStarts = buildLineStarts(source);
+      const masks = computeBlockMasks(lines);
+      const literals = scanStringLiterals(source, lineStarts);
+
+      const byLine = new Map();
+      for (const lit of literals) {
+        if (!byLine.has(lit.startLine)) byLine.set(lit.startLine, []);
+        byLine.get(lit.startLine).push(lit);
+      }
+
+      const dialogs = [];
+      for (const [lineIdx, list] of byLine.entries()) {
+        if (masks.inPython[lineIdx] || masks.inStyle[lineIdx] || masks.inTransform[lineIdx]) continue;
+
+        list.sort((a, b) => a.openStart - b.openStart);
+
+        const line = lines[lineIdx] ?? '';
+        const lineTrimmed = line.trim();
+        const lineStartOffset = lineStarts[lineIdx] ?? 0;
+        const first = list[0];
+
+        const prefixTrimmed = source.slice(lineStartOffset, first.openStart).trim();
+        const zone = masks.inScreen[lineIdx] ? 'screen' : 'script';
+
+        let isMenuOption = false;
+        let colonPos = null;
+        const firstNonSpacePos = lineStartOffset + (line.length - line.trimStart().length);
+        if (masks.inMenu[lineIdx] && first.openStart === firstNonSpacePos && !first.isTriple) {
+          const after = first.endOffset - lineStartOffset;
+          const cp = menuOptionColonPos(line, after);
+          if (cp != null) {
+            isMenuOption = true;
+            colonPos = cp;
+          }
+        }
+
+        const isSay = zone === 'script' && isSayStatement(prefixTrimmed, lineTrimmed);
+        const head = getHeadToken(prefixTrimmed);
+        const screenAllowed = zone === 'screen' && SCREEN_ALLOWED_HEADS.has(head);
+
+        for (const lit of list) {
+          const raw = lit.value;
+
+          if (!isMeaningfulText(raw)) continue;
+          if (isLikelyAssetString(raw) || isUrlString(raw)) continue;
+
+          const quotePosInLine = lit.openQuoteStart - lineStartOffset;
+          const prevId = prevIdentifierAt(line, quotePosInLine).toLowerCase();
+          if (NON_TRANSLATABLE_ATTRS.has(prevId) || NON_TRANSLATABLE_CALLS.has(prevId)) continue;
+
+          const inWrap = isWrappedByUnderscore(source, lit.openQuoteStart);
+
+          let allowed = false;
+          if (zone === 'screen') {
+            allowed = inWrap || (screenAllowed && lit === first);
+          } else {
+            if (isMenuOption && colonPos != null) {
+              allowed = (lit.openStart - lineStartOffset) < colonPos;
+            } else {
+              allowed = isSay || inWrap;
+            }
+          }
+
+          if (!allowed) continue;
+
+          const maskedInfo = maskTagsInText(raw);
+
+          dialogs.push({
+            lineIndex: lineIdx,
+            contentStart: lit.contentStart,
+            contentEnd: lit.contentEnd,
+            quoteChar: lit.quoteChar,
+            isTriple: lit.isTriple,
+            quote: raw,
+            maskedQuote: maskedInfo.masked,
+            placeholderMap: maskedInfo.map,
+            cacheKey: maskedInfo.masked,
+            translated: null,
+          });
+        }
+      }
+
+      return dialogs;
+    }
+
+    function applyTranslations(source, dialogs, eol) {
+      const reps = [];
+      for (const d of dialogs) {
+        if (d.translated == null) continue;
+        reps.push({
+          start: d.contentStart,
+          end: d.contentEnd,
+          value: escapeForRenpyString(d.translated, d.quoteChar, d.isTriple),
+        });
+      }
+      reps.sort((a, b) => b.start - a.start);
+
+      let out = source;
+      for (const r of reps) {
+        out = out.slice(0, r.start) + r.value + out.slice(r.end);
+      }
+
+      const nl = eol || (out.includes('\r\n') ? '\r\n' : '\n');
+      return out + nl + nl + TRANSLATOR_CREDIT + nl;
+    }
+
+    return { extractDialogs, applyTranslations };
+  })();
+
+  function safeParseJsonArray(content) {
+    const text = String(content || '').trim();
+    try {
+      const v = JSON.parse(text);
+      return Array.isArray(v) ? v : null;
+    } catch {}
+    const start = text.indexOf('[');
+    const end = text.lastIndexOf(']');
+    if (start !== -1 && end !== -1 && end > start) {
+      const slice = text.slice(start, end + 1);
+      try {
+        const v = JSON.parse(slice);
+        return Array.isArray(v) ? v : null;
+      } catch {}
+    }
+    return null;
+  }
+
+  async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
+    const src = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+    const languageName = languageLabel(targetLang);
+
+    const payload = JSON.stringify(src);
+
+    const prompt =
+      `Translate Ren'Py dialogue strings to ${languageName} (language code: ${targetLang}).\n` +
+      `Return ONLY a valid JSON array of strings, same length, same order.\n` +
+      `Rules:\n` +
+      `- Placeholders like __RENPLH_0__ must remain EXACTLY.\n` +
+      `- Preserve Ren'Py tags/variables/syntax.\n` +
+      `- Do not merge/split/reorder.\n` +
+      `Input JSON array:\n` +
+      payload;
+
+    const bodyForProxy = {
+      apiKey,
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: "You are a professional game localization translator specializing in Ren'Py visual novels." },
+        { role: 'user', content: prompt }
+      ],
+      stream: false,
+    };
+
+    let response;
+    try {
+      response = await fetch('/api/deepseek-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyForProxy),
+      });
+    } catch (err) {
+      throw new Error('*️⃣ Network error when calling DeepSeek proxy: ' + (err?.message || err));
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`*️⃣ DeepSeek/proxy error ${response.status}: ${text}`);
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) throw new Error('*️⃣ DeepSeek response did not contain any content.');
+
+    const arr = safeParseJsonArray(content);
+    if (!arr) throw new Error('*️⃣ DeepSeek output is not a valid JSON array.');
+
+    const out = arr.map(x => (typeof x === 'string' ? x : String(x ?? '')));
+
+    if (out.length !== src.length) {
+      log(`*️⃣ Warning: expected ${src.length} items from DeepSeek but got ${out.length}.`, 'warn');
+    }
+
+    return out;
+  }
+
+  async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
+    const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+    const targetCode = getDeepLLangCode(targetLang);
+
+    const bodyForProxy = {
+      apiKey,
+      text: lines,
+      target_lang: targetCode,
+      preserve_formatting: 1,
+      split_sentences: 0,
+      ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {}),
+    };
+
+    let response;
+    try {
+      response = await fetch('/api/deepl-trans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyForProxy),
+      });
+    } catch (err) {
+      throw new Error('*️⃣ Network error when calling DeepL proxy: ' + (err?.message || err));
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`*️⃣ DeepL/proxy error ${response.status}: ${text}`);
+    }
+
+    const data = await response.json();
+    const translations = Array.isArray(data?.translations) ? data.translations : [];
+    const out = translations.map(t => (t && typeof t.text === 'string') ? t.text : '');
+
+    if (out.length !== lines.length) {
+      log(`*️⃣ Warning: expected ${lines.length} items from DeepL but got ${out.length}.`, 'warn');
+    }
+
+    return out;
+  }
+
+  const LINGVA_LANG_MAP = {
+    'Bahasa Indonesia': 'id',
+    Indonesian: 'id',
+    Vietnamese: 'vi',
+    'vi-VN': 'vi',
+    English: 'en',
+    'en-US': 'en',
+    'en-GB': 'en',
+    Malay: 'ms',
+    Filipino: 'tl',
+    Filipina: 'tl',
+    Tagalog: 'tl',
+    'Chinese (Simplified)': 'zh-CN',
+    'Simplified Chinese': 'zh-CN',
+    Chinese: 'zh-CN',
+    Hindi: 'hi',
+    Spanish: 'es',
+    French: 'fr',
+    Arabic: 'ar',
+    Portuguese: 'pt',
+    Russian: 'ru',
+    German: 'de',
+    Japanese: 'ja',
+    Korean: 'ko',
+  };
+
+  function getLingvaLangCode(lang) {
+    if (!lang) return 'en';
+    const trimmed = String(lang).trim();
+    if (/^[a-z]{2}(-[A-Za-z0-9]+)?$/i.test(trimmed)) return trimmed.toLowerCase();
+    const key = Object.keys(LINGVA_LANG_MAP).find(k => k.toLowerCase() === trimmed.toLowerCase());
+    return key ? LINGVA_LANG_MAP[key] : trimmed;
+  }
+
+  const LINGVA_BASE_URLS = [
+    'https://lingva.lunar.icu',
+    'https://lingva.dialectapp.org',
+    'https://lingva.ml',
+    'https://lingva.vercel.app',
+    'https://translate.plausibility.cloud',
+    'https://lingva.garudalinux.org',
+  ];
+
+  async function lingvaFetch(path, init) {
+    let lastError;
+    for (const base of LINGVA_BASE_URLS) {
+      const url = base.replace(/\/+$/, '') + path;
+      try {
+        const res = await fetch(url, init);
+        if (!res.ok) {
+          lastError = new Error(`*️⃣ HTTP ${res.status} from ${base}`);
+          continue;
+        }
+        return res;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError || new Error('*️⃣ All Lingva endpoints failed');
+  }
+
+  async function pMap(items, concurrency, mapper) {
+    const results = new Array(items.length);
+    let idx = 0;
+    const workers = new Array(Math.max(1, concurrency)).fill(0).map(async () => {
+      while (idx < items.length) {
+        const cur = idx++;
+        results[cur] = await mapper(items[cur], cur);
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  }
+
+  async function translateBatchLingva(batchDialogs, targetLang) {
+    const langCode = getLingvaLangCode(targetLang);
+
+    const out = await pMap(batchDialogs, 4, async (dialog) => {
+      const text = dialog.maskedQuote || dialog.quote || '';
+      if (!text.trim()) return text;
+
+      const path =
+        '/api/v1/auto/' +
+        encodeURIComponent(langCode) +
+        '/' +
+        encodeURIComponent(text);
+
+      const response = await lingvaFetch(path);
+      const data = await response.json().catch(() => ({}));
+      const translated = data.translation || data.translatedText || data.result || '';
+
+      if (!translated) throw new Error('*️⃣ Lingva response did not contain a translation string.');
+      await delay(60);
+      return translated;
+    });
+
+    return out;
+  }
+
+  async function waitWhilePaused() {
+    while (state.isPaused && state.isTranslating) await delay(100);
+  }
+
+  async function runTranslationLoop() {
+    const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
+    const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
+    const targetLang = el.langTarget ? el.langTarget.value : 'id';
+    const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
+
+    updateControlButtons();
+
+    while (state.currentBatchIndex < state.batches.length && state.isTranslating) {
+      if (state.isPaused) {
+        log('⏸ Translation paused.', 'info');
+        await waitWhilePaused();
+        if (!state.isTranslating) {
+          log('ℹ️ Translation cancelled while paused.', 'warn');
+          return;
+        }
+        log('▶️ Resuming translation...', 'info');
+      }
+
+      const batchNum = state.currentBatchIndex + 1;
+      const totalBatches = state.batches.length;
+      const batchDialogs = state.batches[state.currentBatchIndex];
+
+      log(`🔄 Translating batch ${batchNum}/${totalBatches} (${batchDialogs.length} lines)...`, 'info');
+
+      const toTranslate = [];
+      const indexMap = [];
+
+      for (let i = 0; i < batchDialogs.length; i++) {
+        const d = batchDialogs[i];
+        const cached = state.translationCache.get(d.cacheKey);
+        if (typeof cached === 'string') {
+          const fixed = unmaskTagsInText(cached, d.placeholderMap) || cached;
+          validateTagConsistency(d.quote, fixed, d.lineIndex + 1);
+          d.translated = fixed;
+          log(`✅ [${d.lineIndex + 1}] ${fixed}`, 'success');
+        } else {
+          toTranslate.push(d);
+          indexMap.push(i);
+        }
+      }
+
+      if (toTranslate.length) {
+        let translatedLines;
+        try {
+          if (model === 'deepseek') {
+            translatedLines = await translateBatchDeepSeek(toTranslate, targetLang, apiKey);
+          } else if (model === 'deepl') {
+            translatedLines = await translateBatchDeepL(toTranslate, targetLang, deeplApiKey);
+          } else {
+            translatedLines = await translateBatchLingva(toTranslate, targetLang);
+          }
+        } catch (err) {
+          log(`*️⃣ Error while translating batch ${batchNum}: ${err.message || err}`, 'error');
+          throw err;
+        }
+
+        for (let j = 0; j < toTranslate.length; j++) {
+          const dialog = toTranslate[j];
+          const translatedMasked = translatedLines[j];
+
+          if (!translatedMasked) {
+            log(`*️⃣ [${dialog.lineIndex + 1}] Cannot translate`, 'warn');
+            continue;
+          }
+
+          state.translationCache.set(dialog.cacheKey, translatedMasked);
+
+          const fixed = unmaskTagsInText(translatedMasked, dialog.placeholderMap) || translatedMasked;
+          validateTagConsistency(dialog.quote, fixed, dialog.lineIndex + 1);
+          dialog.translated = fixed;
+
+          log(`✅ [${dialog.lineIndex + 1}] ${fixed}`, 'success');
+        }
+      }
+
+      state.currentBatchIndex++;
+      updateProgress();
+    }
+
+    if (state.currentBatchIndex >= state.batches.length) {
+      log('✅ Translation complete. You can now download the result.', 'success');
+      if (el.downloadFinal) el.downloadFinal.disabled = false;
+      if (el.previewBtn) el.previewBtn.disabled = false;
+    }
+
+    resetTranslateUIAfterFinish();
+  }
+
+  async function startTranslation() {
+    if (state.isTranslating) {
+      log('ℹ️ A translation is already in progress.', 'warn');
+      return;
+    }
+
+    if (!state.fileName || !state.originalText) {
+      log('*️⃣ No .rpy file loaded. Please upload a file first.', 'error');
+      return;
+    }
+
+    const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
+    const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
+    const targetLang = el.langTarget ? el.langTarget.value : 'id';
+
+    if (model === 'deepseek' && !apiKey) {
+      log('*️⃣ Please provide your DeepSeek API key.', 'error');
+      return;
+    }
+
+    const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
+    if (model === 'deepl' && !deeplApiKey) {
+      log('*️⃣ Please provide your DeepL API key.', 'error');
+      return;
+    }
+
+    log(`ℹ️ Preparing translation using model "${model}" to ${languageLabel(targetLang)}...`, 'info');
+
+    state.translationCache.clear();
+    state.dialogs = RENPY.extractDialogs(state.originalText);
+
+    if (!state.dialogs.length) {
+      log('*️⃣ No translatable dialog/text strings were detected in this .rpy file.', 'error');
+      return;
+    }
+
+    log(`ℹ️ Detected ${state.dialogs.length} translatable strings. Creating translation batches...`, 'info');
+
+    state.batches = createBatches(state.dialogs, { maxLines: 48, maxTokens: 1800 });
+
+    log(`ℹ️ Created ${state.batches.length} batches for translation.`, 'info');
+
+    state.currentBatchIndex = 0;
+    state.isTranslating = true;
+    state.isPaused = false;
+
+    if (el.downloadFinal) el.downloadFinal.disabled = false;
+
+    if (el.progressBar) {
+      el.progressBar.value = 0;
+      el.progressBar.max = state.dialogs.length;
+    }
+    updateProgress();
+
+    setTranslateButtonBusy(true, '🔁 Translating...');
+    if (el.controlBtns) el.controlBtns.style.display = 'flex';
+    updateControlButtons();
+
+    try {
+      await runTranslationLoop();
+    } catch (err) {
+      log('*️⃣ Translation stopped due to an error.', 'error');
+      resetTranslateUIAfterFinish();
+    }
+  }
+
+  function handleDownloadFinal() {
+    if (!state.originalText || !state.dialogs.length) {
+      log('*️⃣ Nothing to download.', 'error');
+      return;
+    }
+    const eol = state.originalText.includes('\r\n') ? '\r\n' : '\n';
+    const outputText = RENPY.applyTranslations(state.originalText, state.dialogs, eol);
+
+    const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+
+    const base = (state.fileName || 'translated').replace(/\.rpy$/i, '');
+    a.download = base + '_translated.rpy';
+    a.click();
+
+    log('⬇️ Downloaded translated file.', 'success');
+  }
+
+  function handleDownloadProgress() {
+    const logText = state.logEntries.join('\n');
+    const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.download = 'translation_log.txt';
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    log('⬇️ Downloaded translation log.', 'success');
+  }
+
+  function handlePreview() {
+    if (!state.originalLines.length || !state.dialogs.length) {
+      alert('*️⃣ There is no data to preview yet.');
+      return;
+    }
+
+    try {
+      localStorage.setItem('originalLines', JSON.stringify(state.originalLines));
+      localStorage.setItem('detectedDialogs', JSON.stringify(state.dialogs.map(d => d.quote || '')));
+      localStorage.setItem('translatedDialogs', JSON.stringify(state.dialogs.map(d => d.translated || '')));
+      if (el.langTarget) localStorage.setItem('targetLang', el.langTarget.value);
+      if (el.modelSelect) localStorage.setItem('translationModel', el.modelSelect.value || 'deepseek');
+    } catch (err) {
+      alert('*️⃣ Unable to save preview data (storage quota/incognito).');
+      return;
+    }
+
+    window.location.href = 'preview.html';
+  }
+
+  function handleFileChange(evt) {
+    const file = evt.target.files && evt.target.files[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.rpy')) {
+      log('*️⃣ Please upload a .rpy file.', 'error');
+      evt.target.value = '';
+      if (el.translateBtn) el.translateBtn.disabled = true;
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.fileName = file.name;
+      state.originalText = String(e.target.result || '');
+      state.originalLines = state.originalText.split(/\r?\n/);
+      state.dialogs = [];
+      state.batches = [];
+      state.isTranslating = false;
+      state.isPaused = false;
+      state.currentBatchIndex = 0;
+      state.logEntries = [];
+      state.translationCache.clear();
+
+      log(`ℹ️ Loaded file "${file.name}" (${state.originalLines.length} lines).`, 'info');
+
+      if (el.translateBtn) el.translateBtn.disabled = false;
+      if (el.downloadFinal) el.downloadFinal.disabled = true;
+      if (el.previewBtn) el.previewBtn.disabled = true;
+
+      if (el.progressBar) {
+        el.progressBar.value = 0;
+        el.progressBar.max = 1;
+      }
+      if (el.progressText) {
+        el.progressText.textContent = '0 / 0 lines translated';
+      }
+    };
+    reader.onerror = () => log('*️⃣ Failed to read file.', 'error');
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function showLibreModal() {
+    if (!el.libreWarningModal) return;
+    el.libreWarningModal.style.display = 'flex';
+  }
+
+  function hideLibreModal() {
+    if (!el.libreWarningModal) return;
+    el.libreWarningModal.style.display = 'none';
+  }
+
+  function setupModelSelectBehavior() {
+    if (!el.modelSelect) return;
+
+    const apply = () => {
+      const value = el.modelSelect.value;
+
+      if (value === 'deepseek') {
+        if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'block';
+        if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
+      } else if (value === 'deepl') {
+        if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
+        if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'block';
+      } else {
+        if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
+        if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
+        showLibreModal();
+      }
+    };
+
+    el.modelSelect.addEventListener('change', apply);
+    apply();
+  }
+
+  function setupModalBehavior() {
+    if (el.libreWarningClose) el.libreWarningClose.addEventListener('click', hideLibreModal);
+    if (el.confirmLibre) el.confirmLibre.addEventListener('click', hideLibreModal);
+    if (el.libreWarningModal) {
+      el.libreWarningModal.addEventListener('click', e => {
+        if (e.target === el.libreWarningModal) hideLibreModal();
+      });
+    }
+  }
+
+  function init() {
+    if (el.fileInput) el.fileInput.addEventListener('change', handleFileChange);
+
+    if (el.translateBtn) {
+      el.translateBtn.addEventListener('click', startTranslation);
+      el.translateBtn.disabled = true;
+    }
+
+    if (el.stopBtn) {
+      el.stopBtn.addEventListener('click', () => {
+        if (!state.isTranslating) return;
+        state.isPaused = true;
+        updateControlButtons();
+      });
+    }
+
+    if (el.resumeBtn) {
+      el.resumeBtn.addEventListener('click', () => {
+        if (!state.isTranslating) return;
+        state.isPaused = false;
+        updateControlButtons();
+      });
+    }
+
+    if (el.downloadFinal) {
+      el.downloadFinal.addEventListener('click', handleDownloadFinal);
+      el.downloadFinal.disabled = true;
+    }
+
+    if (el.downloadProgress) el.downloadProgress.addEventListener('click', handleDownloadProgress);
+
+    if (el.previewBtn) {
+      el.previewBtn.addEventListener('click', handlePreview);
+      el.previewBtn.disabled = true;
+    }
+
+    setupModelSelectBehavior();
+    setupModalBehavior();
+    updateControlButtons();
+    updateProgress();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
