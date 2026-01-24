@@ -2,279 +2,184 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pro Ren'Py Translator | VN Translator</title>
   <link rel="stylesheet" href="./prenpy.css" />
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="title">Pro Ren'Py Translator</span>
-    </div>
-
-    <div class="actions">
-      <button id="btnImport" class="btn primary" type="button">Import .rpy / .zip / .json</button>
-      <button id="btnExportZip" class="btn good" type="button">Export ZIP</button>
-      <button id="btnSettings" class="btn" type="button">Settings</button>
-    </div>
-
-    <div class="search">
-      <input id="q" placeholder="Search / Find…" autocomplete="off" />
-      <select id="qField" aria-label="Find field">
-        <option value="all" selected>All</option>
-        <option value="original">Original</option>
-        <option value="machine">Machine</option>
-        <option value="manual">Manual</option>
-      </select>
-      <button id="btnFindPrev" class="btn" type="button">Prev</button>
-      <button id="btnFindNext" class="btn" type="button">Next</button>
-      <button id="btnReplace" class="btn" type="button">Replace</button>
-    </div>
-
-    <div class="jobbar">
-      <select id="jobScope">
-        <option value="row">Row</option>
-        <option value="file" selected>File</option>
-        <option value="all">All</option>
-      </select>
-      <button id="btnTranslate" class="btn warn" type="button">Translate</button>
-      <button id="btnStop" class="btn bad" type="button" disabled>Stop</button>
-      <button id="btnUndo" class="btn" type="button">Undo</button>
-      <button id="btnRedo" class="btn" type="button">Redo</button>
-      <div class="meter">
-        <div id="meterFill" class="meterFill"></div>
-      </div>
-      <div id="jobText" class="jobText">Ready.</div>
-    </div>
-  </header>
-
-  <div class="layout">
-    <aside class="left">
-      <div class="leftHeader">
-        <div class="projectWrap">
-          <div class="project" id="projectName">No project</div>
-          <div class="projectBadge" id="projectBadge"></div>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="brand-text">
+          <div class="brand-title">VN Translator</div>
+          <div class="brand-sub">Pro Ren'Py Translator</div>
         </div>
-        <button id="btnClear" class="btn" type="button">Reset</button>
       </div>
-      <div id="fileList" class="fileList" role="listbox" aria-label="Files"></div>
-    </aside>
+
+      <div class="topbar-actions">
+        <button class="btn" id="btnOpen">Open .rpy</button>
+        <button class="btn" id="btnOpenFolder">Open Folder</button>
+        <button class="btn" id="btnImportTranslated">Import Translated</button>
+        <div class="sep"></div>
+
+        <div class="field compact">
+          <label for="modeSelect">Extract</label>
+          <select id="modeSelect">
+            <option value="safe" selected>Safe</option>
+            <option value="balanced">Balanced</option>
+            <option value="aggressive">Aggressive</option>
+          </select>
+        </div>
+
+        <div class="field compact">
+          <label for="engineSelect">Engine</label>
+          <select id="engineSelect">
+            <option value="deepseek" selected>DeepSeek</option>
+            <option value="deepl">DeepL</option>
+            <option value="lingva">Lingva</option>
+          </select>
+        </div>
+
+        <div class="field compact">
+          <label for="targetLang">Target</label>
+          <select id="targetLang"></select>
+        </div>
+
+        <button class="btn ghost" id="btnSettings">Settings</button>
+        <button class="btn primary" id="btnTranslate">Translate</button>
+        <button class="btn" id="btnExport">Export</button>
+      </div>
+    </header>
 
     <main class="main">
-      <div class="gridHeader">
-        <div class="h idx">#</div>
-        <div class="h">Original</div>
-        <div class="h">Machine</div>
-        <div class="h">Manual</div>
-        <div class="h flag">✓</div>
-      </div>
-
-      <div id="grid" class="grid" tabindex="0">
-        <div id="gridSpacer" class="gridSpacer"></div>
-        <div id="gridWindow" class="gridWindow"></div>
-      </div>
-
-      <section class="editor">
-        <div class="editorHeader">
-          <div class="meta">
-            <span id="metaFile" class="chip">—</span>
-            <span id="metaLine" class="chip">—</span>
-            <span id="metaFlag" class="chip">todo</span>
-          </div>
-          <div class="editorActions">
-            <button id="btnMarkTodo" class="btn" type="button">Todo</button>
-            <button id="btnMarkReview" class="btn warn" type="button">Review</button>
-            <button id="btnMarkDone" class="btn good" type="button">Done</button>
-            <button id="btnCopyOriginal" class="btn" type="button">Copy Original</button>
-            <button id="btnCopyMachine" class="btn" type="button">Copy Machine</button>
-            <button id="btnPasteToManual" class="btn primary" type="button">Machine → Manual</button>
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="sidebar-title">Files</div>
+          <div class="sidebar-actions">
+            <button class="iconbtn" id="btnCloseFile" title="Close file" aria-label="Close file">×</button>
           </div>
         </div>
 
-        <div class="editorBody">
-          <div class="col">
-            <label>Original</label>
-            <textarea id="edOriginal" readonly></textarea>
+        <div class="filelist" id="fileList" role="listbox" aria-label="Project files"></div>
+
+        <div class="sidebar-foot">
+          <div class="stat">
+            <div class="stat-label">Total</div>
+            <div class="stat-value" id="statTotal">0</div>
           </div>
-          <div class="col">
-            <label>Machine</label>
-            <textarea id="edMachine" readonly></textarea>
+          <div class="stat">
+            <div class="stat-label">Translated</div>
+            <div class="stat-value" id="statDone">0</div>
           </div>
-          <div class="col">
-            <label>Manual</label>
-            <textarea id="edManual"></textarea>
+          <div class="stat">
+            <div class="stat-label">Progress</div>
+            <div class="stat-value" id="statPct">0%</div>
           </div>
+        </div>
+      </aside>
+
+      <section class="work">
+        <div class="work-toolbar">
+          <div class="field grow">
+            <input id="searchBox" type="search" placeholder="Search (original or translation)..." autocomplete="off" />
+          </div>
+
+          <div class="toggle">
+            <input type="checkbox" id="onlyUntranslated" />
+            <label for="onlyUntranslated">Untranslated</label>
+          </div>
+
+          <div class="toggle">
+            <input type="checkbox" id="onlyWarnings" />
+            <label for="onlyWarnings">Warnings</label>
+          </div>
+
+          <div class="toggle">
+            <input type="checkbox" id="caseSensitive" />
+            <label for="caseSensitive">Aa</label>
+          </div>
+
+          <div class="sep"></div>
+          <button class="btn" id="btnTranslateSelected">Translate Selected</button>
+          <button class="btn" id="btnCopyMt">MT → Manual</button>
+        </div>
+
+        <div class="split">
+          <div class="pane left">
+            <div class="table-head">
+              <div class="th idx">#</div>
+              <div class="th col">Original</div>
+              <div class="th col">Manual</div>
+              <div class="th tiny">!</div>
+            </div>
+            <div class="table-body" id="tableBody"></div>
+          </div>
+
+          <div class="pane right">
+            <div class="editor">
+              <div class="editor-head">
+                <div class="editor-title" id="editorTitle">No selection</div>
+                <div class="editor-actions">
+                  <button class="btn small" id="btnPrev">Prev</button>
+                  <button class="btn small" id="btnNext">Next</button>
+                </div>
+              </div>
+
+              <div class="editor-section">
+                <div class="labelrow">
+                  <div class="label">Original (read-only)</div>
+                  <button class="btn small ghost" id="btnInsertTags">Insert Tags</button>
+                </div>
+                <textarea id="editorOriginal" readonly></textarea>
+              </div>
+
+              <div class="editor-section">
+                <div class="labelrow">
+                  <div class="label">Machine Translation</div>
+                  <button class="btn small" id="btnUseMt">Use as Manual</button>
+                </div>
+                <textarea id="editorMt" readonly></textarea>
+              </div>
+
+              <div class="editor-section grow">
+                <div class="labelrow">
+                  <div class="label">Manual Translation (placeholders protected)</div>
+                  <div class="chip" id="placeholderHint">Keep ⟦RENPH{n}⟧ tokens intact</div>
+                </div>
+                <textarea id="editorManual" spellcheck="false"></textarea>
+              </div>
+
+              <div class="editor-foot">
+                <div class="hint" id="validationHint"></div>
+                <div class="editor-foot-actions">
+                  <button class="btn" id="btnSaveRow">Save</button>
+                  <button class="btn ghost" id="btnClearRow">Clear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="logs">
+          <div class="logs-head">
+            <div class="logs-title">Logs</div>
+            <div class="logs-actions">
+              <button class="btn small ghost" id="btnClearLogs">Clear</button>
+            </div>
+          </div>
+          <div class="logs-body" id="logBody" aria-live="polite"></div>
         </div>
       </section>
     </main>
   </div>
 
-  <input id="filePicker" type="file" multiple accept="*/*" hidden />
+  <input id="fileInput" type="file" accept=".rpy,.txt" multiple hidden />
+  <input id="fileInputTranslated" type="file" accept=".rpy,.txt" multiple hidden />
 
-  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modalCard">
-      <div class="modalHead">
-        <div class="modalTitle">Settings</div>
-        <button id="btnCloseModal" class="btn" type="button">Close</button>
-      </div>
+  <div id="modalRoot"></div>
+  <div id="toastRoot"></div>
 
-      <div class="modalBody">
-        <div class="field">
-          <label>Engine</label>
-          <select id="setEngine">
-            <option value="deepseek">🔥 DeepSeek API (Best)</option>
-            <option value="deepl">🔰 DeepL API</option>
-            <option value="lingva">🌐 Lingva (Free)</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Target language</label>
-          <select id="setLang"></select>
-        </div>
-
-        <div class="field">
-          <label>API key (only for DeepSeek / DeepL) — stored in session only</label>
-          <input id="setKey" type="password" autocomplete="off" placeholder="Paste key here…" />
-        </div>
-
-        <div class="field">
-          <label>Proxy base URL (optional)</label>
-          <input id="setProxy" type="text" autocomplete="off" placeholder="https://your-worker.example.com" />
-          <div class="hint">Useful for Cloudflare Pages / GitHub Pages: point to your API domain hosting /api/* endpoints.</div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label>Extraction mode</label>
-            <select id="setMode">
-              <option value="safe" selected>safe</option>
-              <option value="balanced">balanced</option>
-              <option value="aggressive">aggressive</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Batch size</label>
-            <input id="setBatch" type="number" min="1" max="80" value="24" />
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label>Concurrency</label>
-            <input id="setConc" type="number" min="1" max="6" value="2" />
-          </div>
-          <div class="field">
-            <label>Retry</label>
-            <input id="setRetry" type="number" min="0" max="8" value="4" />
-          </div>
-        </div>
-
-        <div class="hint">
-          Ren'Py interpolation like <span class="mono">[playername]</span> and tags like <span class="mono">{color=#fff}</span> are protected automatically.
-        </div>
-      </div>
-
-      <div class="modalFoot">
-        <button id="btnSaveSettings" class="btn good" type="button">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="replaceModal" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modalCard">
-      <div class="modalHead">
-        <div class="modalTitle">Replace</div>
-        <button id="btnCloseReplace" class="btn" type="button">Close</button>
-      </div>
-
-      <div class="modalBody">
-        <div class="field">
-          <label>Find</label>
-          <input id="repFind" type="text" autocomplete="off" />
-        </div>
-        <div class="field">
-          <label>Replace with</label>
-          <input id="repWith" type="text" autocomplete="off" />
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label>Scope</label>
-            <select id="repScope">
-              <option value="selected" selected>Selected row</option>
-              <option value="file">Current file</option>
-              <option value="all">All files</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Field</label>
-            <select id="repField">
-              <option value="manual" selected>Manual</option>
-              <option value="machine">Machine</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label><input id="repCase" type="checkbox" /> Case sensitive</label>
-          </div>
-          <div class="field">
-            <label><input id="repWhole" type="checkbox" /> Whole word</label>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label><input id="repRegex" type="checkbox" /> Regex</label>
-          </div>
-          <div class="field">
-            <label><input id="repIncludeDone" type="checkbox" /> Include done</label>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label>Mode</label>
-            <select id="repMode">
-              <option value="single" selected>Single</option>
-              <option value="multi">Multi rules</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Rules format (multi)</label>
-            <div class="hint"><span class="mono">find =&gt; replace</span> (one per line). Empty / # comment ignored.</div>
-          </div>
-        </div>
-
-        <div class="field" id="repRulesWrap" style="display:none">
-          <label>Rules</label>
-          <textarea id="repRules" style="height:180px"></textarea>
-        </div>
-
-        <div class="field">
-          <label>
-            <input id="repFillManual" type="checkbox" />
-            Fill Manual from Machine if empty (before replace)
-          </label>
-        </div>
-
-        <div class="hint">
-          Replace is Ren'Py-safe (it protects <span class="mono">{tags}</span> and <span class="mono">[vars]</span>).
-        </div>
-      </div>
-
-      <div class="modalFoot" style="gap:10px">
-        <button id="btnRepCount" class="btn" type="button">Count</button>
-        <button id="btnRepRun" class="btn good" type="button">Replace</button>
-      </div>
-    </div>
-  </div>
-
-  <script type="module" src="./prenpy.js"></script>
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>
