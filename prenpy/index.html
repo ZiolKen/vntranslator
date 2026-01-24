@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pro Ren'Py Translator | VN Translator</title>
+  <meta name="color-scheme" content="dark light" />
+  <link rel="stylesheet" href="./prenpy.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><img src="../assets/logo.jpeg"></img></div>
+      <div class="brand-text">
+        <div class="brand-title">VN Translator</div>
+        <div class="brand-subtitle">Pro Ren’Py Translator</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn" id="btnOpenFiles">Open Files</button>
+      <button class="btn" id="btnOpenFolder">Open Folder</button>
+      <button class="btn" id="btnExportFile" disabled>Export File</button>
+      <button class="btn" id="btnExportZip" disabled>Export ZIP</button>
+      <div class="sep"></div>
+      <button class="btn" id="btnFind">Find/Replace</button>
+      <button class="btn" id="btnTM">Translation Memory</button>
+      <div class="sep"></div>
+      <button class="btn btn-danger" id="btnClear">Clear</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="panel-title">Project</div>
+        <div class="kv">
+          <div class="k">Files</div><div class="v" id="statFiles">0</div>
+          <div class="k">Strings</div><div class="v" id="statStrings">0</div>
+          <div class="k">Translated</div><div class="v" id="statTranslated">0</div>
+        </div>
+        <div class="row gap">
+          <input class="input" id="fileFilter" placeholder="Filter files…" />
+          <button class="btn btn-ghost" id="btnReload">Reload</button>
+        </div>
+      </div>
+
+      <div class="panel files">
+        <div class="panel-title">
+          <span>Files</span>
+          <span class="badge" id="fileBadge">0</span>
+        </div>
+        <div class="file-list" id="fileList" role="listbox" aria-label="Files"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Translate</div>
+
+        <div class="row gap">
+          <label class="label">Engine</label>
+          <select class="select" id="engineSelect">
+            <option value="deepseek">DeepSeek</option>
+            <option value="deepl">DeepL</option>
+            <option value="lingva">Lingva</option>
+          </select>
+        </div>
+
+        <div class="row gap">
+          <label class="label">Target</label>
+          <select class="select" id="targetLangSelect">
+            <option value="English">English</option>
+            <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="Arabic">Arabic</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Russian">Russian</option>
+            <option value="German">German</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Bahasa Indonesia">Indonesian</option>
+            <option value="Malay">Malay</option>
+            <option value="Vietnamese">Vietnamese</option>
+            <option value="Filipino">Filipino</option>
+            <option value="Korean">Korean</option>
+          </select>
+        </div>
+
+        <div class="row gap">
+          <label class="label">Extract mode</label>
+          <select class="select" id="extractMode">
+            <option value="safe">Safe</option>
+            <option value="balanced">Balanced</option>
+            <option value="aggressive">Aggressive</option>
+          </select>
+        </div>
+
+        <div class="row gap">
+          <label class="label">Batch</label>
+          <input class="input" id="batchSize" type="number" min="1" max="80" value="20" />
+        </div>
+
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="useTMFirst" checked />
+            <span>Fill missing from TM before MT</span>
+          </label>
+        </div>
+
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="autoSave" checked />
+            <span>Auto-save</span>
+          </label>
+        </div>
+
+        <div class="row gap">
+          <button class="btn btn-primary" id="btnTranslateMissing" disabled>Translate Untranslated</button>
+          <button class="btn" id="btnTranslateSelected" disabled>Translate Selected</button>
+        </div>
+
+        <div class="row gap">
+          <label class="label">API key (optional)</label>
+          <input class="input" id="apiKey" placeholder="DeepSeek / DeepL key (kept local)" />
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">View</div>
+        <div class="row gap">
+          <label class="label">Filter</label>
+          <select class="select" id="rowFilter">
+            <option value="all">All</option>
+            <option value="untranslated">Untranslated</option>
+            <option value="translated">Translated</option>
+          </select>
+        </div>
+        <div class="row gap">
+          <input class="input" id="tableSearch" placeholder="Search in source/translation…" />
+        </div>
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="showWarnings" checked />
+            <span>Show placeholder warnings</span>
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="table-wrap">
+        <table class="grid" id="grid">
+          <thead>
+            <tr>
+              <th class="col-sel"><input type="checkbox" id="selAll" /></th>
+              <th class="col-no">#</th>
+              <th class="col-src">Source</th>
+              <th class="col-tr">Translation</th>
+              <th class="col-meta">Meta</th>
+            </tr>
+          </thead>
+          <tbody id="gridBody"></tbody>
+        </table>
+      </div>
+
+      <div class="statusbar">
+        <div class="status-left" id="statusLeft">No project loaded.</div>
+        <div class="status-right" id="statusRight"></div>
+      </div>
+
+      <div class="log" id="log" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <input id="fileInput" type="file" accept=".rpy" multiple hidden />
+  <input id="folderInput" type="file" accept=".rpy" webkitdirectory directory multiple hidden />
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+
+  <div class="modal" id="findModal" hidden role="dialog" aria-modal="true" aria-labelledby="findTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="findTitle">Find & Replace</div>
+      <button class="icon-btn" data-close="findModal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div>
+          <div class="field">
+            <div class="field-label">Find</div>
+            <input class="input" id="findQuery" />
+          </div>
+          <div class="field">
+            <div class="field-label">Replace</div>
+            <input class="input" id="replaceQuery" />
+          </div>
+          <div class="row gap">
+            <label class="check"><input type="checkbox" id="findCase" /> <span>Case sensitive</span></label>
+            <label class="check"><input type="checkbox" id="findRegex" /> <span>Regex</span></label>
+          </div>
+          <div class="row gap">
+            <label class="label">In</label>
+            <select class="select" id="findScope">
+              <option value="translation">Translation</option>
+              <option value="source">Source</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div class="row gap">
+            <label class="label">Rows</label>
+            <select class="select" id="findRows">
+              <option value="filtered">Filtered rows</option>
+              <option value="selected">Selected rows</option>
+              <option value="all">All rows</option>
+            </select>
+          </div>
+        </div>
+        <div class="find-right">
+          <div class="find-stats" id="findStats">0 matches.</div>
+          <div class="row gap">
+            <button class="btn" id="btnFindPrev">Prev</button>
+            <button class="btn" id="btnFindNext">Next</button>
+            <button class="btn" id="btnReplaceOne">Replace</button>
+            <button class="btn btn-primary" id="btnReplaceAll">Replace All</button>
+          </div>
+          <div class="hint">
+            Tip: Click a row to focus. Find/Replace works on current file.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="tmModal" hidden role="dialog" aria-modal="true" aria-labelledby="tmTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="tmTitle">Translation Memory</div>
+      <button class="icon-btn" data-close="tmModal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row gap">
+        <input class="input" id="tmSearch" placeholder="Search TM…" />
+        <button class="btn" id="btnTmExport">Export</button>
+        <button class="btn" id="btnTmImport">Import</button>
+        <button class="btn btn-danger" id="btnTmClear">Clear</button>
+      </div>
+      <div class="row gap">
+        <button class="btn btn-primary" id="btnTmFillMissing" disabled>Fill missing in current file</button>
+      </div>
+      <div class="tm-list" id="tmList"></div>
+      <input id="tmImportInput" type="file" accept=".json" hidden />
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
