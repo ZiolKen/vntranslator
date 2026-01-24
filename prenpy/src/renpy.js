@@ -1,4 +1,4 @@
-export const CREDIT_LINE = "# Translated by VN Translator";
+export const CREDIT_LINE = "# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/";
 
 const RENPH_RE = /⟦\s*RENPH\s*(?:\{\s*(\d+)\s*\}|(\d+))\s*⟧/g;
 export const RENPH_TEST_RE = /⟦\s*RENPH\s*(?:\{\s*\d+\s*\}|\d+)\s*⟧/;
