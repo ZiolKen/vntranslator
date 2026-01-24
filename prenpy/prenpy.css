@@ -193,8 +193,8 @@ body{
 .col-sel{width:38px}
 .col-no{width:60px; color:var(--muted); font-family:var(--mono)}
 .col-meta{width:150px; color:var(--muted); font-family:var(--mono); font-size:11px}
-.col-src{width:44%}
-.col-tr{width:44%}
+.col-src{width:47%}
+.col-tr{width:47%}
 .cell-src{font-family:var(--mono); color:#dce6f3; overflow-wrap:anywhere; word-break:break-word}
 .srcText{
   white-space:pre-wrap;
@@ -238,6 +238,7 @@ body{
   padding:10px 12px;
   color: #b7c4d4;
   max-height: 160px;
+  min-height: 80px;
   overflow:auto;
   border-top:1px solid rgba(31,42,57,.7);
   background: rgba(9,13,18,.55);
