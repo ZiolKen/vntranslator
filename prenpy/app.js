@@ -593,7 +593,7 @@ ui.btnExportZip.addEventListener('click', () => {
     const restored = restoreLineEndings(out, f.eol);
     files.push({ name: String(f.path).replaceAll('\\\\','/'), data: new TextEncoder().encode(restored) });
   }
-  downloadZip('prenpy-export.zip', files);
+  downloadZip('vntl-export.zip', files);
 });
 
 ui.btnClear.addEventListener('click', async () => {
