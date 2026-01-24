@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pro Ren'Py Translator | VN Translator</title>
+  <meta name="color-scheme" content="dark" />
+  <title>Pro Ren'Py Translator</title>
   <link rel="stylesheet" href="./prenpy.css" />
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
@@ -14,7 +15,7 @@
     </div>
 
     <div class="actions">
-      <button id="btnImport" class="btn primary" type="button">Import .rpy</button>
+      <button id="btnImport" class="btn primary" type="button">Import .rpy / .zip / .json</button>
       <button id="btnExportZip" class="btn good" type="button">Export ZIP</button>
       <button id="btnSettings" class="btn" type="button">Settings</button>
     </div>
@@ -30,10 +31,6 @@
       <button id="btnFindPrev" class="btn" type="button">Prev</button>
       <button id="btnFindNext" class="btn" type="button">Next</button>
       <button id="btnReplace" class="btn" type="button">Replace</button>
-      <div class="field" id="repRulesWrap" style="display:none">
-        <label>Rules</label>
-        <textarea id="repRules" style="height:180px"></textarea>
-      </div>
     </div>
 
     <div class="jobbar">
@@ -56,7 +53,10 @@
   <div class="layout">
     <aside class="left">
       <div class="leftHeader">
-        <div class="project" id="projectName">No project</div>
+        <div class="projectWrap">
+          <div class="project" id="projectName">No project</div>
+          <div class="projectBadge" id="projectBadge"></div>
+        </div>
         <button id="btnClear" class="btn" type="button">Reset</button>
       </div>
       <div id="fileList" class="fileList" role="listbox" aria-label="Files"></div>
@@ -124,9 +124,9 @@
         <div class="field">
           <label>Engine</label>
           <select id="setEngine">
-            <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
-            <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
-            <option value="lingva">🌐 Lingva (Free - Stable)</option>
+            <option value="deepseek">🔥 DeepSeek API (Best)</option>
+            <option value="deepl">🔰 DeepL API</option>
+            <option value="lingva">🌐 Lingva (Free)</option>
           </select>
         </div>
 
@@ -136,8 +136,14 @@
         </div>
 
         <div class="field">
-          <label>API key (only for DeepSeek/DeepL)</label>
+          <label>API key (only for DeepSeek / DeepL) — stored in session only</label>
           <input id="setKey" type="password" autocomplete="off" placeholder="Paste key here…" />
+        </div>
+
+        <div class="field">
+          <label>Proxy base URL (optional)</label>
+          <input id="setProxy" type="text" autocomplete="off" placeholder="https://your-worker.example.com" />
+          <div class="hint">Useful for Cloudflare Pages / GitHub Pages: point to your API domain hosting /api/* endpoints.</div>
         </div>
 
         <div class="row2">
@@ -158,16 +164,16 @@
         <div class="row2">
           <div class="field">
             <label>Concurrency</label>
-            <input id="setConc" type="number" min="1" max="4" value="2" />
+            <input id="setConc" type="number" min="1" max="6" value="2" />
           </div>
           <div class="field">
             <label>Retry</label>
-            <input id="setRetry" type="number" min="0" max="6" value="4" />
+            <input id="setRetry" type="number" min="0" max="8" value="4" />
           </div>
         </div>
 
         <div class="hint">
-          Ren'Py interpolation like <span class="mono">[playername]</span> must be preserved.
+          Ren'Py interpolation like <span class="mono">[playername]</span> and tags like <span class="mono">{color=#fff}</span> are protected automatically.
         </div>
       </div>
 
@@ -176,14 +182,14 @@
       </div>
     </div>
   </div>
-  
+
   <div id="replaceModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modalCard">
       <div class="modalHead">
         <div class="modalTitle">Replace</div>
         <button id="btnCloseReplace" class="btn" type="button">Close</button>
       </div>
-  
+
       <div class="modalBody">
         <div class="field">
           <label>Find</label>
@@ -193,7 +199,7 @@
           <label>Replace with</label>
           <input id="repWith" type="text" autocomplete="off" />
         </div>
-  
+
         <div class="row2">
           <div class="field">
             <label>Scope</label>
@@ -212,7 +218,7 @@
             </select>
           </div>
         </div>
-  
+
         <div class="row2">
           <div class="field">
             <label><input id="repCase" type="checkbox" /> Case sensitive</label>
@@ -221,7 +227,7 @@
             <label><input id="repWhole" type="checkbox" /> Whole word</label>
           </div>
         </div>
-  
+
         <div class="row2">
           <div class="field">
             <label><input id="repRegex" type="checkbox" /> Regex</label>
@@ -230,7 +236,7 @@
             <label><input id="repIncludeDone" type="checkbox" /> Include done</label>
           </div>
         </div>
-        
+
         <div class="row2">
           <div class="field">
             <label>Mode</label>
@@ -241,22 +247,27 @@
           </div>
           <div class="field">
             <label>Rules format (multi)</label>
-            <div class="hint"><span class="mono">find => replace</span> (one per line). Empty / # comment ignored.</div>
+            <div class="hint"><span class="mono">find =&gt; replace</span> (one per line). Empty / # comment ignored.</div>
           </div>
         </div>
-        
+
+        <div class="field" id="repRulesWrap" style="display:none">
+          <label>Rules</label>
+          <textarea id="repRules" style="height:180px"></textarea>
+        </div>
+
         <div class="field">
           <label>
             <input id="repFillManual" type="checkbox" />
             Fill Manual from Machine if empty (before replace)
           </label>
         </div>
-  
+
         <div class="hint">
-          Replace is Ren'Py-safe (it will protect <span class="mono">{tags}</span> and <span class="mono">[vars]</span>).
+          Replace is Ren'Py-safe (it protects <span class="mono">{tags}</span> and <span class="mono">[vars]</span>).
         </div>
       </div>
-  
+
       <div class="modalFoot" style="gap:10px">
         <button id="btnRepCount" class="btn" type="button">Count</button>
         <button id="btnRepRun" class="btn good" type="button">Replace</button>
