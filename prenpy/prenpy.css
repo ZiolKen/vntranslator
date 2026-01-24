@@ -40,8 +40,8 @@ body{
   background: transparent;
 }
 .logo img{
-  width:48px;
-  height:48px;
+  width:40px;
+  height:40px;
   object-fit: cover;
   border-radius: 12px;
   display:block;
@@ -187,15 +187,15 @@ body{
   white-space:pre-wrap;
   font-family:var(--mono);
   color:#dce6f3;
+  font-size:12px;
 }
 .cell-tr textarea{
   width:100%;
   min-height: 44px;
   resize: vertical;
-  border:1px solid rgba(31,42,57,.95);
-  background: rgba(13,20,30,.75);
+  border: 0;
+  background: transparent;
   color: var(--text);
-  border-radius:12px;
   padding:8px 10px;
   outline:none;
   font-family:var(--mono);
