@@ -1,13 +1,29 @@
 <!doctype html>
 <html lang="en">
+  
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
+  
   <title>Pro Ren'Py Translator | VN Translator</title>
+  
   <meta name="color-scheme" content="dark light" />
   <link rel="stylesheet" href="./prenpy.css" />
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BXTNE3VPWH');
+  </script>
 </head>
+
 <body>
+  
   <header class="topbar">
     <div class="brand">
       <div class="logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="VN Translator" /></div>
@@ -135,6 +151,7 @@
             <option value="translated">Translated</option>
           </select>
         </div>
+        
         <div class="row gap">
           <input class="input" id="tableSearch" placeholder="Search in source/translation…" />
         </div>
@@ -252,5 +269,7 @@
   </div>
 
   <script type="module" src="./app.js"></script>
+  
 </body>
+
 </html>
