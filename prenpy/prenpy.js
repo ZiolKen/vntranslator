@@ -236,23 +236,21 @@ function findNext(dir) {
   const map = filteredIndexMap();
   const cur = state.selectedRowId ? (map.get(state.selectedRowId) ?? -1) : -1;
 
-  const norm = (s) => String(s || "");
-  const needle = q;
   const field = $("qField").value;
-  
+
   const pickFields = (r) => {
     if (field === "original") return [r.original];
     if (field === "machine") return [r.machine];
     if (field === "manual") return [r.manual];
     return [r.original, r.machine, r.manual];
   };
-  
+
   const cs = false;
   const needle = cs ? q : q.toLowerCase();
+
   const cmpRow = (r) => {
-    const arr = pickFields(r).filter(Boolean).map(x => String(x));
-    if (cs) return arr.some(x => x.includes(needle));
-    return arr.some(x => x.toLowerCase().includes(needle));
+    const arr = pickFields(r).filter(Boolean).map(String);
+    return arr.some(x => (cs ? x.includes(needle) : x.toLowerCase().includes(needle)));
   };
 
   const step = dir > 0 ? 1 : -1;
@@ -271,6 +269,7 @@ function findNext(dir) {
       return setJobUI(0, "Found.", false);
     }
   }
+
   setJobUI(0, "No match.", false);
 }
 
@@ -673,27 +672,41 @@ function buildFileFromRpy(name, source) {
 async function importFiles(fileList) {
   const okExt = (name) => /\.(rpy|txt|json|csv)$/i.test(name);
   const arr = Array.from(fileList || []).filter(f => okExt(f.name));
-  if (!arr.length) { setJobUI(0, "Unsupported file type.", false); return; }
 
-  const arr = Array.from(fileList || []);
-  if (!arr.length) return;
+  if (!arr.length) {
+    setJobUI(0, "Unsupported file type.", false);
+    return;
+  }
 
   const rpy = arr.filter(f => f.name.toLowerCase().endsWith(".rpy"));
   const json = arr.filter(f => f.name.toLowerCase().endsWith(".json"));
 
   if (json.length && !rpy.length) {
-    const text = await json[0].text();
-    const s = JSON.parse(text);
-    if (s && Array.isArray(s.files)) {
-      state.projectName = s.projectName || state.projectName;
-      state.files = s.files;
-      rebuildIndex();
-      state.activeFileId = state.files[0]?.id || null;
-      state.selectedRowId = state.files[0]?.rows?.[0]?.id || null;
-      saveState();
-      renderFiles();
-      refreshGrid(true);
-      syncEditor();
+    try {
+      const text = await json[0].text();
+      const s = JSON.parse(text);
+
+      if (s && Array.isArray(s.files)) {
+        state.projectName = s.projectName || state.projectName;
+        state.files = s.files;
+
+        rebuildIndex();
+        state.activeFileId = state.files[0]?.id || null;
+        state.selectedRowId = state.files[0]?.rows?.[0]?.id || null;
+
+        commitManualSessionHard();
+        saveState();
+        renderFiles();
+        refreshGrid(true);
+        syncEditor();
+        setJobUI(0, "Imported project JSON.", false);
+        return;
+      }
+
+      setJobUI(0, "JSON format not recognized.", false);
+      return;
+    } catch (e) {
+      setJobUI(0, `Invalid JSON: ${String(e?.message || e)}`, false);
       return;
     }
   }
@@ -704,17 +717,23 @@ async function importFiles(fileList) {
     out.push(buildFileFromRpy(f.name, source));
   }
 
-  if (out.length) {
-    state.files = out;
-    rebuildIndex();
-    state.projectName = state.projectName || "Ren'Py Project";
-    state.activeFileId = out[0].id;
-    state.selectedRowId = out[0].rows[0]?.id || null;
-    saveState();
-    renderFiles();
-    refreshGrid(true);
-    syncEditor();
+  if (!out.length) {
+    setJobUI(0, "No .rpy files to import.", false);
+    return;
   }
+
+  state.files = out;
+  rebuildIndex();
+  state.projectName = state.projectName || "Ren'Py Project";
+  state.activeFileId = out[0].id;
+  state.selectedRowId = out[0].rows[0]?.id || null;
+
+  commitManualSessionHard();
+  saveState();
+  renderFiles();
+  refreshGrid(true);
+  syncEditor();
+  setJobUI(0, `Imported ${out.length} file(s).`, false);
 }
 
 function collectRows(scope) {
@@ -848,6 +867,12 @@ function commitManualSessionHard() {
     ts: Date.now(),
     changes: [{ rowId, field: "manual", prev, next }]
   });
+}
+
+function beginManualSession(r) {
+  if (!r) return;
+  if (manualEditSession && manualEditSession.rowId === r.id) return;
+  manualEditSession = { rowId: r.id, prev: r.manual || "" };
 }
 
 async function exportZip() {
@@ -1023,11 +1048,6 @@ function bind() {
   
   function openReplace() { $("replaceModal").classList.remove("hidden"); }
   function closeReplace() { $("replaceModal").classList.add("hidden"); }
-  
-  $("btnReplace").addEventListener("click", () => {
-    $("repFind").value = $("q").value || "";
-    openReplace();
-  });
   
   $("btnCloseReplace").addEventListener("click", closeReplace);
   $("replaceModal").addEventListener("click", (e) => { if (e.target === $("replaceModal")) closeReplace(); });
