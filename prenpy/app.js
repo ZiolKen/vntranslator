@@ -46,6 +46,7 @@ const ui = {
   showWarnings: el('showWarnings'),
 
   gridBody: el('gridBody'),
+  tableWrap: el('tableWrap'),
   selAll: el('selAll'),
 
   statusLeft: el('statusLeft'),
@@ -87,6 +88,13 @@ const state = {
   find: {
     matches: [],
     cursor: -1,
+  },
+  virtual: {
+    rowHeight: 78,
+    overscan: 10,
+    lastStart: -1,
+    lastEnd: -1,
+    viewIndexByRow: new Map(),
   },
 };
 
@@ -206,98 +214,165 @@ function computeActiveView() {
   }
 
   state.activeView = out;
+  state.virtual.viewIndexByRow = new Map();
+  for (let pos = 0; pos < out.length; pos++) state.virtual.viewIndexByRow.set(out[pos], pos);
 }
 
-function renderTable() {
-  ui.gridBody.innerHTML = '';
+function resetSelection() {
   state.activeSelected.clear();
   ui.selAll.checked = false;
+}
 
-  computeActiveView();
+function makeSpacer(heightPx) {
+  const tr = document.createElement('tr');
+  tr.className = 'spacer';
+  const td = document.createElement('td');
+  td.colSpan = 5;
+  td.style.height = `${Math.max(0, Math.floor(heightPx))}px`;
+  tr.appendChild(td);
+  return tr;
+}
+
+function renderRow(f, idx, warnOn) {
+  const d = f.dialogs[idx];
+  const trText = d.translated ?? '';
+  const hasTr = String(trText).trim().length > 0;
+  const warn = warnOn && (RENPH_TEST_RE.test(String(trText)) || OLD_RENPH_TEST_RE.test(String(trText)));
+
+  const row = document.createElement('tr');
+  row.className = 'tr-row' + (state.activeSelected.has(idx) ? ' selected' : '');
+  row.dataset.idx = String(idx);
+
+  const tdSel = document.createElement('td');
+  tdSel.className = 'col-sel';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'rowSel';
+  cb.checked = state.activeSelected.has(idx);
+  tdSel.appendChild(cb);
+
+  const tdNo = document.createElement('td');
+  tdNo.className = 'col-no';
+  tdNo.textContent = String(idx + 1);
+
+  const tdSrc = document.createElement('td');
+  tdSrc.className = 'cell-src col-src';
+  tdSrc.title = String(d.quote ?? '');
+  const srcBox = document.createElement('div');
+  srcBox.className = 'srcText';
+  srcBox.textContent = String(d.quote ?? '');
+  tdSrc.appendChild(srcBox);
+
+  const tdTr = document.createElement('td');
+  tdTr.className = 'cell-tr col-tr';
+  const ta = document.createElement('textarea');
+  ta.spellcheck = false;
+  ta.className = 'trInput';
+  ta.value = String(trText ?? '');
+  tdTr.appendChild(ta);
+
+  const tdMeta = document.createElement('td');
+  tdMeta.className = 'col-meta';
+  tdMeta.innerHTML = warn ? '<span class="meta-warn">PLACEHOLDER</span>' : (hasTr ? '<span class="meta-ok">OK</span>' : '—');
+
+  row.append(tdSel, tdNo, tdSrc, tdTr, tdMeta);
+
+  cb.addEventListener('change', () => {
+    if (cb.checked) state.activeSelected.add(idx);
+    else state.activeSelected.delete(idx);
+    row.classList.toggle('selected', cb.checked);
+  });
+
+  row.addEventListener('click', (ev) => {
+    if (ev.target && (ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'INPUT')) return;
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  });
+
+  ta.addEventListener('focus', () => row.classList.add('selected'));
+  ta.addEventListener('blur', () => row.classList.toggle('selected', cb.checked));
+  ta.addEventListener('input', () => {
+    const v = ta.value;
+    d.translated = v;
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+    scheduleUpdateTM(idx, v);
+    tdMeta.innerHTML = (warnOn && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v)))
+      ? '<span class="meta-warn">PLACEHOLDER</span>'
+      : (String(v).trim() ? '<span class="meta-ok">OK</span>' : '—');
+    updateProjectStats();
+  });
+
+  return row;
+}
+
+function renderVirtual(force = false) {
   const path = state.activePath;
   if (!path) return;
   const f = state.files.get(path);
   if (!f) return;
+  const total = state.activeView.length;
 
-  const frag = document.createDocumentFragment();
+  const wrap = ui.tableWrap;
+  const rowH = state.virtual.rowHeight;
+  const overscan = state.virtual.overscan;
+  const top = wrap.scrollTop;
+  const vh = wrap.clientHeight || 1;
+  const start = Math.max(0, Math.floor(top / rowH) - overscan);
+  const end = Math.min(total, Math.ceil((top + vh) / rowH) + overscan);
+
+  if (!force && start === state.virtual.lastStart && end === state.virtual.lastEnd) return;
+  state.virtual.lastStart = start;
+  state.virtual.lastEnd = end;
+
   const warnOn = !!ui.showWarnings.checked;
+  const frag = document.createDocumentFragment();
 
-  for (const idx of state.activeView) {
-    const d = f.dialogs[idx];
-    const tr = d.translated ?? '';
-    const hasTr = String(tr).trim().length > 0;
-    const warn = warnOn && (RENPH_TEST_RE.test(String(tr)) || OLD_RENPH_TEST_RE.test(String(tr)));
+  if (start > 0) frag.appendChild(makeSpacer(start * rowH));
 
-    const row = document.createElement('tr');
-    row.className = 'tr-row';
-    row.dataset.idx = String(idx);
-
-    const tdSel = document.createElement('td');
-    tdSel.className = 'col-sel';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'rowSel';
-    tdSel.appendChild(cb);
-
-    const tdNo = document.createElement('td');
-    tdNo.className = 'col-no';
-    tdNo.textContent = String(idx + 1);
-
-    const tdSrc = document.createElement('td');
-    tdSrc.className = 'cell-src';
-    tdSrc.textContent = String(d.quote ?? '');
-
-    const tdTr = document.createElement('td');
-    tdTr.className = 'cell-tr';
-    const ta = document.createElement('textarea');
-    ta.spellcheck = false;
-    ta.className = 'trInput';
-    ta.value = String(tr ?? '');
-    tdTr.appendChild(ta);
-
-    const tdMeta = document.createElement('td');
-    tdMeta.className = 'col-meta';
-    tdMeta.innerHTML = warn ? '<span class="meta-warn">PLACEHOLDER</span>' : (hasTr ? '<span class="meta-ok">OK</span>' : '—');
-
-    row.append(tdSel, tdNo, tdSrc, tdTr, tdMeta);
-
-    cb.addEventListener('change', () => {
-      const i = Number(row.dataset.idx);
-      if (cb.checked) state.activeSelected.add(i);
-      else state.activeSelected.delete(i);
-      row.classList.toggle('selected', cb.checked);
-    });
-
-    row.addEventListener('click', (ev) => {
-      if (ev.target && (ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'INPUT')) return;
-      cb.checked = !cb.checked;
-      cb.dispatchEvent(new Event('change'));
-    });
-
-    ta.addEventListener('focus', () => row.classList.add('selected'));
-    ta.addEventListener('blur', () => row.classList.toggle('selected', cb.checked));
-    ta.addEventListener('input', () => {
-      const v = ta.value;
-      d.translated = v;
-      if (ui.autoSave.checked) scheduleSaveActiveFile();
-      scheduleUpdateTM(idx, v);
-      tdMeta.innerHTML = (warnOn && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v)))
-        ? '<span class="meta-warn">PLACEHOLDER</span>'
-        : (String(v).trim() ? '<span class="meta-ok">OK</span>' : '—');
-      updateProjectStats();
-    });
-
-    frag.appendChild(row);
+  for (let pos = start; pos < end; pos++) {
+    const idx = state.activeView[pos];
+    frag.appendChild(renderRow(f, idx, warnOn));
   }
 
-  ui.gridBody.appendChild(frag);
+  if (end < total) frag.appendChild(makeSpacer((total - end) * rowH));
 
+  ui.gridBody.replaceChildren(frag);
+}
+
+function renderTable({ resetSel = true, resetScroll = true } = {}) {
+  if (resetSel) resetSelection();
+  computeActiveView();
+  state.virtual.lastStart = -1;
+  state.virtual.lastEnd = -1;
+
+  if (resetScroll && ui.tableWrap) ui.tableWrap.scrollTop = 0;
+  renderVirtual(true);
+
+  const path = state.activePath;
+  if (!path) return;
   const count = state.activeView.length;
   setStatus(`${path} — ${count} rows shown`, '');
 }
 
+{
+  let raf = 0;
+  ui.tableWrap.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      renderVirtual(false);
+    });
+  }, { passive: true });
+
+  window.addEventListener('resize', debounce(() => {
+    state.virtual.lastStart = -1;
+    state.virtual.lastEnd = -1;
+    renderVirtual(true);
+  }, 100));
+}
+
 ui.selAll.addEventListener('change', () => {
-  const rows = ui.gridBody.querySelectorAll('tr');
+  const rows = ui.gridBody.querySelectorAll('tr.tr-row');
   const v = ui.selAll.checked;
   for (const r of rows) {
     const cb = r.querySelector('.rowSel');
@@ -350,7 +425,6 @@ const scheduleUpdateTM = debounce(async (idx, value) => {
   try {
     await Store.tmPut(target, String(d.maskedQuote ?? ''), t, { source: 'manual' });
   } catch (e) {
-    /* noop */
   }
 }, 600);
 
@@ -452,7 +526,7 @@ ui.btnReload.addEventListener('click', async () => { await hydrateFromStorage();
 
 ui.rowFilter.addEventListener('change', renderTable);
 ui.tableSearch.addEventListener('input', debounce(renderTable, 120));
-ui.showWarnings.addEventListener('change', renderTable);
+ui.showWarnings.addEventListener('change', () => renderTable({ resetSel: false, resetScroll: false }));
 
 ui.extractMode.addEventListener('change', () => {
   applyExtractMode();
@@ -757,26 +831,41 @@ function computeFindMatches() {
 }
 
 function focusMatch(m) {
-  const rowEl = ui.gridBody.querySelector(`tr[data-idx="${m.row}"]`);
-  if (!rowEl) {
-    const p = state.activePath;
-    if (!p) return;
+  const p = state.activePath;
+  if (!p) return;
+
+  let pos = state.virtual.viewIndexByRow.get(m.row);
+  if (pos == null) {
     ui.rowFilter.value = 'all';
     ui.tableSearch.value = '';
-    renderTable();
+    renderTable({ resetSel: false, resetScroll: false });
+    pos = state.virtual.viewIndexByRow.get(m.row);
   }
+  if (pos == null) return;
 
-  const r2 = ui.gridBody.querySelector(`tr[data-idx="${m.row}"]`);
-  if (!r2) return;
-  r2.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const wrap = ui.tableWrap;
+  const rowH = state.virtual.rowHeight;
+  const targetTop = Math.max(0, pos * rowH - (wrap.clientHeight / 2) + (rowH / 2));
+  wrap.scrollTo({ top: targetTop, behavior: 'smooth' });
 
-  if (m.field === 'translation') {
-    const ta = r2.querySelector('.trInput');
-    ta.focus();
-    const start = m.index;
-    const end = m.index + m.len;
-    ta.setSelectionRange(start, end);
-  }
+  let tries = 0;
+  const tryFocus = () => {
+    tries++;
+    renderVirtual(true);
+    const r2 = ui.gridBody.querySelector(`tr[data-idx="${m.row}"]`);
+    if (!r2) {
+      if (tries < 30) requestAnimationFrame(tryFocus);
+      return;
+    }
+    if (m.field === 'translation') {
+      const ta = r2.querySelector('.trInput');
+      ta.focus();
+      const start = m.index;
+      const end = m.index + m.len;
+      ta.setSelectionRange(start, end);
+    }
+  };
+  requestAnimationFrame(tryFocus);
 }
 
 function updateFindUI() {
