@@ -458,6 +458,25 @@ function applyExtractMode() {
   RENPY.setMode(ui.extractMode.value);
 }
 
+function splitNameExt(name) {
+  const i = name.lastIndexOf('.');
+  if (i <= 0) return { base: name, ext: '' };
+  return { base: name.slice(0, i), ext: name.slice(i) };
+}
+
+function uniquePath(rawPath) {
+  const norm = String(rawPath || '').replaceAll('\\', '/');
+  if (!state.files.has(norm)) return norm;
+
+  const parts = norm.split('/');
+  const filename = parts.pop() || 'file.rpy';
+  const { base, ext } = splitNameExt(filename);
+
+  let k = 2;
+  while (state.files.has([...parts, `${base} (${k})${ext}`].join('/'))) k++;
+  return [...parts, `${base} (${k})${ext}`].join('/');
+}
+
 async function importFiles(fileList) {
   applyExtractMode();
 
@@ -473,7 +492,8 @@ async function importFiles(fileList) {
     const { text: normalized, eol } = normalizeLineEndings(text);
     const dialogs = RENPY.extractDialogs(normalized);
 
-    const path = file.webkitRelativePath || file.name;
+    const rawPath = file.webkitRelativePath || file.name;
+    const path = uniquePath(rawPath);
     state.files.set(path, { path, source: normalized, eol, dialogs });
 
     if (ui.autoSave.checked) {
