@@ -163,6 +163,7 @@ function renderFiles() {
     row.querySelector(".pct").textContent = `${pct}%`;
     row.addEventListener("click", () => {
       state.activeFileId = f.id;
+      commitManualSessionHard();
       state.selectedRowId = f.rows[0]?.id || null;
       saveState();
       renderFiles();
@@ -425,6 +426,7 @@ function replaceRun() {
   const scope = $("repScope").value;
   const field = $("repField").value;
   const includeDone = $("repIncludeDone").checked;
+  const fillManual = $("repFillManual").checked;
 
   const rows = iterScopeRows(scope);
   if (!rows.length) return setJobUI(0, "Nothing to replace.", false);
@@ -449,6 +451,27 @@ function replaceRun() {
     compiledRules = rules.map(x => ({ re: build(x.find, x.withStr), withStr: x.withStr }));
   }
 
+  commitManualSessionHard();
+
+  const changes = [];
+
+  if (fillManual && fields.includes("manual")) {
+    for (const r of rows) {
+      if (!includeDone && r.flag === "done") continue;
+      if ((r.manual || "").trim()) continue;
+      if (!(r.machine || "").trim()) continue;
+
+      const prev = r.manual || "";
+      const next = r.machine;
+
+      r.manual = next;
+      changes.push({ rowId: r.id, field: "manual", prev, next });
+
+      if (r.flag === "done") r.flag = "review";
+      else if (r.flag === "todo") r.flag = "review";
+    }
+  }
+
   let changedFields = 0;
 
   for (const r of rows) {
@@ -460,16 +483,33 @@ function replaceRun() {
 
       const rr = safeRenpyReplaceMany(cur, compiledRules);
       if (rr.changed) {
-        r[k] = rr.out;
+        const prev = cur;
+        const next = rr.out;
+
+        r[k] = next;
+        changes.push({ rowId: r.id, field: k, prev, next });
         changedFields++;
+
         if (r.flag === "done") r.flag = "review";
         else if (r.flag === "todo") r.flag = "review";
       }
     }
   }
 
-  const f = activeFile();
-  if (f) f.updated = Date.now();
+  if (!changes.length) return setJobUI(0, "No changes.", false);
+
+  pushHistory({ type: "replace", ts: Date.now(), changes });
+
+  const touchedFiles = new Set();
+  for (const ch of changes) {
+    const fid = ROW_INDEX.get(ch.rowId)?.fileId;
+    if (fid) touchedFiles.add(fid);
+  }
+  for (const fid of touchedFiles) {
+    const f = state.files.find(x => x.id === fid);
+    if (f) f.updated = Date.now();
+  }
+
   saveState();
   renderFiles();
   renderVirtualRows();
@@ -571,6 +611,7 @@ function renderVirtualRows() {
 
     row.addEventListener("click", (e) => {
       if (e.target === btn) return;
+      commitManualSessionHard();
       state.selectedRowId = r.id;
       saveState();
       renderVirtualRows();
@@ -579,7 +620,12 @@ function renderVirtualRows() {
 
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
+      const prev = r.flag;
       const next = r.flag === "todo" ? "review" : (r.flag === "review" ? "done" : "todo");
+      if (prev !== next) {
+        r.flag = next;
+        pushHistory({ type:"flag", ts:Date.now(), changes:[{ rowId:r.id, field:"flag", prev, next }] });
+      }
       r.flag = next;
       saveState();
       renderFiles();
@@ -606,6 +652,7 @@ function syncEditor() {
   $("btnMarkTodo").disabled = !r;
   $("btnMarkReview").disabled = !r;
   $("btnMarkDone").disabled = !r;
+  manualEditSession = null;
 }
 
 function buildFileFromRpy(name, source) {
@@ -881,7 +928,18 @@ function bind() {
 
   $("grid").addEventListener("scroll", () => renderVirtualRows());
 
-  $("edManual").addEventListener("input", () => applyManualEdit());
+  $("edManual").addEventListener("input", () => {
+    const f = activeFile();
+    const r = selectedRow();
+    if (!f || !r) return;
+  
+    beginManualSession(r);
+    r.manual = $("edManual").value;
+    f.updated = Date.now();
+  
+    debounceSave();
+    debounceRender();
+  });
 
   $("btnMarkTodo").addEventListener("click", () => {
     const r = selectedRow(); if (!r) return;
@@ -932,8 +990,23 @@ function bind() {
     const f = activeFile(); const r = selectedRow();
     if (!f || !r) return;
     if (!r.machine?.trim()) return;
-    r.manual = r.machine;
+  
+    commitManualSessionHard();
+  
+    const prev = r.manual || "";
+    const next = r.machine;
+  
+    if (prev === next) return;
+  
+    r.manual = next;
     f.updated = Date.now();
+  
+    pushHistory({
+      type: "edit",
+      ts: Date.now(),
+      changes: [{ rowId: r.id, field: "manual", prev, next }]
+    });
+  
     saveState();
     renderVirtualRows();
     renderFiles();
@@ -997,6 +1070,10 @@ function bind() {
     if ((k === "y" || (k === "z" && e.shiftKey)) && !inTextField) {
       e.preventDefault(); redo(); return;
     }
+  });
+  
+  $("edManual").addEventListener("blur", () => {
+    commitManualSessionHard();
   });
 }
 
