@@ -466,7 +466,7 @@ async function importTranslatedFiles(fileList, opts = {}) {
   scheduleSave();
 }
 
-function buildTargetLangSelect() {() {
+function buildTargetLangSelect() {
   ui.targetLang.replaceChildren(...LANGS.map(l => el("option", { value: l.code }, `${l.label} (${l.code})`)));
 }
 
