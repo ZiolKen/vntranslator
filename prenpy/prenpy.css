@@ -187,7 +187,7 @@ body{
   white-space:pre-wrap;
   font-family:var(--mono);
   color:#dce6f3;
-  font-size:12px;
+  font-size:10px;
 }
 .cell-tr textarea{
   width:100%;
