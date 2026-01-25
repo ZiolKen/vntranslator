@@ -496,6 +496,7 @@ function renderRow(f, idx, warnOn) {
   refreshMeta();
   
   flagBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
     ev.stopPropagation();
     d.flagged = !d.flagged;
     flagBtn.classList.toggle('on', d.flagged);
@@ -524,7 +525,7 @@ function renderRow(f, idx, warnOn) {
   });
 
   row.addEventListener('click', (ev) => {
-    if (ev.target && (ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'INPUT')) return;
+    if (ev.target?.closest?.('textarea,input,button')) return;
     cb.checked = !cb.checked;
     cb.dispatchEvent(new Event('change'));
   });
