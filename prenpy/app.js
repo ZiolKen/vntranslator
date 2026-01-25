@@ -401,6 +401,7 @@ function computeActiveView() {
 function resetSelection() {
   state.activeSelected.clear();
   ui.selAll.checked = false;
+  ui.selAll.indeterminate = false;
 }
 
 function makeSpacer(heightPx) {
@@ -454,43 +455,45 @@ function renderRow(f, idx, warnOn) {
 
   const tdMeta = document.createElement('td');
   tdMeta.className = 'col-meta';
-  
-  const metaWrap = document.createElement('div');
-  metaWrap.className = 'meta-wrap';
-  
+
   const flagBtn = document.createElement('button');
   flagBtn.type = 'button';
   flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
-  flagBtn.textContent = '🚩';
   flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
-  
-  const metaSpan = document.createElement('span');
-  metaSpan.className = 'metaText';
-  
-  function refreshMeta() {
-    const kind = getMetaKind(d);
-    const warnOn2 = warnOn || ui.rowFilter.value === 'error';
-  
-    row.classList.toggle('is-error', kind === 'error');
-    row.classList.toggle('is-flag', !!d.flagged);
-  
-    if (!warnOn2) {
-      metaSpan.textContent = hasTr ? 'OK' : '—';
-      metaSpan.className = 'metaText ' + (hasTr ? 'meta-ok' : 'meta-empty');
-      return;
-    }
-  
-    if (kind === 'error') {
-      metaSpan.textContent = 'ERROR';
-      metaSpan.className = 'metaText meta-err';
-    } else if (hasTr) {
-      metaSpan.textContent = 'OK';
-      metaSpan.className = 'metaText meta-ok';
+  flagBtn.textContent = '🚩';
+  flagBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    toggleFlag(idx);
+
+    if (ui.rowFilter.value === 'flag') {
+      renderTable({ resetSel: false, resetScroll: false });
     } else {
-      metaSpan.textContent = '—';
-      metaSpan.className = 'metaText meta-empty';
+      updateRowDOM(idx);
     }
+  });
+
+  const status = document.createElement('span');
+  status.className = 'metaStatus';
+
+  function refreshMeta() {
+    const v = String(d.translated ?? '');
+    const hasTr = v.trim().length > 0;
+    const warnOn2 = !!ui.showWarnings.checked || ui.rowFilter.value === 'error';
+    const err = warnOn2 && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v));
+
+    row.classList.toggle('flagged', !!d.flagged);
+    row.classList.toggle('is-error', !!err);
+
+    flagBtn.classList.toggle('on', !!d.flagged);
+    flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
+
+    status.className = 'metaStatus ' + (err ? 'meta-warn' : hasTr ? 'meta-ok' : 'meta-none');
+    status.textContent = err ? 'ERROR' : (hasTr ? 'OK' : '—');
   }
+
+  tdMeta.append(flagBtn, status);
+  refreshMeta();
   
   flagBtn.addEventListener('click', (ev) => {
     ev.stopPropagation();
@@ -503,26 +506,8 @@ function renderRow(f, idx, warnOn) {
     if (ui.rowFilter.value === 'flag') renderTable({ resetSel: false, resetScroll: false });
   });
   
-  metaWrap.append(flagBtn, metaSpan);
-  tdMeta.appendChild(metaWrap);
-  
-  refreshMeta();
-  
-  const flagBtn = document.createElement('button');
-  flagBtn.type = 'button';
-  flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
-  flagBtn.title = 'Flag this row';
-  flagBtn.textContent = '⚑';
-  flagBtn.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    toggleFlag(idx);
-  });
-  
   const status = document.createElement('span');
   status.className = 'metaStatus';
-  
-  tdMeta.append(flagBtn, status);
   
   {
     const v = String(trText ?? '');
@@ -589,7 +574,6 @@ function renderRow(f, idx, warnOn) {
   
     updateProjectStats();
     refreshMeta();
-    updateProjectStats();
     updateSelAllUI();
   });
 
@@ -638,6 +622,8 @@ function renderTable({ resetSel = true, resetScroll = true } = {}) {
 
   if (resetScroll && ui.tableWrap) ui.tableWrap.scrollTop = 0;
   renderVirtual(true);
+  
+  updateSelAllUI();
 
   const path = state.activePath;
   if (!path) return;
