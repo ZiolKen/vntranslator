@@ -65,10 +65,10 @@ export function unmaskTagsInText(text, map) {
 export const RENPY = (() => {
   const PREFIX_CHARS = new Set(['r','R','u','U','b','B','f','F']);
   const SCRIPT_SKIP_HEADS = new Set([
-    'label','init','python','transform','style','screen','key',
-    'define','default','translate','old','new',
+    'label','init','python','transform','style','screen','key','base_bar','left_bar',
+    'define','default','translate','old','new','properties','thumb','right_bar','use',
     'return','jump','call','if','elif','else','for','while','try','except','finally',
-    'pass','break','continue','import','from','$','renpy','action',
+    'pass','break','continue','import','from','$','renpy','action','top_bar','bottom_bar',
     'outlines','outline_scaling','text_font','font','text_color','text_size','color',
     'xpos','ypos','xalign','yalign','align','anchor','pos','xysize','size','zorder','tag'
   ]);
