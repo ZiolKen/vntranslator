@@ -95,7 +95,7 @@ const state = {
     cursor: -1,
   },
   virtual: {
-    rowHeight: 78,
+    rowHeight: 80,
     overscan: 10,
     lastStart: -1,
     lastEnd: -1,
