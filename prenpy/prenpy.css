@@ -188,10 +188,12 @@ body{
   border-bottom:1px solid rgba(31,42,57,.6);
   vertical-align:top;
   padding:8px 10px;
-  font-size:12px;
+  font-size:11px;
 }
-.tdtr{
+.grid tbody tdtr{
+  border-bottom:1px solid rgba(31,42,57,.6);
   padding:4px 8px;
+  font-size:12px;
 }
 .col-sel{width:38px}
 .col-no{width:60px; color:var(--muted); font-family:var(--mono)}
@@ -202,7 +204,7 @@ body{
 .srcText{
   white-space:pre-wrap;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -219,7 +221,7 @@ body{
 .tr-row{background: rgba(0,0,0,.06)}
 .tr-row:hover{background: rgba(124,92,255,.05)}
 .tr-row.selected{outline: 2px solid rgba(124,92,255,.55); outline-offset:-2px}
-.tr-row{height:78px}
+.tr-row{height:80px}
 .spacer td{padding:0!important; border:0!important; height:0}
 .meta-warn{color: var(--warn)}
 .meta-ok{color: var(--ok)}
