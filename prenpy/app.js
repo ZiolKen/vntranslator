@@ -76,6 +76,11 @@ const ui = {
   btnTmClear: el('btnTmClear'),
   btnTmFillMissing: el('btnTmFillMissing'),
   tmImportInput: el('tmImportInput'),
+  
+  btnUndo: el('btnUndo'),
+  btnRedo: el('btnRedo'),
+  btnCopyOriginal: el('btnCopyOriginal'),
+  btnCopyTranslate: el('btnCopyTranslate'),
 };
 
 const state = {
@@ -95,6 +100,16 @@ const state = {
     lastStart: -1,
     lastEnd: -1,
     viewIndexByRow: new Map(),
+  },
+  editor: {
+    focusRow: -1,
+    focusPrev: '',
+    applying: false,
+  },
+  history: {
+    undo: [],
+    redo: [],
+    limit: 5000,
   },
 };
 
@@ -130,6 +145,163 @@ function closeModal(modalEl) {
   modalEl.hidden = true;
   ui.modalBackdrop.hidden = true;
   document.body.style.overflow = '';
+}
+
+function isTextInputEl(x) {
+  return x && (x.tagName === 'TEXTAREA' || x.tagName === 'INPUT');
+}
+
+function updateUndoRedoButtons() {
+  if (ui.btnUndo) ui.btnUndo.disabled = state.history.undo.length === 0 || state.busy;
+  if (ui.btnRedo) ui.btnRedo.disabled = state.history.redo.length === 0 || state.busy;
+}
+
+function pushHistory(action) {
+  state.history.undo.push(action);
+  if (state.history.undo.length > state.history.limit) state.history.undo.shift();
+  state.history.redo.length = 0;
+  updateUndoRedoButtons();
+}
+
+function getActiveFile() {
+  const p = state.activePath;
+  if (!p) return null;
+  return state.files.get(p) || null;
+}
+
+function updateRowDOM(rowIndex) {
+  const r = ui.gridBody.querySelector(`tr[data-idx="${rowIndex}"]`);
+  if (!r) return;
+
+  const f = getActiveFile();
+  if (!f) return;
+  const d = f.dialogs[rowIndex];
+  if (!d) return;
+
+  const ta = r.querySelector('.trInput');
+  if (ta && ta.value !== String(d.translated ?? '')) ta.value = String(d.translated ?? '');
+
+  r.classList.toggle('flagged', !!d.flagged);
+  const flagBtn = r.querySelector('.flagBtn');
+  if (flagBtn) flagBtn.classList.toggle('on', !!d.flagged);
+
+  const status = r.querySelector('.metaStatus');
+  if (status) {
+    const warnOn = !!ui.showWarnings.checked;
+    const v = String(d.translated ?? '');
+    const hasTr = v.trim().length > 0;
+    const warn = warnOn && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v));
+
+    status.className = 'metaStatus ' + (warn ? 'meta-warn' : hasTr ? 'meta-ok' : 'meta-none');
+    status.textContent = warn ? 'PLACEHOLDER' : (hasTr ? 'OK' : '—');
+  }
+}
+
+function applyAction(action, dir /* undo, redo */) {
+  const f = state.files.get(action.path);
+  if (!f) return;
+  const d = f.dialogs[action.row];
+  if (!d) return;
+
+  const value = (dir === 'undo') ? action.prev : action.next;
+
+  state.editor.applying = true;
+  try {
+    if (action.field === 'translated') {
+      d.translated = value;
+      const t = String(value ?? '').trim();
+      if (t) Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), t, { source: dir }).catch(()=>{});
+    } else if (action.field === 'flagged') {
+      d.flagged = !!value;
+    }
+
+    if (action.path === state.activePath) {
+      updateRowDOM(action.row);
+      renderTable({ resetSel: false, resetScroll: false });
+    }
+
+    updateProjectStats();
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+  } finally {
+    state.editor.applying = false;
+  }
+}
+
+function undo() {
+  if (!state.history.undo.length || state.busy) return;
+  const a = state.history.undo.pop();
+  applyAction(a, 'undo');
+  state.history.redo.push(a);
+  updateUndoRedoButtons();
+}
+
+function redo() {
+  if (!state.history.redo.length || state.busy) return;
+  const a = state.history.redo.pop();
+  applyAction(a, 'redo');
+  state.history.undo.push(a);
+  updateUndoRedoButtons();
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(String(text ?? ''));
+    setStatus('Copied to clipboard.', '');
+  } catch {
+    log('Clipboard copy failed (browser blocked).', 'warn');
+  }
+}
+
+function pickRowForActions() {
+  const f = getActiveFile();
+  if (!f) return -1;
+
+  if (state.editor.focusRow >= 0) return state.editor.focusRow;
+
+  const selected = Array.from(state.activeSelected.values()).sort((a,b)=>a-b);
+  if (selected.length) return selected[0];
+
+  return -1;
+}
+
+async function copyOriginal() {
+  const f = getActiveFile();
+  if (!f) return;
+  const row = pickRowForActions();
+  if (row < 0) return;
+  await copyToClipboard(f.dialogs[row]?.quote ?? '');
+}
+
+async function copyTranslate() {
+  const f = getActiveFile();
+  if (!f) return;
+  const row = pickRowForActions();
+  if (row < 0) return;
+  await copyToClipboard(f.dialogs[row]?.translated ?? '');
+}
+
+function toggleFlag(rowIndex) {
+  const f = getActiveFile();
+  if (!f) return;
+  const d = f.dialogs[rowIndex];
+  if (!d) return;
+
+  const prev = !!d.flagged;
+  const next = !prev;
+  d.flagged = next;
+
+  pushHistory({
+    path: state.activePath,
+    row: rowIndex,
+    field: 'flagged',
+    prev,
+    next,
+    ts: Date.now(),
+    source: 'flag',
+  });
+
+  updateRowDOM(rowIndex);
+  if (ui.autoSave.checked) scheduleSaveActiveFile();
 }
 
 document.addEventListener('click', (e) => {
@@ -241,6 +413,7 @@ function renderRow(f, idx, warnOn) {
 
   const row = document.createElement('tr');
   row.className = 'tr-row' + (state.activeSelected.has(idx) ? ' selected' : '');
+  row.classList.toggle('flagged', !!d.flagged);
   row.dataset.idx = String(idx);
 
   const tdSel = document.createElement('td');
@@ -273,7 +446,30 @@ function renderRow(f, idx, warnOn) {
 
   const tdMeta = document.createElement('td');
   tdMeta.className = 'col-meta';
-  tdMeta.innerHTML = warn ? '<span class="meta-warn">PLACEHOLDER</span>' : (hasTr ? '<span class="meta-ok">OK</span>' : '—');
+  
+  const flagBtn = document.createElement('button');
+  flagBtn.type = 'button';
+  flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
+  flagBtn.title = 'Flag this row';
+  flagBtn.textContent = '⚑';
+  flagBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    toggleFlag(idx);
+  });
+  
+  const status = document.createElement('span');
+  status.className = 'metaStatus';
+  
+  tdMeta.append(flagBtn, status);
+  
+  {
+    const v = String(trText ?? '');
+    const hasTr2 = v.trim().length > 0;
+    const warn2 = warnOn && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v));
+    status.className = 'metaStatus ' + (warn2 ? 'meta-warn' : hasTr2 ? 'meta-ok' : 'meta-none');
+    status.textContent = warn2 ? 'PLACEHOLDER' : (hasTr2 ? 'OK' : '—');
+  }
 
   row.append(tdSel, tdNo, tdSrc, tdTr, tdMeta);
 
@@ -289,16 +485,46 @@ function renderRow(f, idx, warnOn) {
     cb.dispatchEvent(new Event('change'));
   });
 
-  ta.addEventListener('focus', () => row.classList.add('selected'));
-  ta.addEventListener('blur', () => row.classList.toggle('selected', cb.checked));
+  ta.addEventListener('focus', () => {
+    row.classList.add('selected');
+    state.editor.focusRow = idx;
+    state.editor.focusPrev = ta.value; 
+  });
+  
+  ta.addEventListener('blur', () => {
+    row.classList.toggle('selected', cb.checked);
+  
+    if (state.editor.applying) return;
+  
+    const prev = String(state.editor.focusPrev ?? '');
+    const next = String(ta.value ?? '');
+    if (prev !== next) {
+      pushHistory({
+        path: state.activePath,
+        row: idx,
+        field: 'translated',
+        prev,
+        next,
+        ts: Date.now(),
+        source: 'manual',
+      });
+      state.editor.focusPrev = next;
+      updateUndoRedoButtons();
+    }
+  });
+  
   ta.addEventListener('input', () => {
     const v = ta.value;
     d.translated = v;
+  
     if (ui.autoSave.checked) scheduleSaveActiveFile();
     scheduleUpdateTM(idx, v);
-    tdMeta.innerHTML = (warnOn && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v)))
-      ? '<span class="meta-warn">PLACEHOLDER</span>'
-      : (String(v).trim() ? '<span class="meta-ok">OK</span>' : '—');
+  
+    const warnNow = !!ui.showWarnings.checked && (RENPH_TEST_RE.test(v) || OLD_RENPH_TEST_RE.test(v));
+    const hasNow = String(v).trim().length > 0;
+    status.className = 'metaStatus ' + (warnNow ? 'meta-warn' : hasNow ? 'meta-ok' : 'meta-none');
+    status.textContent = warnNow ? 'PLACEHOLDER' : (hasNow ? 'OK' : '—');
+  
     updateProjectStats();
   });
 
@@ -401,6 +627,7 @@ const scheduleSaveActiveFile = debounce(async () => {
       maskedQuote: d.maskedQuote,
       placeholderMap: d.placeholderMap,
       translated: d.translated ?? null,
+      flagged: !!d.flagged,
     })),
   };
 
@@ -511,6 +738,7 @@ async function importFiles(fileList) {
           maskedQuote: d.maskedQuote,
           placeholderMap: d.placeholderMap,
           translated: d.translated ?? null,
+          flagged: !!d.flagged,
         })),
       });
     }
@@ -563,6 +791,23 @@ ui.extractMode.addEventListener('change', () => {
   }
 });
 
+if (ui.btnUndo) ui.btnUndo.addEventListener('click', undo);
+if (ui.btnRedo) ui.btnRedo.addEventListener('click', redo);
+if (ui.btnCopyOriginal) ui.btnCopyOriginal.addEventListener('click', copyOriginal);
+if (ui.btnCopyTranslate) ui.btnCopyTranslate.addEventListener('click', copyTranslate);
+
+document.addEventListener('keydown', (e) => {
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  if (!mod) return;
+
+  if (document.activeElement && document.activeElement.classList?.contains('trInput')) return;
+
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+});
+
 async function fillMissingFromTM(path) {
   const f = state.files.get(path);
   if (!f) return 0;
@@ -588,7 +833,7 @@ async function translateDialogs(path, indices) {
   const apiKey = String(ui.apiKey.value || '').trim();
   const batch = clamp(Number(ui.batchSize.value || 20), 1, 80);
 
-  const list = indices.map(i => f.dialogs[i]).filter(Boolean);
+  const list = indices.map(i => ({ idx: i, d: f.dialogs[i] })).filter(x => x.d);
   if (!list.length) return;
 
   setBusy(true);
@@ -600,25 +845,31 @@ async function translateDialogs(path, indices) {
   for (let start = 0; start < list.length; start += batch) {
     const slice = list.slice(start, start + batch);
     let translated;
-
-    if (engine === 'deepseek') translated = await translateBatchDeepSeek(slice, targetLang, apiKey);
-    else if (engine === 'deepl') translated = await translateBatchDeepL(slice, targetLang, apiKey);
-    else translated = await translateBatchLingva(slice, targetLang);
-
+    const dialogsOnly = slice.map(x => x.d);
+    
+    if (engine === 'deepseek') translated = await translateBatchDeepSeek(dialogsOnly, targetLang, apiKey);
+    else if (engine === 'deepl') translated = await translateBatchDeepL(dialogsOnly, targetLang, apiKey);
+    else translated = await translateBatchLingva(dialogsOnly, targetLang);
+    
     for (let i = 0; i < slice.length; i++) {
-      const d = slice[i];
+      const { idx, d } = slice[i];
+      const prev = String(d.translated ?? '');
+    
       const out = String(translated[i] ?? '');
       const unmasked = unmaskTagsInText(out, d.placeholderMap);
       d.translated = unmasked;
-
+    
+      pushHistory({ path, row: idx, field: 'translated', prev, next: String(unmasked ?? ''), ts: Date.now(), source: engine });
+    
       if (ui.autoSave.checked) {
-        Store.tmPut(targetLang, String(d.maskedQuote ?? ''), String(unmasked), { source: engine }).catch(() => {});
+        Store.tmPut(targetLang, String(d.maskedQuote ?? ''), String(unmasked), { source: engine }).catch(()=>{});
       }
     }
 
     done += slice.length;
     setStatus(`Translating… ${done}/${list.length}`, `${engine} → ${targetLang}`);
-    renderTable();
+    renderTable({ resetSel: false, resetScroll: false });
+    updateUndoRedoButtons();
     if (ui.autoSave.checked) scheduleSaveActiveFile();
   }
 
