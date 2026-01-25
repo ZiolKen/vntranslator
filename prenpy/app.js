@@ -280,6 +280,13 @@ async function copyTranslate() {
   await copyToClipboard(f.dialogs[row]?.translated ?? '');
 }
 
+function getMetaKind(d) {
+  const tr = String(d.translated ?? '');
+  if (!tr.trim()) return 'empty';
+  if (RENPH_TEST_RE.test(tr) || OLD_RENPH_TEST_RE.test(tr)) return 'error';
+  return 'ok';
+}
+
 function toggleFlag(rowIndex) {
   const f = getActiveFile();
   if (!f) return;
@@ -366,22 +373,23 @@ function computeActiveView() {
 
   const filterMode = ui.rowFilter.value;
   const q = String(ui.tableSearch.value || '').trim().toLowerCase();
-  const showTranslated = filterMode === 'all' || filterMode === 'translated';
-  const showUntranslated = filterMode === 'all' || filterMode === 'untranslated';
-
+  
   const out = [];
   for (let i = 0; i < f.dialogs.length; i++) {
     const d = f.dialogs[i];
     const hasTr = d.translated && String(d.translated).trim();
-    if (hasTr && !showTranslated) continue;
-    if (!hasTr && !showUntranslated) continue;
-
+  
+    if (filterMode === 'translated' && !hasTr) continue;
+    if (filterMode === 'untranslated' && hasTr) continue;
+    if (filterMode === 'flag' && !d.flagged) continue;
+    if (filterMode === 'error' && getMetaKind(d) !== 'error') continue;
+  
     if (q) {
       const src = String(d.quote || '').toLowerCase();
       const tr = String(d.translated || '').toLowerCase();
       if (!src.includes(q) && !tr.includes(q)) continue;
     }
-
+  
     out.push(i);
   }
 
@@ -447,6 +455,59 @@ function renderRow(f, idx, warnOn) {
   const tdMeta = document.createElement('td');
   tdMeta.className = 'col-meta';
   
+  const metaWrap = document.createElement('div');
+  metaWrap.className = 'meta-wrap';
+  
+  const flagBtn = document.createElement('button');
+  flagBtn.type = 'button';
+  flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
+  flagBtn.textContent = '🚩';
+  flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
+  
+  const metaSpan = document.createElement('span');
+  metaSpan.className = 'metaText';
+  
+  function refreshMeta() {
+    const kind = getMetaKind(d);
+    const warnOn2 = warnOn || ui.rowFilter.value === 'error';
+  
+    row.classList.toggle('is-error', kind === 'error');
+    row.classList.toggle('is-flag', !!d.flagged);
+  
+    if (!warnOn2) {
+      metaSpan.textContent = hasTr ? 'OK' : '—';
+      metaSpan.className = 'metaText ' + (hasTr ? 'meta-ok' : 'meta-empty');
+      return;
+    }
+  
+    if (kind === 'error') {
+      metaSpan.textContent = 'ERROR';
+      metaSpan.className = 'metaText meta-err';
+    } else if (hasTr) {
+      metaSpan.textContent = 'OK';
+      metaSpan.className = 'metaText meta-ok';
+    } else {
+      metaSpan.textContent = '—';
+      metaSpan.className = 'metaText meta-empty';
+    }
+  }
+  
+  flagBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    d.flagged = !d.flagged;
+    flagBtn.classList.toggle('on', d.flagged);
+    flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
+    refreshMeta();
+  
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+    if (ui.rowFilter.value === 'flag') renderTable({ resetSel: false, resetScroll: false });
+  });
+  
+  metaWrap.append(flagBtn, metaSpan);
+  tdMeta.appendChild(metaWrap);
+  
+  refreshMeta();
+  
   const flagBtn = document.createElement('button');
   flagBtn.type = 'button';
   flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
@@ -477,6 +538,7 @@ function renderRow(f, idx, warnOn) {
     if (cb.checked) state.activeSelected.add(idx);
     else state.activeSelected.delete(idx);
     row.classList.toggle('selected', cb.checked);
+    updateSelAllUI();
   });
 
   row.addEventListener('click', (ev) => {
@@ -526,6 +588,9 @@ function renderRow(f, idx, warnOn) {
     status.textContent = warnNow ? 'PLACEHOLDER' : (hasNow ? 'OK' : '—');
   
     updateProjectStats();
+    refreshMeta();
+    updateProjectStats();
+    updateSelAllUI();
   });
 
   return row;
@@ -594,17 +659,38 @@ function renderTable({ resetSel = true, resetScroll = true } = {}) {
     state.virtual.lastStart = -1;
     state.virtual.lastEnd = -1;
     renderVirtual(true);
+    updateSelAllUI();
   }, 100));
 }
 
-ui.selAll.addEventListener('change', () => {
-  const rows = ui.gridBody.querySelectorAll('tr.tr-row');
-  const v = ui.selAll.checked;
-  for (const r of rows) {
-    const cb = r.querySelector('.rowSel');
-    cb.checked = v;
-    cb.dispatchEvent(new Event('change'));
+function updateSelAllUI() {
+  const total = state.activeView.length;
+  if (!total) {
+    ui.selAll.checked = false;
+    ui.selAll.indeterminate = false;
+    return;
   }
+
+  let inView = 0;
+  for (const idx of state.activeView) if (state.activeSelected.has(idx)) inView++;
+
+  ui.selAll.checked = inView === total;
+  ui.selAll.indeterminate = inView > 0 && inView < total;
+}
+
+ui.selAll.addEventListener('change', () => {
+  const v = ui.selAll.checked;
+
+  if (!state.activePath) return;
+
+  if (v) {
+    for (const idx of state.activeView) state.activeSelected.add(idx);
+  } else {
+    for (const idx of state.activeView) state.activeSelected.delete(idx);
+  }
+
+  updateSelAllUI();
+  renderVirtual(true);
 });
 
 const scheduleSaveActiveFile = debounce(async () => {
