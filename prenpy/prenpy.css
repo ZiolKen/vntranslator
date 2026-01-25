@@ -61,6 +61,7 @@ body{
   background: rgba(15,23,34,.8);
   color:var(--text);
   padding:9px 12px;
+  text-decoration:none;
   border-radius:12px;
   cursor:pointer;
   font-weight:700;
@@ -137,7 +138,7 @@ body{
 .select{cursor:pointer}
 .input:focus,.select:focus{border-color: rgba(124,92,255,.75)}
 .check{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px}
-.files{height: 220px}
+.files{height: 240px}
 .file-list{
   display:flex; flex-direction:column; gap:6px;
   max-height: 176px;
@@ -193,8 +194,8 @@ body{
 .col-sel{width:38px}
 .col-no{width:60px; color:var(--muted); font-family:var(--mono)}
 .col-meta{width:150px; color:var(--muted); font-family:var(--mono); font-size:11px}
-.col-src{width:55%}
-.col-tr{width:60%}
+.col-src{width:60%}
+.col-tr{width:65%}
 .cell-src{font-family:var(--mono); color:#dce6f3; overflow-wrap:anywhere; word-break:break-word}
 .srcText{
   white-space:pre-wrap;
