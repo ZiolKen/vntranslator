@@ -193,8 +193,8 @@ body{
 .col-sel{width:38px}
 .col-no{width:60px; color:var(--muted); font-family:var(--mono)}
 .col-meta{width:150px; color:var(--muted); font-family:var(--mono); font-size:11px}
-.col-src{width:48%}
-.col-tr{width:49%}
+.col-src{width:49%}
+.col-tr{width:50%}
 .cell-src{font-family:var(--mono); color:#dce6f3; overflow-wrap:anywhere; word-break:break-word}
 .srcText{
   white-space:pre-wrap;
@@ -206,7 +206,6 @@ body{
 .cell-tr textarea{
   width:100%;
   min-height: 48px;
-  max-height: 48px;
   resize: none;
   overflow:auto;
   border:0;
