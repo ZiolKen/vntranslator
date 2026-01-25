@@ -506,9 +506,6 @@ function renderRow(f, idx, warnOn) {
     if (ui.rowFilter.value === 'flag') renderTable({ resetSel: false, resetScroll: false });
   });
   
-  const status = document.createElement('span');
-  status.className = 'metaStatus';
-  
   {
     const v = String(trText ?? '');
     const hasTr2 = v.trim().length > 0;
