@@ -460,7 +460,7 @@ function renderRow(f, idx, warnOn) {
   flagBtn.type = 'button';
   flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
   flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
-  flagBtn.textContent = '🚩';
+  flagBtn.textContent = 'Flag';
   flagBtn.addEventListener('click', (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
