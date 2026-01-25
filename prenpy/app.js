@@ -436,7 +436,7 @@ function renderRow(f, idx, warnOn) {
   srcBox.textContent = String(d.quote ?? '');
   tdSrc.appendChild(srcBox);
 
-  const tdTr = document.createElement('td');
+  const tdTr = document.createElement('tdtr');
   tdTr.className = 'cell-tr col-tr';
   const ta = document.createElement('textarea');
   ta.spellcheck = false;
