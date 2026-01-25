@@ -141,7 +141,7 @@ async function fetchLingva(base, src, target, q, timeoutMs = 15000) {
   }
 }
 
-async function translateOneLingva(q, src, target, timeoutMs = 150) {
+async function translateOneLingva(q, src, target, timeoutMs = 15000) {
   let lastErr = null;
   for (const base of LINGVA_BASE_URLS) {
     try {
@@ -169,7 +169,7 @@ export async function translateBatchLingva(batchDialogs, targetLang) {
     const settled = await Promise.allSettled(
       slice.map(d => {
         const q = d.maskedQuote || d.quote || '';
-        return translateOneLingva(q, src, target, 150);
+        return translateOneLingva(q, src, target, 15000);
       })
     );
 
