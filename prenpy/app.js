@@ -495,18 +495,6 @@ function renderRow(f, idx, warnOn) {
   tdMeta.append(flagBtn, status);
   refreshMeta();
   
-  flagBtn.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    d.flagged = !d.flagged;
-    flagBtn.classList.toggle('on', d.flagged);
-    flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
-    refreshMeta();
-  
-    if (ui.autoSave.checked) scheduleSaveActiveFile();
-    if (ui.rowFilter.value === 'flag') renderTable({ resetSel: false, resetScroll: false });
-  });
-  
   {
     const v = String(trText ?? '');
     const hasTr2 = v.trim().length > 0;
