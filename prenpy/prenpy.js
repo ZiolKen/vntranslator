@@ -87,6 +87,13 @@ export const RENPY = (() => {
     'renpy.call','renpy.jump','renpy.call_in_new_context','renpy.invoke_in_new_context'
   ]);
 
+  const TRANSLATOR_CALLS = new Set([
+    '_','__','_p','_np','p_','pgettext','npgettext','ngettext','gettext','ugettext',
+    'translate','t','tt','translate_string'
+  ]);
+
+  const BALANCED_MAX_MISC_LEN = 2500;
+
   let HAS_UNICODE_PROPS = true;
   try { new RegExp('\\p{L}', 'u'); } catch { HAS_UNICODE_PROPS = false; }
 
@@ -137,6 +144,12 @@ export const RENPY = (() => {
       while (stack.length && indent <= stack[stack.length - 1].indent) stack.pop();
     }
 
+    const PY_BLOCK_RE = /^\s*(?:init(?:\s+[-+]?\d+)?\s+python(?:\s+hide)?|python(?:\s+hide)?)\s*:\s*$/;
+    const SCREEN_RE = /^\s*screen\s+[A-Za-z_]\w*\s*(\([^)]*\))?\s*:\s*$/;
+    const MENU_RE = /^\s*menu\s*:\s*$/;
+    const STYLE_RE = /^\s*style\s+[A-Za-z_]\w*\s*:\s*$/;
+    const TRANSFORM_RE = /^\s*transform\s+[A-Za-z_]\w*\s*:\s*$/;
+
     for (let i = 0; i < n; i++) {
       const raw = lines[i];
       const stripped = raw.trim();
@@ -145,11 +158,11 @@ export const RENPY = (() => {
       if (stripped && !raw.trimStart().startsWith('#')) {
         popTo(indent);
 
-        if (/^\s*(init\s+python|python)\s*:\s*$/.test(raw)) stack.push({ type: 'python', indent });
-        else if (/^\s*screen\s+[A-Za-z_]\w*\s*(\([^)]*\))?\s*:\s*$/.test(raw)) stack.push({ type: 'screen', indent });
-        else if (/^\s*menu\s*:\s*$/.test(raw)) stack.push({ type: 'menu', indent });
-        else if (/^\s*style\s+[A-Za-z_]\w*\s*:\s*$/.test(raw)) stack.push({ type: 'style', indent });
-        else if (/^\s*transform\s+[A-Za-z_]\w*\s*:\s*$/.test(raw)) stack.push({ type: 'transform', indent });
+        if (PY_BLOCK_RE.test(raw)) stack.push({ type: 'python', indent });
+        else if (SCREEN_RE.test(raw)) stack.push({ type: 'screen', indent });
+        else if (MENU_RE.test(raw)) stack.push({ type: 'menu', indent });
+        else if (STYLE_RE.test(raw)) stack.push({ type: 'style', indent });
+        else if (TRANSFORM_RE.test(raw)) stack.push({ type: 'transform', indent });
       }
 
       const types = new Set(stack.map(x => x.type));
@@ -302,18 +315,18 @@ export const RENPY = (() => {
     return line.slice(k + 1, j + 1);
   }
 
-  function isWrappedByUnderscore(source, openQuoteStart) {
+  function isTranslateWrapped(source, openQuoteStart) {
     let j = openQuoteStart - 1;
     while (j >= 0 && /\s/.test(source[j])) j--;
-    if (j >= 0 && source[j] === '(') {
-      j--;
-      while (j >= 0 && /\s/.test(source[j])) j--;
-      if (j >= 0 && source[j] === '_') {
-        const k = j - 1;
-        if (k < 0 || !/[A-Za-z0-9_]/.test(source[k])) return true;
-      }
-    }
-    return false;
+    if (j < 0 || source[j] !== '(') return false;
+    j--;
+    while (j >= 0 && /\s/.test(source[j])) j--;
+    let end = j;
+    while (j >= 0 && /[A-Za-z0-9_\.]/.test(source[j])) j--;
+    const ident = source.slice(j + 1, end + 1);
+    if (!ident) return false;
+    const last = ident.split('.').pop().toLowerCase();
+    return TRANSLATOR_CALLS.has(last);
   }
 
   function isSayStatement(prefixTrimmed, fullLineTrimmed) {
@@ -334,6 +347,8 @@ export const RENPY = (() => {
     if (/(^|[^=!<>])=([^=]|$)/.test(prefixTrimmed)) return false;
 
     if (prefixTrimmed.includes(':')) return false;
+
+    if (prefixTrimmed.includes('(')) return false;
 
     return true;
   }
@@ -356,6 +371,60 @@ export const RENPY = (() => {
     }
     if (quoteChar === '"') return t.replace(/"""/g, '\\"""');
     return t.replace(/'''/g, "\\'''");
+  }
+
+  function stmtHeadLower(line) {
+    const m = String(line || '').trimStart().match(/^([A-Za-z_][\w\.]*)/);
+    return (m ? m[1].toLowerCase() : '');
+  }
+
+  function isDirectScreenTextLiteral(line, headLower, quotePosInLine) {
+    if (!headLower || !SCREEN_ALLOWED_HEADS.has(headLower)) return false;
+    const stmtStart = (line.match(/^\s*/)?.[0]?.length) || 0;
+    const pre = line.slice(stmtStart, quotePosInLine).trim();
+    const preLower = pre.toLowerCase();
+    if (preLower === headLower) return true;
+    if (!preLower.startsWith(headLower)) return false;
+    const rest = pre.slice(headLower.length).trim();
+    if (!rest.endsWith('(')) return false;
+    const ident = rest.slice(0, -1).trim();
+    if (!ident) return false;
+    const last = ident.split('.').pop().toLowerCase();
+    return TRANSLATOR_CALLS.has(last);
+  }
+
+  function enclosingCallInfoAtLine(line, quotePosInLine) {
+    let i = quotePosInLine - 1;
+    let depth = 0;
+    while (i >= 0) {
+      const c = line[i];
+      if (c === ')') depth++;
+      else if (c === '(') {
+        if (depth === 0) {
+          let j = i - 1;
+          while (j >= 0 && /\s/.test(line[j])) j--;
+          let k = j;
+          while (k >= 0 && /[A-Za-z0-9_\.]/.test(line[k])) k--;
+          const name = line.slice(k + 1, j + 1);
+          return { name, parenPos: i };
+        }
+        depth--;
+      }
+      i--;
+    }
+    return null;
+  }
+
+  function isNotifyStringAt(line, quotePosInLine) {
+    const info = enclosingCallInfoAtLine(line, quotePosInLine);
+    if (!info || !info.name) return false;
+    const nameLower = info.name.toLowerCase();
+    if (nameLower === 'notify' || nameLower === 'renpy.notify' || nameLower.endsWith('.notify')) return true;
+    if (nameLower === 'function') {
+      const pre = line.slice(info.parenPos + 1, quotePosInLine);
+      if (/\brenpy\.notify\b\s*,\s*$/.test(pre) || /\bnotify\b\s*,\s*$/.test(pre)) return true;
+    }
+    return false;
   }
 
   function extractDialogs(source) {
@@ -381,10 +450,13 @@ export const RENPY = (() => {
       const line = lines[lineIdx] ?? '';
       const lineTrimmed = line.trim();
       const lineStartOffset = lineStarts[lineIdx] ?? 0;
-      const first = list[0];
 
+      const first = list[0];
       const prefixTrimmed = source.slice(lineStartOffset, first.openStart).trim();
       const zone = masks.inScreen[lineIdx] ? 'screen' : 'script';
+
+      const head = getHeadToken(prefixTrimmed);
+      const stmtHead = stmtHeadLower(line);
 
       let isMenuOption = false;
       let colonPos = null;
@@ -400,8 +472,6 @@ export const RENPY = (() => {
       }
 
       const isSay = zone === 'script' && isSayStatement(prefixTrimmed, lineTrimmed);
-      const head = getHeadToken(prefixTrimmed);
-      const screenAllowed = zone === 'screen' && SCREEN_ALLOWED_HEADS.has(head);
 
       for (const lit of list) {
         const raw = lit.value;
@@ -413,7 +483,10 @@ export const RENPY = (() => {
         const prevId = prevIdentifierAt(line, quotePosInLine).toLowerCase();
         if (NON_TRANSLATABLE_ATTRS.has(prevId) || NON_TRANSLATABLE_CALLS.has(prevId)) continue;
 
-        const inWrap = isWrappedByUnderscore(source, lit.openQuoteStart);
+        const inWrap = isTranslateWrapped(source, lit.openQuoteStart);
+        const isAlt = (zone === 'screen' && prevId === 'alt');
+        const isDirectScreen = (zone === 'screen' && isDirectScreenTextLiteral(line, stmtHead, quotePosInLine));
+        const isNotify = (zone === 'screen' && isNotifyStringAt(line, quotePosInLine));
 
         let allowed = false;
 
@@ -424,11 +497,21 @@ export const RENPY = (() => {
           } else {
             allowed = isSay;
           }
-
-          if (inWrap && !(isSay || isMenuOption)) allowed = false;
+        } else if (MODE === 'balanced') {
+          if (zone === 'screen') {
+            allowed = isAlt || isDirectScreen || isNotify || inWrap;
+            if (allowed && inWrap && !(isAlt || isDirectScreen || isNotify) && raw.length > BALANCED_MAX_MISC_LEN) allowed = false;
+          } else {
+            if (isMenuOption && colonPos != null) {
+              allowed = (lit.openStart - lineStartOffset) < colonPos;
+            } else {
+              allowed = isSay || inWrap;
+              if (allowed && inWrap && !isSay && raw.length > BALANCED_MAX_MISC_LEN) allowed = false;
+            }
+          }
         } else {
           if (zone === 'screen') {
-            allowed = inWrap || (screenAllowed && lit === first);
+            allowed = isAlt || isDirectScreen || isNotify || inWrap;
           } else {
             if (isMenuOption && colonPos != null) {
               allowed = (lit.openStart - lineStartOffset) < colonPos;
@@ -475,7 +558,7 @@ export const RENPY = (() => {
     let out = source;
     for (const r of reps) out = out.slice(0, r.start) + r.value + out.slice(r.end);
 
-    const nl = eol || '\\n';
+    const nl = eol || '\n';
     const credit = String(creditLine || '').trim();
     if (!credit) return out + nl;
 
@@ -486,4 +569,4 @@ export const RENPY = (() => {
   }
 
   return { extractDialogs, applyTranslations, setMode, getMode };
-})(); 
+})();
