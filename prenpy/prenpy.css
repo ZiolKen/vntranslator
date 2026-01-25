@@ -193,6 +193,7 @@ body{
 .grid tbody tdtr{
   border-bottom:1px solid rgba(31,42,57,.6);
   vertical-align:top;
+  padding:4px 8px;
   font-size:12px;
 }
 .col-sel{width:38px}
@@ -211,7 +212,6 @@ body{
 .cell-tr textarea{
   width:100%;
   min-height: 48px;
-  padding:4px 8px;
   resize: none;
   overflow:auto;
   border:0;
