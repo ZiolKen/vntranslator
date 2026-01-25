@@ -302,3 +302,9 @@ body{
   .layout{grid-template-columns: 1fr}
   .sidebar{border-right:none; border-bottom: 1px solid rgba(31,42,57,.9)}
 }
+.tr-row.flagged { outline: 2px solid rgba(255, 120, 0, 0.35); }
+.flagBtn { margin-right: 8px; opacity: 0.35; }
+.flagBtn.on { opacity: 1; }
+.metaStatus.meta-warn { color: #ff6a6a; font-weight: 700; }
+.metaStatus.meta-ok { color: #38c172; font-weight: 700; }
+.metaStatus.meta-none { opacity: 0.6; }
