@@ -140,7 +140,7 @@ body{
 .files{height: 220px}
 .file-list{
   display:flex; flex-direction:column; gap:6px;
-  max-height: 188px;
+  max-height: 176px;
   overflow:auto;
   padding-right:4px;
 }
