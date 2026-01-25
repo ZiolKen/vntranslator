@@ -212,6 +212,7 @@ body{
 .cell-tr textarea{
   width:100%;
   min-height: 48px;
+  max-height: 58px;
   resize: none;
   overflow:auto;
   border:0;
