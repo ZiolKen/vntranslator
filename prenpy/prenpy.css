@@ -137,10 +137,10 @@ body{
 .select{cursor:pointer}
 .input:focus,.select:focus{border-color: rgba(124,92,255,.75)}
 .check{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px}
-.files{height: 240px;overflow-y:auto}
+.files{height: 220px}
 .file-list{
   display:flex; flex-direction:column; gap:6px;
-  max-height: 320px;
+  max-height: 188px;
   overflow:auto;
   padding-right:4px;
 }
