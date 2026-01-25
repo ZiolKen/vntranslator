@@ -72,7 +72,6 @@ export async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
 
   for (const t of out) {
     if (RENPH_TEST_RE.test(t) || OLD_RENPH_TEST_RE.test(t)) {
-      /* warn at UI layer */
     }
   }
 
@@ -124,33 +123,62 @@ export async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
   return out;
 }
 
-async function fetchLingva(base, src, target, q) {
+async function fetchLingva(base, src, target, q, timeoutMs = 15000) {
   const url = `${base}/api/v1/${encodeURIComponent(src)}/${encodeURIComponent(target)}/${encodeURIComponent(q)}`;
-  const res = await fetch(url, { method: 'GET' });
-  if (!res.ok) throw makeError(`Lingva error ${res.status}`, await res.text().catch(()=>''));
-  return res.json();
+
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, { method: 'GET', signal: controller.signal });
+    if (!res.ok) throw makeError(`Lingva error ${res.status}`, await res.text().catch(()=>''));
+    return res.json();
+  } catch (e) {
+    if (String(e?.name || '').includes('Abort')) throw makeError('Lingva timeout.', 'timeout');
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function translateOneLingva(q, src, target, timeoutMs = 150) {
+  let lastErr = null;
+  for (const base of LINGVA_BASE_URLS) {
+    try {
+      const data = await fetchLingva(base, src, target, q, timeoutMs);
+      const t = pickFirstNonEmpty([data?.translation, data?.translatedText, data?.translationText]);
+      if (!t) throw makeError('Lingva returned empty translation.');
+      return t;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || makeError('Lingva failed.');
 }
 
 export async function translateBatchLingva(batchDialogs, targetLang) {
   const target = LANG_TO_CODE[targetLang] || 'en';
   const src = 'auto';
-  const out = [];
-  for (const d of batchDialogs) {
-    const q = d.maskedQuote || d.quote || '';
-    let lastErr = null;
-    for (const base of LINGVA_BASE_URLS) {
-      try {
-        const data = await fetchLingva(base, src, target, q);
-        const t = pickFirstNonEmpty([data?.translation, data?.translatedText, data?.translationText]);
-        if (!t) throw makeError('Lingva returned empty translation.');
-        out.push(t);
-        lastErr = null;
-        break;
-      } catch (e) {
-        lastErr = e;
-      }
+
+  const out = new Array(batchDialogs.length);
+  const batchSize = 3;
+
+  for (let i = 0; i < batchDialogs.length; i += batchSize) {
+    const slice = batchDialogs.slice(i, i + batchSize);
+
+    const settled = await Promise.allSettled(
+      slice.map(d => {
+        const q = d.maskedQuote || d.quote || '';
+        return translateOneLingva(q, src, target, 150);
+      })
+    );
+
+    for (let j = 0; j < settled.length; j++) {
+      const r = settled[j];
+      if (r.status === 'fulfilled') out[i + j] = r.value;
+      else throw r.reason;
     }
-    if (lastErr) throw lastErr;
   }
+
   return out;
 }
