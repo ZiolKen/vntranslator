@@ -237,8 +237,8 @@ body{
   font-size: 11px;
   padding:10px 12px;
   color: #b7c4d4;
-  max-height: 160px;
-  min-height: 80px;
+  max-height: 100px;
+  min-height: 50px;
   overflow:auto;
   border-top:1px solid rgba(31,42,57,.7);
   background: rgba(9,13,18,.55);
