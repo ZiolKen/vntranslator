@@ -1107,7 +1107,7 @@
       return;
     }
     const eol = state.originalText.includes('\r\n') ? '\r\n' : '\n';
-    const outputText = RENPY.applyTranslations(state.originalText, state.dialogs, eol);
+    const outputText = RENPY.applyTranslations(state.originalText, state.dialogs, eol, TRANSLATOR_CREDIT);
 
     const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
