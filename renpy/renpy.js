@@ -792,11 +792,12 @@
       log(`*️⃣ Warning: expected ${src.length} items from DeepSeek but got ${out.length}.`, 'warn');
     }
     
-    if (RENPH_TEST_RE.test(translatedText) || OLD_RENPH_TEST_RE.test(translatedText)) {
-      log(
-        '*️⃣ [Line ' + lineNumber + '] Placeholder still appears in translation. Please review manually.',
-        'warn'
-      );
+    for (let i = 0; i < out.length && i < batchDialogs.length; i++) {
+      const t = out[i] || '';
+      const lineNumber = (batchDialogs[i]?.lineIndex ?? -1) + 1;
+      if (OLD_RENPH_TEST_RE.test(t)) {
+        log(`*️⃣ [Line ${lineNumber}] Placeholder __RENPLH_*__ still appears in DeepSeek output.`, 'warn');
+      }
     }
 
     return out;
