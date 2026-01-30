@@ -920,7 +920,7 @@
   async function translateBatchLingva(batchDialogs, targetLang) {
     const langCode = getLingvaLangCode(targetLang);
 
-    const out = await pMap(batchDialogs, 4, async (dialog) => {
+    const out = await pMap(batchDialogs, 8, async (dialog) => {
       const text = dialog.maskedQuote || dialog.quote || '';
       if (!text.trim()) return text;
 
