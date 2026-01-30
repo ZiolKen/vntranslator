@@ -128,15 +128,26 @@ function protectRPGMCodes(str) {
       if (ch === '\\') {
         block = '\\';
         j++;
-        while (j < str.length && /[A-Za-z{}<>]/.test(str[j])) {
-          block += str[j++];
-        }
-        if (str[j] === '[') {
-          block += '[';
+      
+        if (str[j] === '\\') {
+          block += '\\';
           j++;
-          while (j < str.length && str[j] !== ']') block += str[j++];
-          if (str[j] === ']') block += ']';
-          j++;
+        } else {
+          while (j < str.length && /[A-Za-z]/.test(str[j])) {
+            block += str[j++];
+          }
+      
+          if (block === '\\' && j < str.length && /[.!^|]/.test(str[j])) {
+            block += str[j++];
+          }
+      
+          if (str[j] === '[') {
+            block += '[';
+            j++;
+            while (j < str.length && str[j] !== ']') block += str[j++];
+            if (str[j] === ']') block += ']';
+            j++;
+          }
         }
       } else if (ch === '<') {
         block = '<';
@@ -186,11 +197,11 @@ function restoreRPGMCodes(str, map) {
 /* ------------------------------------------------------------
    Extract dialogs
 ------------------------------------------------------------ */
-const COMMAND_TEXT   = [101,105];
-const COMMAND_LINE   = [401,408,405];
-const COMMAND_CHOICE = [102];
-const COMMAND_BRANCH = [402,403];
-const COMMAND_COMMENT= [108];
+const COMMAND_SAY      = [101];
+const COMMAND_LINE     = [401,405,408];
+const COMMAND_CHOICE   = [102];
+const COMMAND_BRANCH   = [402,403];
+const COMMAND_COMMENT  = [108];
 
 function isValidDialogText(s) {
   if (typeof s !== "string") return false;
@@ -267,23 +278,23 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
 
     if (node.code && node.parameters) {
       const code = node.code;
-
-      if (COMMAND_TEXT.includes(code)) {
-        const arr = node.parameters[0] || [];
-        arr.forEach((t, i) => {
-          if (isValidDialogText(t)) {
-            dialogs.push({
-              fileIndex,
-              fileName,
-              ref: node.parameters[0],
-              index: i,
-              text: t,
-              code
-            });
-          }
-        });
-      } else if (COMMAND_LINE.includes(code)) {
-        const t = node.parameters[0];
+    
+      if (COMMAND_SAY.includes(code)) {
+        const speaker = node.parameters?.[4];
+        if (isValidDialogText(speaker)) {
+          dialogs.push({
+            fileIndex,
+            fileName,
+            ref: node.parameters,
+            index: 4,
+            text: speaker,
+            code: "SPEAKER_NAME"
+          });
+        }
+      }
+    
+      else if (COMMAND_LINE.includes(code)) {
+        const t = node.parameters?.[0];
         if (isValidDialogText(t)) {
           dialogs.push({
             fileIndex,
@@ -294,8 +305,10 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
             code
           });
         }
-      } else if (COMMAND_COMMENT.includes(code)) {
-        const t = node.parameters[0];
+      }
+    
+      else if (COMMAND_COMMENT.includes(code)) {
+        const t = node.parameters?.[0];
         if (isValidDialogText(t)) {
           dialogs.push({
             fileIndex,
@@ -306,22 +319,28 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
             code
           });
         }
-      } else if (COMMAND_CHOICE.includes(code)) {
-        const arr = node.parameters[0] || [];
-        arr.forEach((t, i) => {
-          if (isValidDialogText(t)) {
-            dialogs.push({
-              fileIndex,
-              fileName,
-              ref: node.parameters[0],
-              index: i,
-              text: t,
-              code
-            });
-          }
-        });
-      } else if (COMMAND_BRANCH.includes(code)) {
-        const t = node.parameters[1];
+      }
+    
+      else if (COMMAND_CHOICE.includes(code)) {
+        const arr = node.parameters?.[0];
+        if (Array.isArray(arr)) {
+          arr.forEach((t, i) => {
+            if (isValidDialogText(t)) {
+              dialogs.push({
+                fileIndex,
+                fileName,
+                ref: arr,
+                index: i,
+                text: t,
+                code
+              });
+            }
+          });
+        }
+      }
+    
+      else if (COMMAND_BRANCH.includes(code)) {
+        const t = node.parameters?.[1];
         if (isValidDialogText(t)) {
           dialogs.push({
             fileIndex,
@@ -646,26 +665,59 @@ function languageLabel(code){
   }
 }
 
+function buildTranslatePrompt(lines, targetLang) {
+  return `Translate each string in the JSON array to ${languageLabel(targetLang)} (code: ${targetLang}).
+
+RULES:
+- Parts like __RPGPLH_123__ (starts with "__RPGPLH_" and ends with "__") are placeholders. Keep them EXACTLY as-is.
+- Preserve RPG Maker escape codes, variables, and tags.
+- Do NOT add/remove real line breaks inside a string. Keep \\n as-is if present.
+- Do NOT reorder, merge, or split entries.
+- Return ONLY a JSON array of strings with the same length and order as input. No markdown, no comments.
+
+INPUT_JSON:
+${JSON.stringify(lines)}`;
+}
+
+function parseTranslatedArray(content, expectedCount) {
+  const raw = String(content || "").trim();
+
+  const tryParse = (s) => {
+    const arr = JSON.parse(s);
+    if (!Array.isArray(arr)) throw new Error("Not an array");
+    return arr.map(x => (typeof x === "string" ? x : String(x)));
+  };
+
+  try {
+    const arr = tryParse(raw);
+    return arr;
+  } catch {}
+
+  const s = raw.indexOf("[");
+  const e = raw.lastIndexOf("]");
+  if (s !== -1 && e !== -1 && e > s) {
+    try {
+      const arr = tryParse(raw.slice(s, e + 1));
+      return arr;
+    } catch {}
+  }
+
+  const out = raw
+    .split(/\r?\n/)
+    .map(l => l.replace(/^(?:\d+[\).\-\:]\s*|\-\s+|\*\s+)/, ""));
+
+  if (out.length !== expectedCount) {
+    log(`⚠️ Output lines=${out.length} expected=${expectedCount}. Consider JSON-array mode only.`, "warn");
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------
    Translator: DeepSeek
 ------------------------------------------------------------ */
 async function translateBatchDeepSeek(batch, targetLang, apiKey) {
   const lines = batch.map(d => d.protectedText);
-
-  const prompt =
-`Translate the following RPG Maker dialogue lines to ${languageLabel(targetLang)} (code: ${targetLang}).
-
-RULES:
-- Some parts are placeholders like __PH0__, __PH1__. Keep them EXACTLY as-is and do NOT translate them.
-- Preserve RPGM syntax, variables, and tags.
-- DO NOT remove or add \n or any RPGM escape codes.
-- Do NOT reorder, merge, or split lines.
-- Do NOT change placeholders or variables.
-- Return ONLY the translated lines, one per line, in the same order.
-- Do NOT add numbering, quotes, prefixes, or extra commentary.
-
-LINES:
-${lines.join("\n")}`;
+  const prompt = buildTranslatePrompt(lines, targetLang);
 
   const body = {
     apiKey: apiKey,
@@ -687,17 +739,13 @@ ${lines.join("\n")}`;
 
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content || "";
-  const outLines = content
-    .split(/\r?\n/)
-    .map(l => l.trim())
-    .filter(l => l !== "")
-    .map(l => l.replace(/^(?:\d+[\).\-\:]\s*|\-\s+|\*\s+)/, ""));
+  const out = parseTranslatedArray(content, lines.length);
 
-  if (outLines.length !== lines.length) {
-    log(`⚠️ DeepSeek returned ${outLines.length} lines, expected ${lines.length}. Mapping by order.`, "warn");
+  if (out.length !== lines.length) {
+    log(`⚠️ DeepSeek returned ${out.length} entries, expected ${lines.length}.`, "warn");
   }
 
-  return outLines;
+  return out;
 }
 
 /* ------------------------------------------------------------
@@ -705,21 +753,7 @@ ${lines.join("\n")}`;
 ------------------------------------------------------------ */
 async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
   const lines = batch.map(d => d.protectedText);
-
-  const prompt =
-`Translate the following RPG Maker dialogue lines to ${languageLabel(targetLang)} (code: ${targetLang}).
-
-RULES:
-- Some parts are placeholders like __PH0__, __PH1__. Keep them EXACTLY as-is and do NOT translate them.
-- Preserve RPGM syntax, variables, and tags.
-- DO NOT remove or add \n or any RPGM escape codes.
-- Do NOT reorder, merge, or split lines.
-- Do NOT change placeholders or variables.
-- Return ONLY the translated lines, one per line, in the same order.
-- Do NOT add numbering, quotes, prefixes, or extra commentary.
-
-LINES:
-${lines.join("\n")}`;
+  const prompt = buildTranslatePrompt(lines, targetLang);
 
   const body = {
     model: model,
@@ -745,17 +779,13 @@ ${lines.join("\n")}`;
 
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content || "";
-  const outLines = content
-    .split(/\r?\n/)
-    .map(l => l.trim())
-    .filter(l => l !== "")
-    .map(l => l.replace(/^(?:\d+[\).\-\:]\s*|\-\s+|\*\s+)/, ""));
-  
-  if (outLines.length !== lines.length) {
-    log(`⚠️ ChatGPT returned ${outLines.length} lines, expected ${lines.length}.`, "warn");
+  const out = parseTranslatedArray(content, lines.length);
+
+  if (out.length !== lines.length) {
+    log(`⚠️ ChatGPT returned ${out.length} entries, expected ${lines.length}.`, "warn");
   }
 
-  return outLines;
+  return out;
 }
 
 /* ------------------------------------------------------------
@@ -780,6 +810,64 @@ function normalizeLingvaTargetCode(code) {
   return c;
 }
 
+// ------------------------------------------------------------
+// Concurrency helper
+// ------------------------------------------------------------
+async function pMap(items, concurrency, mapper) {
+  const arr = Array.from(items || []);
+  const limit = Math.max(1, Number(concurrency) || 1);
+
+  const results = new Array(arr.length);
+  let nextIndex = 0;
+  let firstErr = null;
+
+  async function worker() {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= arr.length) return;
+      if (firstErr) return;
+
+      try {
+        results[i] = await mapper(arr[i], i);
+      } catch (e) {
+        firstErr = e;
+        return;
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, arr.length) }, () => worker());
+  await Promise.all(workers);
+
+  if (firstErr) throw firstErr;
+  return results;
+}
+
+let _lingvaBestHost = null;
+
+async function lingvaFetch(path) {
+  const hosts = _lingvaBestHost
+    ? [_lingvaBestHost, ...LINGVA_HOSTS.filter(h => h !== _lingvaBestHost)]
+    : LINGVA_HOSTS.slice();
+
+  let lastErr = null;
+
+  for (const host of hosts) {
+    try {
+      const res = await fetch(host + path, { cache: "no-store" });
+      if (res.ok) {
+        _lingvaBestHost = host;
+        return res;
+      }
+      lastErr = new Error(`Lingva HTTP ${res.status} from ${host}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  throw lastErr || new Error("Lingva: all endpoints failed");
+}
+
 async function lingvaRequest(text, target) {
   const t = normalizeLingvaTargetCode(target);
 
@@ -796,13 +884,31 @@ async function lingvaRequest(text, target) {
   throw new Error("Lingva: all endpoints failed");
 }
 
-async function translateBatchLingva(batch, targetLang) {
-  const out = [];
-  for (const d of batch) {
-    const translated = await lingvaRequest(d.protectedText, targetLang);
-    out.push(translated);
-    await delay(150);
-  }
+async function translateBatchLingva(batchDialogs, targetLang) {
+  const langCode = normalizeLingvaTargetCode(targetLang);
+
+  const out = await pMap(batchDialogs, 8, async (dialog) => {
+    const text = dialog.protectedText ?? dialog.text ?? "";
+    if (!String(text).trim()) return text;
+
+    const path =
+      "/api/v1/auto/" +
+      encodeURIComponent(langCode) +
+      "/" +
+      encodeURIComponent(text);
+
+    const response = await lingvaFetch(path);
+    const data = await response.json().catch(() => ({}));
+
+    const translated = data.translation || data.translatedText || data.result || "";
+    if (!translated) {
+      throw new Error("⚠️ Lingva response did not contain a translation string.");
+    }
+
+    await delay(60);
+    return translated;
+  });
+
   return out;
 }
 
@@ -1165,6 +1271,7 @@ el.confirmLingvaBtn.addEventListener("click", hideLingvaWarning);
 el.cancelLingvaBtn.addEventListener("click", () => {
   hideLingvaWarning();
   el.translationModel.value = "deepseek";
+  el.translationModel.dispatchEvent(new Event("change"));
 });
 
 /* ------------------------------------------------------------
