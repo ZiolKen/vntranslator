@@ -215,6 +215,10 @@ body{
   padding:0;
   margin:0;
 }
+textarea:hover,textarea:active,textarea:focus{
+  background: transparent;
+  border:0;
+}
 .cell-tr textarea:focus{border-color: rgba(124,92,255,.75)}
 .tr-row{background: rgba(0,0,0,.06)}
 .tr-row:hover{background: rgba(124,92,255,.05)}
