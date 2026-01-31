@@ -347,7 +347,7 @@ const LINGVA_HOSTS = [
   "https://lingva.lunar.icu",
 ];
 
-const lingvaPool = createPool(100);
+const lingvaPool = createPool(55);
 
 async function lingvaRequest(text, target, signal) {
   const hosts = [...LINGVA_HOSTS].sort(() => Math.random() - 0.5);
@@ -366,7 +366,7 @@ async function lingvaRequest(text, target, signal) {
   throw new Error("Lingva: all endpoints failed");
 }
 
-const googlePool = createPool(100);
+const googlePool = createPool(55);
 const translateCache = new Map();
 
 async function googleTranslate(text, sl, tl, signal) {
