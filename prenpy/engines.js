@@ -180,7 +180,7 @@ export async function translateBatchLingva(batchDialogs, targetLang) {
   const src = 'auto';
 
   const out = new Array(batchDialogs.length);
-  const batchSize = 75;
+  const batchSize = 60;
 
   for (let i = 0; i < batchDialogs.length; i += batchSize) {
     const slice = batchDialogs.slice(i, i + batchSize);
