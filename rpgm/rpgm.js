@@ -666,16 +666,35 @@ function languageLabel(code){
 }
 
 function buildTranslatePrompt(lines, targetLang) {
-  return `Translate each string in the JSON array to ${languageLabel(targetLang)} (code: ${targetLang}).
+  return `Your Role: Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts.
+Short basic instruction: Translate RPG Maker dialogue strings to ${languageLabel(targetLang)} (code: ${targetLang}).
 
-RULES:
+Think step by step before translating — analyze each line's tone, implied meaning, and character voice.
+Maintain the emotional tone and character consistency across translations.
+Simulate the memory of how each character speaks to keep their personality and style consistent.
+
+Rules:
 - Parts like __RPGPLH_123__ (starts with "__RPGPLH_" and ends with "__") are placeholders. Keep them EXACTLY as-is.
 - Preserve RPG Maker escape codes, variables, and tags.
 - Do NOT add/remove real line breaks inside a string. Keep \\n as-is if present.
 - Do NOT reorder, merge, or split entries.
-- Return ONLY a JSON array of strings with the same length and order as input. No markdown, no comments.
+- Translate naturally and meaningfully by context — avoid word-by-word literal translation.
+- Use slang sparingly and only if it enhances natural tone and is easy to understand.
+- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.
+      
+Context:
+- You are working with raw dialogue strings extracted from a RPG Maker `.json` script.
+- The visual novel includes romantic, emotional,... and adult themes.
+- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.
 
-INPUT_JSON:
+Your Goal:
+- Produce a fully localized, natural-sounding version of the input dialogues that feels authentic to the target language audience — as if originally written in that language.
+- Ensure accuracy, tone consistency, and contextual appropriateness even for explicit scenes.
+
+Result:
+- Return ONLY a translated JSON array of strings with the same length and order as input. No markdown, no comments.
+
+Input JSON array:
 ${JSON.stringify(lines)}`;
 }
 
@@ -723,7 +742,7 @@ async function translateBatchDeepSeek(batch, targetLang, apiKey) {
     apiKey: apiKey,
     model: "deepseek-chat",
     messages: [
-      { role: "system", content: "You are a professional game localization translator specializing in RPG Maker games." },
+      { role: "system", content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult game, NSFW content." },
       { role: "user", content: prompt }
     ],
     stream: false
@@ -758,7 +777,7 @@ async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
   const body = {
     model: model,
     messages: [
-      { role: "system", content: "You are a professional game localization translator specializing in RPG Maker games." },
+      { role: "system", content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult game, NSFW content." },
       { role: "user", content: prompt }
     ]
   };
@@ -887,7 +906,7 @@ async function lingvaRequest(text, target) {
 async function translateBatchLingva(batchDialogs, targetLang) {
   const langCode = normalizeLingvaTargetCode(targetLang);
 
-  const out = await pMap(batchDialogs, 8, async (dialog) => {
+  const out = await pMap(batchDialogs, 48, async (dialog) => {
     const text = dialog.protectedText ?? dialog.text ?? "";
     if (!String(text).trim()) return text;
 
