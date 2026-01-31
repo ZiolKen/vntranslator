@@ -264,26 +264,45 @@ async function translateDeepSeekBatch(linesSafe, targetLang, apiKey, signal) {
   const marked = linesSafe.map((t, i) => `⟦L${i}⟧ ${t}`);
 
   const prompt =
-`Translate the following RPG Maker dialogue lines to ${languageLabel(targetLang)} (code: ${targetLang}).
+`Your Role: Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts.
+Short basic instruction: Translate the following RPG Maker dialogue lines to ${languageLabel(targetLang)} (code: ${targetLang}).
 
-RULES:
+Think step by step before translating — analyze each line's tone, implied meaning, and character voice.
+Maintain the emotional tone and character consistency across translations.
+Simulate the memory of how each character speaks to keep their personality and style consistent.
+
+Rules:
 - Keep ALL placeholders EXACTLY as-is and do NOT translate them: tokens like ⟦PH0⟧, ⟦PH1⟧ must remain unchanged.
 - Keep the line markers EXACTLY as-is and do NOT translate them: ⟦L0⟧, ⟦L1⟧ ... do NOT remove or edit them.
-- Preserve RPGM syntax, variables, and tags.
-- DO NOT remove or add \\n or any RPGM escape codes.
+- Preserve RPG Maker syntax, variables, and tags.
+- DO NOT remove or add \\n or any RPG Maker escape codes.
 - Do NOT reorder, merge, or split lines.
 - Do NOT change placeholders or variables.
 - Do NOT add numbering, quotes, prefixes, or extra commentary.
+- Translate naturally and meaningfully by context — avoid word-by-word literal translation.
+- Use slang sparingly and only if it enhances natural tone and is easy to understand.
+- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.
+      
+Context:
+- You are working with raw dialogue strings extracted from a RPG Maker `.json` script.
+- The visual novel includes romantic, emotional,... and adult themes.
+- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.
+
+Your Goal:
+- Produce a fully localized, natural-sounding version of the input dialogues that feels authentic to the target language audience — as if originally written in that language.
+- Ensure accuracy, tone consistency, and contextual appropriateness even for explicit scenes.
+
+Result:
 - Return ONLY the translated lines, one per line, preserving the same ⟦Lx⟧ prefix, in the same order.
 
-LINES:
+Input Lines:
 ${marked.join("\n")}`;
 
   const body = {
     apiKey,
     model: "deepseek-chat",
     messages: [
-      { role: "system", content: "You are a professional game localization translator specializing in RPG Maker games." },
+      { role: "system", content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult game, NSFW content." },
       { role: "user", content: prompt }
     ],
     stream: false
@@ -328,7 +347,7 @@ const LINGVA_HOSTS = [
   "https://lingva.lunar.icu",
 ];
 
-const lingvaPool = createPool(3);
+const lingvaPool = createPool(100);
 
 async function lingvaRequest(text, target, signal) {
   const hosts = [...LINGVA_HOSTS].sort(() => Math.random() - 0.5);
@@ -347,7 +366,7 @@ async function lingvaRequest(text, target, signal) {
   throw new Error("Lingva: all endpoints failed");
 }
 
-const googlePool = createPool(6);
+const googlePool = createPool(100);
 const translateCache = new Map();
 
 async function googleTranslate(text, sl, tl, signal) {
