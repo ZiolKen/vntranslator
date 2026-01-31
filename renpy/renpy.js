@@ -756,7 +756,7 @@
       apiKey,
       model: 'deepseek-chat',
       messages: [
-        { role: 'system', content: "Your Role: Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts." },
+        { role: 'system', content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult game, NSFW content." },
         { role: 'user', content: prompt }
       ],
       stream: false,
