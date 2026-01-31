@@ -25,12 +25,31 @@ export async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
   const prompt =
     `Your Role: Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts.\n` +
     `Short basic instruction: Translate Ren'Py dialogue strings to ${languageName} (language code: ${LANG_TO_CODE[targetLang] || targetLang}).\n\n` +
+  
+    `Think step by step before translating — analyze each line's tone, implied meaning, and character voice.\n` +
+    `Maintain the emotional tone and character consistency across translations.\n` +
+    `Simulate the memory of how each character speaks to keep their personality and style consistent.\n\n` +
+  
     `Rules:\n` +
     `- DO NOT translate or modify placeholders like ⟦RENPH{0}⟧.\n` +
     `- Preserve ALL Ren'Py tags, syntax, and variables (e.g., {fast}, [player_name]).\n` +
     `- DO NOT merge, split, or reorder lines.\n` +
-    `- Translate naturally and meaningfully by context.\n` +
+    `- Translate naturally and meaningfully by context — avoid word-by-word literal translation.\n` +
+    `- Use slang sparingly and only if it enhances natural tone and is easy to understand.\n` +
+    `- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.\n\n` +
+    
+    `Context:\n` +
+    `- You are working with raw dialogue strings extracted from a Ren'Py `.rpy` script.\n` +
+    `- The visual novel includes romantic, emotional,... and adult themes.\n` +
+    `- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.\n\n` +
+  
+    `Your Goal:\n` +
+    `- Produce a fully localized, natural-sounding version of the input dialogues that feels authentic to the target language audience — as if originally written in that language.\n` +
+    `- Ensure accuracy, tone consistency, and contextual appropriateness even for explicit scenes.\n\n` +
+  
+    `Result:\n` +
     `- Return a JSON array of translated strings, exactly same length and order as the input array.\n\n` +
+  
     `Input JSON array:\n` +
     payload;
 
@@ -38,7 +57,7 @@ export async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
     apiKey,
     model: 'deepseek-chat',
     messages: [
-      { role: 'system', content: "Your Role: Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult/NSFW content." },
+      { role: 'system', content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult game, NSFW content." },
       { role: 'user', content: prompt }
     ],
     stream: false,
