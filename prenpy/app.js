@@ -84,7 +84,7 @@ const ui = {
 };
 
 const state = {
-  project: { id: PROJECT_ID, name: 'PreRenPy', createdAt: new Date().toISOString() },
+  project: { id: PROJECT_ID, name: 'Untitled_Project', createdAt: new Date().toISOString() },
   files: new Map(),
   activePath: null,
   activeView: [],
@@ -339,29 +339,53 @@ function updateProjectStats() {
 
 function renderFileList() {
   const filter = String(ui.fileFilter.value || '').toLowerCase().trim();
-  ui.fileList.innerHTML = '';
-  const paths = Array.from(state.files.keys()).sort((a,b) => a.localeCompare(b));
+  ui.fileList.replaceChildren();
+  const paths = Array.from(state.files.keys()).sort((a, b) => a.localeCompare(b));
   let shown = 0;
+
   for (const p of paths) {
     if (filter && !p.toLowerCase().includes(filter)) continue;
     const f = state.files.get(p);
+    if (!f) continue;
+
     const item = document.createElement('div');
     item.className = 'file-item' + (p === state.activePath ? ' active' : '');
     item.tabIndex = 0;
     item.setAttribute('role', 'option');
 
+    const pathEl = document.createElement('div');
+    pathEl.className = 'file-path';
+    pathEl.title = p;
+    pathEl.textContent = p;
+
+    const meta = document.createElement('div');
+    meta.className = 'file-meta';
+
     const translated = f.dialogs.filter(d => d.translated && String(d.translated).trim()).length;
-    item.innerHTML = `
-      <div class="file-path" title="${escapeHtml(p)}">${escapeHtml(p)}</div>
-      <div class="file-meta">
-        <span class="pill">${f.dialogs.length} strings</span>
-        <span class="pill">${translated} translated</span>
-      </div>
-    `;
+
+    const pill1 = document.createElement('span');
+    pill1.className = 'pill';
+    pill1.textContent = `${f.dialogs.length} strings`;
+
+    const pill2 = document.createElement('span');
+    pill2.className = 'pill';
+    pill2.textContent = `${translated} translated`;
+
+    meta.append(pill1, pill2);
+    item.append(pathEl, meta);
+
     item.addEventListener('click', () => openFile(p));
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openFile(p);
+      }
+    });
+
     ui.fileList.appendChild(item);
     shown++;
   }
+
   ui.fileBadge.textContent = String(shown);
 }
 
@@ -1055,7 +1079,7 @@ async function renderTM() {
   const target = ui.targetLangSelect.value;
   const q = String(ui.tmSearch.value || '').toLowerCase().trim();
   const list = await Store.tmList(target, 2000);
-  ui.tmList.innerHTML = '';
+  ui.tmList.replaceChildren();
   const frag = document.createDocumentFragment();
   let shown = 0;
 
@@ -1066,30 +1090,49 @@ async function renderTM() {
 
     const item = document.createElement('div');
     item.className = 'tm-item';
-    item.innerHTML = `
-      <div class="tm-top">
-        <div class="tm-k">${escapeHtml(e.key)} · ${escapeHtml(e.updatedAt)} · x${escapeHtml(e.count ?? 1)}</div>
-        <div class="tm-actions">
-          <button class="btn" data-tm-del="${escapeHtml(e.key)}">Delete</button>
-        </div>
-      </div>
-      <div class="tm-src">${escapeHtml(src)}</div>
-      <div class="tm-tr">${escapeHtml(tr)}</div>
-    `;
+
+    const top = document.createElement('div');
+    top.className = 'tm-top';
+
+    const k = document.createElement('div');
+    k.className = 'tm-k';
+
+    const key = String(e.key ?? '');
+    const updatedAt = String(e.updatedAt ?? '');
+    const count = String(e.count ?? 1);
+    k.textContent = `${key} · ${updatedAt} · x${count}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'tm-actions';
+
+    const del = document.createElement('button');
+    del.className = 'btn';
+    del.type = 'button';
+    del.textContent = 'Delete';
+    del.addEventListener('click', async () => {
+      await Store.tmDelete(key);
+      await renderTM();
+    });
+
+    actions.appendChild(del);
+    top.append(k, actions);
+
+    const srcEl = document.createElement('div');
+    srcEl.className = 'tm-src';
+    srcEl.textContent = src;
+
+    const trEl = document.createElement('div');
+    trEl.className = 'tm-tr';
+    trEl.textContent = tr;
+
+    item.append(top, srcEl, trEl);
     frag.appendChild(item);
+
     shown++;
     if (shown >= 400) break;
   }
 
   ui.tmList.appendChild(frag);
-
-  ui.tmList.querySelectorAll('[data-tm-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const key = btn.getAttribute('data-tm-del');
-      await Store.tmDelete(key);
-      await renderTM();
-    });
-  });
 }
 
 ui.tmSearch.addEventListener('input', debounce(renderTM, 120));
