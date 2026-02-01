@@ -72,18 +72,32 @@ function addLog(type, left, right = "") {
   const div = document.createElement("div");
   div.className = "log-item";
 
-  let badge = `<span class="tag tag-skip">LOG</span>`;
-  if (type === "ok") badge = `<span class="tag tag-ok">OK</span>`;
-  else if (type === "exist") badge = `<span class="tag tag-exist">EXIST</span>`;
-  else if (type.startsWith("tag-")) badge = `<span class="tag ${type}">${type.replace("tag-", "").toUpperCase()}</span>`;
-  else if (type === "err") badge = `<span class="tag tag-skip">ERR</span>`;
+  const badge = document.createElement("span");
+  badge.className = "tag";
 
-  div.innerHTML = `
-    ${badge}
-    <span style="color:#aaa">${(left || "").slice(0, 60)}</span>
-    <span style="margin:0 5px;color:#555">➔</span>
-    <span style="color:#fff">${(right || "").slice(0, 60)}</span>
-  `;
+  const t = String(type || "log").toLowerCase();
+  if (t === "ok") badge.classList.add("tag-ok");
+  else if (t === "exist") badge.classList.add("tag-exist");
+  else if (t === "err") badge.classList.add("tag-skip");
+  else if (t.startsWith("tag-")) badge.classList.add(t);
+  else badge.classList.add("tag-skip");
+
+  badge.textContent = t.startsWith("tag-") ? t.replace("tag-", "").toUpperCase() : t.toUpperCase();
+
+  const leftSpan = document.createElement("span");
+  leftSpan.style.color = "#aaa";
+  leftSpan.textContent = String(left || "").slice(0, 60);
+
+  const arrow = document.createElement("span");
+  arrow.style.margin = "0 5px";
+  arrow.style.color = "#555";
+  arrow.textContent = "➔";
+
+  const rightSpan = document.createElement("span");
+  rightSpan.style.color = "#fff";
+  rightSpan.textContent = String(right || "").slice(0, 60);
+
+  div.append(badge, leftSpan, arrow, rightSpan);
 
   els.log.prepend(div);
   while (els.log.children.length > 120) els.log.lastChild.remove();
