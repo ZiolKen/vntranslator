@@ -1,339 +1,283 @@
-    let currentPage = 1;
-    const pageSize = 50;
-    
-    const TRANSLATOR_CREDIT =
-        '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
-    
-    function safeJsonParse(data, fallback) {
-      try {
-        return data ? JSON.parse(data) : fallback;
-      } catch (e) {
-        return fallback;
-      }
-    }
-    
-    const originalLines = safeJsonParse(localStorage.getItem('originalLines'), []);
-    const dialogIndexes = safeJsonParse(localStorage.getItem('dialogIndexes'), []);
-    const detectedDialogs = safeJsonParse(localStorage.getItem('detectedDialogs'), []);
-    let translatedDialogs = safeJsonParse(localStorage.getItem('translatedDialogs'), []);
-    const apiKey = localStorage.getItem('deepseekApiKey') || '';
-    const langTarget = localStorage.getItem('targetLang') || 'Bahasa Indonesia';
-    const translationModel = localStorage.getItem('translationModel') || 'deepseek';
+let currentPage = 1;
+const pageSize = 50;
 
-    document.addEventListener('DOMContentLoaded', function() {
-      if (detectedDialogs.length === 0) {
-        document.getElementById('list').innerHTML = `
-          <div class="text-center text-red-400 p-4 bg-gray-800 rounded-lg">
-            No translation data found!<br>
-            Please go back to the main page and process your file first.
-          </div>
-        `;
-        return;
-      }
-      
-      renderModelBadge();
-      renderList();
-      injectWatermark();
+const TRANSLATOR_CREDIT =
+    '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+
+function safeJsonParse(str, fallback = null) {
+  try { return JSON.parse(str); } catch { return fallback; }
+}
+
+const dialogIndexes = safeJsonParse(localStorage.getItem('dialogIndexes'), []);
+const detectedDialogs = safeJsonParse(localStorage.getItem('detectedDialogs'), []);
+let translatedDialogs = safeJsonParse(localStorage.getItem('translatedDialogs'), []);
+const apiKey = (sessionStorage.getItem('deepseekApiKey') || localStorage.getItem('deepseekApiKey') || '').trim();
+const langTarget = localStorage.getItem('targetLang') || 'Bahasa Indonesia';
+const translationModel = localStorage.getItem('translationModel') || 'deepseek';
+
+document.addEventListener('DOMContentLoaded', function() {
+  const listEl = document.getElementById('list');
+
+  if (!Array.isArray(detectedDialogs) || detectedDialogs.length === 0) {
+    listEl.replaceChildren();
+    const box = document.createElement('div');
+    box.className = 'text-center text-red-400 p-4 bg-gray-800 rounded-lg';
+    box.textContent = "No translation data found! Please go back to the main page and process your file first.";
+    listEl.appendChild(box);
+    return;
+  }
+
+  renderModelBadge();
+  renderList();
+  injectWatermark();
+});
+
+function renderModelBadge() {
+  const modelBadge = document.getElementById('model-badge');
+  if (!modelBadge) return;
+
+  modelBadge.replaceChildren();
+
+  const pill = document.createElement('div');
+  pill.className =
+    'inline-block text-xs px-3 py-1 rounded-full mb-2 ' +
+    (translationModel === 'deepseek'
+      ? 'bg-blue-900 text-blue-300'
+      : 'bg-amber-900 text-amber-300');
+
+  const label = translationModel === 'deepseek' ? 'DEEPSEEK (API)' : 'LIBRE (Free)';
+  pill.textContent = 'Using: ' + label;
+
+  modelBadge.appendChild(pill);
+}
+
+const _saveDebounce = Object.create(null);
+
+function renderList() {
+  const listEl = document.getElementById('list');
+  if (!listEl) return;
+
+  const totalPages = Math.ceil(detectedDialogs.length / pageSize);
+  const start = (currentPage - 1) * pageSize;
+  const end = Math.min(start + pageSize, detectedDialogs.length);
+
+  listEl.replaceChildren();
+
+  const frag = document.createDocumentFragment();
+
+  for (let i = start; i < end; i++) {
+    const dialog = String(detectedDialogs[i] || '');
+    const translation = String(translatedDialogs[i] || '');
+
+    const card = document.createElement('div');
+    card.className = 'bg-gray-800 rounded-xl p-4 shadow';
+
+    const meta = document.createElement('div');
+    meta.className = 'text-xs text-gray-400 mb-1';
+    meta.textContent = `Dialog ${i + 1} (line ${(dialogIndexes[i]?.index || 0) + 1})`;
+
+    const original = document.createElement('div');
+    original.className = 'mb-2 text-blue-400 break-words';
+    const originalLabel = document.createElement('span');
+    originalLabel.className = 'font-semibold';
+    originalLabel.textContent = 'Original: ';
+    original.appendChild(originalLabel);
+    original.appendChild(document.createTextNode(dialog));
+
+    const textarea = document.createElement('textarea');
+    textarea.id = 'trans_' + i;
+    textarea.rows = 2;
+    textarea.className =
+      'w-full p-2 rounded bg-gray-900 border border-gray-700 text-gray-100 ' +
+      'focus:outline-none focus:ring focus:border-blue-400 transition mb-2';
+    textarea.value = translation;
+
+    textarea.addEventListener('input', () => {
+      clearTimeout(_saveDebounce[i]);
+      _saveDebounce[i] = setTimeout(() => {
+        saveEdit(i);
+        updateWarning(i);
+      }, 250);
     });
 
-    function renderModelBadge() {
-      const modelBadge = document.getElementById('model-badge');
-      modelBadge.innerHTML = `
-        <div class="inline-block text-xs px-3 py-1 rounded-full mb-2 ${
-          translationModel === 'deepseek' 
-            ? 'bg-blue-900 text-blue-300' 
-            : 'bg-amber-900 text-amber-300'
-        }">
-          Using: ${translationModel.toUpperCase()} ${translationModel === 'libre' ? '(Free)' : '(API)'}
-        </div>
-      `;
-    }
+    const warnDiv = document.createElement('div');
+    warnDiv.id = 'warn_' + i;
+    warnDiv.className = 'text-xs mt-1 text-yellow-400';
+    warnDiv.textContent = shouldWarn(translation) || '';
 
-    function renderList() {
-      let html = '';
-      const totalPages = Math.ceil(detectedDialogs.length / pageSize);
-      const start = (currentPage - 1) * pageSize;
-      const end = Math.min(start + pageSize, detectedDialogs.length);
+    const btnRow = document.createElement('div');
+    btnRow.className = 'flex gap-2 mt-2';
 
-      for (let i = start; i < end; i++) {
-        const dialog = detectedDialogs[i] || '';
-        const translation = translatedDialogs[i] || '';
-        const warn = shouldWarn(translation);
-        
-        html += `
-          <div class="bg-gray-800 rounded-xl p-4 shadow">
-            <div class="text-xs text-gray-400 mb-1">Dialog ${i+1} (line ${(dialogIndexes[i]?.index || 0) + 1})</div>
-            <div class="mb-2 text-blue-400 break-words"><span class="font-semibold">Original:</span> ${escapeHtml(dialog)}</div>
-            <textarea id="trans_${i}" rows="2" class="w-full p-2 rounded bg-gray-900 border border-gray-700 text-gray-100 focus:outline-none focus:ring focus:border-blue-400 transition mb-2">${escapeHtml(translation)}</textarea>
-            <div id="warn_${i}" class="text-xs mt-1 text-yellow-400">${warn || ''}</div>
-            <div class="flex gap-2 mt-2">
-              <button onclick="restore(${i})" class="bg-yellow-600 hover:bg-yellow-700 text-sm rounded px-4 py-1 font-medium transition">Restore</button>
-              <button onclick="retranslate(${i})" class="bg-blue-600 hover:bg-blue-700 text-sm rounded px-4 py-1 font-medium transition">Retranslate</button>
-            </div>
-            <div id="status_${i}" class="text-xs mt-1"></div>
-          </div>
-        `;
-      }
+    const restoreBtn = document.createElement('button');
+    restoreBtn.type = 'button';
+    restoreBtn.className =
+      'bg-yellow-600 hover:bg-yellow-700 text-sm rounded px-4 py-1 font-medium transition';
+    restoreBtn.textContent = 'Restore';
+    restoreBtn.addEventListener('click', () => restore(i));
 
-      if (detectedDialogs.length > 0) {
-        html += `
-          <div class="flex justify-center gap-4 mt-4">
-            <button onclick="gotoPage(currentPage-1)" ${currentPage==1 ? 'disabled' : ''} class="px-4 py-1 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-50">Prev</button>
-            <span>Page ${currentPage} / ${totalPages}</span>
-            <button onclick="gotoPage(currentPage+1)" ${currentPage==totalPages ? 'disabled' : ''} class="px-4 py-1 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-50">Next</button>
-          </div>
-        `;
-      }
+    const reBtn = document.createElement('button');
+    reBtn.type = 'button';
+    reBtn.className =
+      'bg-blue-600 hover:bg-blue-700 text-sm rounded px-4 py-1 font-medium transition';
+    reBtn.textContent = 'Retranslate';
+    reBtn.addEventListener('click', () => retranslate(i));
 
-      document.getElementById('list').innerHTML = html;
-    }
+    btnRow.append(restoreBtn, reBtn);
 
-    async function retranslate(idx) {
-      const dialog = detectedDialogs[idx] || '';
-      const statusEl = document.getElementById('status_' + idx);
-      const textareaEl = document.getElementById('trans_' + idx);
-      
-      if (!dialog) {
-        statusEl.innerHTML = '<span class="text-red-400">✗ No text to translate</span>';
-        return;
-      }
+    const status = document.createElement('div');
+    status.id = 'status_' + i;
+    status.className = 'text-xs mt-1';
 
-      statusEl.innerHTML = '<span class="spinner"></span> Translating...';
-      textareaEl.value = '...translating...';
-      textareaEl.disabled = true;
+    card.append(meta, original, textarea, warnDiv, btnRow, status);
+    frag.appendChild(card);
+  }
 
-      try {
-        let translated;
-        if (translationModel === 'deepseek') {
-          if (!apiKey) throw new Error('API Key required for DeepSeek');
-          translated = await translateWithDeepSeek(dialog);
-        } else {
-          translated = await translateWithLingva(dialog);
-        }
+  if (detectedDialogs.length > 0) {
+    const pager = document.createElement('div');
+    pager.className = 'flex justify-center gap-4 mt-4';
 
-        if (!translated) throw new Error('Empty translation result');
-        
-        textareaEl.value = translated;
-        translatedDialogs[idx] = translated;
-        localStorage.setItem('translatedDialogs', JSON.stringify(translatedDialogs));
-        statusEl.innerHTML = '<span class="text-green-400">✓ Success</span>';
-        updateWarning(idx);
-      } catch(e) {
-        console.error('Translation failed:', e);
-        statusEl.innerHTML = '<span class="text-red-400">✗ ' + (e.message || 'Translation failed') + '</span>';
-        textareaEl.value = translatedDialogs[idx] || dialog;
-      } finally {
-        textareaEl.disabled = false;
-      }
-    }
-
-    async function translateWithDeepSeek(text) {
-      text = (text ?? '').toString();
-    
-      if (!text.trim()) return '';
-    
-      const prompt = [
-        "[REN'PY TRANSLATION - SINGLE LINE OUTPUT]",
-        `Target language: ${langTarget}`,
-        "",
-        "Rules (MUST follow exactly):",
-        "1) Output ONLY the translated text. No explanations, no quotes wrapping, no numbering, no prefixes like 'Translation:'",
-        "2) Output MUST be a SINGLE LINE. Do NOT insert newline characters.",
-        "3) Preserve EXACTLY these tokens if present: \\n, {color=...}, {…}, [tags], %(vars)s, [player], and any Ren'Py formatting markers.",
-        "4) Only translate human-readable text outside those markers.",
-        "5) Keep spacing natural in the target language.",
-        "",
-        "Text:",
-        text
-      ].join("\n");
-    
-      const bodyForProxy = {
-        apiKey: apiKey,
-        model: "deepseek-chat",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a professional game localization translator specializing in Ren'Py visual novels. " +
-              "You follow formatting rules strictly and return only the final translated string."
-          },
-          { role: "user", content: prompt }
-        ],
-        stream: false,
-        temperature: 0.1,
-        max_tokens: 2000
-      };
-    
-      let response;
-      try {
-        response = await fetch("/api/deepseek-proxy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(bodyForProxy)
-        });
-      } catch (networkErr) {
-        console.error("DeepSeek proxy network error:", networkErr);
-        throw new Error(
-          "Network error when calling DeepSeek proxy: " +
-            (networkErr?.message || String(networkErr))
-        );
-      }
-    
-      if (!response.ok) {
-        const textErr = await response.text().catch(() => "");
-        console.error("DeepSeek proxy HTTP error:", response.status, textErr);
-        throw new Error(
-          `DeepSeek/proxy error ${response.status}: ${textErr || "Unknown error"}`
-        );
-      }
-    
-      const data = await response.json().catch(() => ({}));
-      let out = data?.choices?.[0]?.message?.content;
-    
-      if (!out || !String(out).trim()) {
-        console.error("DeepSeek proxy full JSON:", data);
-        throw new Error("DeepSeek response did not contain any content.");
-      }
-    
-      out = String(out);
-    
-      out = out.replace(/^\s*(translation|translated text|result)\s*:\s*/i, "");
-    
-      out = out.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").trim();
-    
-      out = out
-        .split(/\r?\n/)
-        .map(l => l.trim())
-        .filter(Boolean)
-        .join(" ");
-    
-      out = out.replace(/[ \t]{2,}/g, " ").trim();
-    
-      if (!out) return text;
-    
-      return out;
-    }
-
-    async function translateWithLingva(text) {
-      const langMap = { 
-        'Bahasa Indonesia': 'id',
-        'English': 'en',
-        'Malay': 'ms',
-        'Vietnamese': 'vi',
-        'Filipino': 'tl'
-      };
-      const targetCode = langMap[langTarget] || 'en';
-
-      const endpoints = [
-        'https://lingva.lunar.icu',
-        'https://lingva.ml',
-        'https://lingva.vercel.app',
-        'https://translate.plausibility.cloud',
-        'https://lingva.garudalinux.org',
-      ];
-
-      for (const endpoint of endpoints) {
-        try {
-          const res = await fetch(`${endpoint}/api/v1/en/${targetCode}/${encodeURIComponent(text)}`);
-          if (res.ok) {
-            const data = await res.json();
-            return data.translation || text;
-          }
-        } catch (e) {
-          console.log(`Endpoint ${endpoint} failed, trying next...`);
-        }
-      }
-      throw new Error('All Lingva endpoints failed');
-    }
-
-    function gotoPage(page) {
-      const totalPages = Math.ceil(detectedDialogs.length / pageSize);
-      if (page < 1 || page > totalPages) return;
-      currentPage = page;
+    const prev = document.createElement('button');
+    prev.type = 'button';
+    prev.disabled = currentPage === 1;
+    prev.className =
+      'bg-gray-700 hover:bg-gray-600 disabled:opacity-50 px-4 py-2 rounded';
+    prev.textContent = 'Prev';
+    prev.addEventListener('click', () => {
+      currentPage--;
       renderList();
-      window.scrollTo({top: 0, behavior: 'smooth'});
-    }
+    });
 
-    function saveEdit(idx) {
-      translatedDialogs[idx] = document.getElementById('trans_' + idx).value;
-      localStorage.setItem('translatedDialogs', JSON.stringify(translatedDialogs));
-    }
+    const info = document.createElement('div');
+    info.className = 'text-gray-300 text-sm self-center';
+    info.textContent = `Page ${currentPage} / ${totalPages}`;
 
-    function restore(idx) {
-      document.getElementById('trans_' + idx).value = detectedDialogs[idx] || '';
-      saveEdit(idx);
-      updateWarning(idx);
-      document.getElementById('status_' + idx).textContent = '';
-    }
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.disabled = currentPage === totalPages;
+    next.className =
+      'bg-gray-700 hover:bg-gray-600 disabled:opacity-50 px-4 py-2 rounded';
+    next.textContent = 'Next';
+    next.addEventListener('click', () => {
+      currentPage++;
+      renderList();
+    });
 
-    function shouldWarn(text) {
-      if (!text) return '';
-      const trimmed = text.trim();
-      const isHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(trimmed);
-      const isCodeLike = /^[\W\d_]+$/.test(trimmed) || trimmed.length < 3;
-      return isHex || isCodeLike 
-        ? '⚠️ This might be code/color value. Consider restoring.'
-        : '';
-    }
+    pager.append(prev, info, next);
+    frag.appendChild(pager);
+  }
 
-    function updateWarning(idx) {
-      const text = document.getElementById('trans_' + idx).value;
-      document.getElementById('warn_' + idx).textContent = shouldWarn(text);
-    }
+  listEl.appendChild(frag);
+}
 
-    function downloadFile() {
-      let finalLines = [...originalLines];
-      for (let i = 0; i < dialogIndexes.length; i++) {
-        const obj = dialogIndexes[i] || {};
-        const index = obj.index || 0;
-        const pre = obj.pre || '';
-        const quote = obj.quote || '"';
-        const post = obj.post || '';
-        
-        const indentation = (originalLines[index] || '').match(/^\s*/)?.[0] || '';
-        let val = (translatedDialogs[i] || '').trim();
-        
-        val = val
-          .replace(/\\"/g, '\uFFFF')
-          .replace(/^["']|["']$/g, '')
-          .replace(/\uFFFF/g, '\\"')
-          .replace(/([^\\])"/g, '$1\\"');
-        
-        if (index < finalLines.length) {
-          finalLines[index] = 
-            indentation +
-            (pre ? pre + ' ' : '') +
-            quote + val + quote +
-            (post ? ' ' + post : '');
-        }
-      }
-      
-      const blob = new Blob([finalLines.join('\n') + '\n\n' + TRANSLATOR_CREDIT + '\n'], {type: 'text/plain'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'translated_result.rpy';
-      a.click();
-    }
+function shouldWarn(text) {
+  const t = String(text || '');
+  if (!t.trim()) return '⚠ Empty translation';
+  if (t.includes('[WARNING')) return '⚠ Warning token present';
+  if (t.length > 500) return '⚠ Very long translation';
+  return '';
+}
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str
-        .replace(/\\"/g, '\uFFFF')
-        .replace(/[&<>"']/g, function(m) {
-          return {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-          }[m];
-        })
-        .replace(/\uFFFF/g, '\\"');
-    }
+function saveEdit(index) {
+  const el = document.getElementById('trans_' + index);
+  if (!el) return;
+  translatedDialogs[index] = String(el.value || '');
+  localStorage.setItem('translatedDialogs', JSON.stringify(translatedDialogs));
+}
 
-    function injectWatermark() {
-      const el = document.createElement('div');
-      el.className = 'inline-block text-xs opacity-60 text-gray-200 select-none z-50 font-mono px-4 py-1 rounded-xl bg-gray-700/60 shadow';
-      el.textContent = '© Translated with VNTranslator';
-      document.getElementById('watermark-place').appendChild(el);
+function updateWarning(index) {
+  const el = document.getElementById('trans_' + index);
+  const w = document.getElementById('warn_' + index);
+  if (!el || !w) return;
+  w.textContent = shouldWarn(String(el.value || '')) || '';
+}
+
+function restore(i) {
+  const el = document.getElementById('trans_' + i);
+  if (!el) return;
+  el.value = '';
+  saveEdit(i);
+  updateWarning(i);
+}
+
+async function retranslate(i) {
+  const status = document.getElementById('status_' + i);
+  if (status) status.textContent = 'Translating...';
+
+  try {
+    const src = String(detectedDialogs[i] || '');
+    if (!src.trim()) throw new Error('No text');
+
+    const translated = await translateText(src);
+    translatedDialogs[i] = translated;
+    localStorage.setItem('translatedDialogs', JSON.stringify(translatedDialogs));
+
+    const el = document.getElementById('trans_' + i);
+    if (el) el.value = translated;
+    updateWarning(i);
+
+    if (status) status.textContent = '✓ Success';
+  } catch (e) {
+    if (status) status.textContent = '✗ ' + (e?.message || 'Failed');
+  }
+}
+
+async function translateText(text) {
+  if (translationModel === 'deepseek') {
+    if (!apiKey) throw new Error('Missing DeepSeek API key');
+    const res = await fetch('/api/deepseek-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey, messages: [{ role: 'user', content: text }], targetLang: langTarget })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    return String(data?.translation || data?.text || '').trim();
+  } else {
+    const res = await fetch('/api/lingva-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, target: langTarget })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    return String(data?.translation || data?.text || '').trim();
+  }
+}
+
+function downloadFile() {
+  const lines = [];
+  for (let i = 0; i < detectedDialogs.length; i++) {
+    const originalIndex = dialogIndexes[i]?.index;
+    const t = translatedDialogs[i] || '';
+    if (typeof originalIndex === 'number') {
+      lines.push({ index: originalIndex, text: t });
     }
+  }
+  lines.sort((a, b) => a.index - b.index);
+
+  const contentLines = [];
+  contentLines.push(TRANSLATOR_CREDIT);
+  for (const l of lines) {
+    contentLines.push(l.text);
+  }
+
+  const content = contentLines.join('\n');
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'translated.rpy';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+function injectWatermark() {
+  const place = document.getElementById('watermark-place');
+  if (!place) return;
+  place.replaceChildren();
+  const el = document.createElement('div');
+  el.className = 'fixed bottom-2 right-2 opacity-60 text-xs text-white select-none z-50 font-mono px-4 py-1 rounded-xl bg-gray-700/60 shadow';
+  el.textContent = '© Translated with VN Translator';
+  document.getElementById('watermark-place').appendChild(el);
+}
