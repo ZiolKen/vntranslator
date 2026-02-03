@@ -3,6 +3,7 @@
     
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.buymeacoffee.com https://cdn.tailwindcss.com; connect-src 'self' https:; frame-src https://challenges.cloudflare.com; upgrade-insecure-requests">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta content="ie=edge" http-equiv="X-UA-Compatible" />
   <meta name="theme-color" content="#0b0b10" />
@@ -43,12 +44,7 @@
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-BXTNE3VPWH');
-  </script>
+  <script src="./analytics.js"</script>
 </head>
 
 <body autocomplete="off" spellcheck="false">
@@ -245,29 +241,6 @@
       src="https://images.icon-icons.com/2429/PNG/512/patreon_logo_icon_147253.png" />
   </a>
 
-  <script>
-    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const particleCount = isMobile ? 70 : 120;
-
-    particlesJS("particles-js", {
-      "particles": {
-        "number": { "value": particleCount, "density": { "enable": true, "value_area": 800 } },
-        "color": { "value": "#a855f7" },
-        "shape": { "type": "circle", "stroke": { "width": 0, "color": "#000" } },
-        "opacity": { "value": 0.7, "random": true, "anim": { "enable": true, "speed": 0.5, "opacity_min": 0.3, "sync": false } },
-        "size": { "value": 3, "random": true, "anim": { "enable": true, "speed": 2, "size_min": 0.3, "sync": false } },
-        "line_linked": { "enable": true, "distance": 150, "color": "#a855f7", "opacity": 0.3, "width": 1 },
-        "move": { "enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false }
-      },
-      "interactivity": {
-        "detect_on": "canvas",
-        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": false }, "resize": true },
-        "modes": { "repulse": { "distance": 100, "duration": 0.4 } }
-      },
-      "retina_detect": true
-    });
-  </script>
-
   <script
     data-name="BMC-Widget" data-cfasync="false"
     src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
@@ -280,7 +253,7 @@
     data-y_margin="18">
   </script>
 
-  <script src="script.js"></script>
+  <script src="./script.js"></script>
 </body>
 
 </html>
