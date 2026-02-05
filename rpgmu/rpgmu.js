@@ -298,7 +298,7 @@ Rules:
 - Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.
       
 Context:
-- You are working with raw dialogue strings extracted from a RPG Maker `.json` script.
+- You are working with raw dialogue strings extracted from a RPG Maker .json script.
 - The visual novel includes romantic, emotional,... and adult themes.
 - Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.
 
