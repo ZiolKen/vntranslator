@@ -759,7 +759,7 @@
       `- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.\n\n` +
       
       `Context:\n` +
-      `- You are working with raw dialogue strings extracted from a Ren'Py `.rpy` script.\n` +
+      `- You are working with raw dialogue strings extracted from a Ren'Py .rpy script.\n` +
       `- The visual novel includes romantic, emotional,... and adult themes.\n` +
       `- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.\n\n` +
 
