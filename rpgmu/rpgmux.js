@@ -158,13 +158,27 @@ function initStep1() {
   }
 
   const CODES = {
+    SHOW_TEXT_START: 101,
     SHOW_TEXT_LINE: 401,
+    SCROLL_TEXT_START: 105,
     SCROLL_TEXT_LINE: 405,
+  
     SHOW_CHOICES: 102,
     WHEN_CHOICE: 402,
+  
+    COMMENT: 108,
+    COMMENT_MORE: 408,
+  
+    SCRIPT: 355,
+    SCRIPT_MORE: 655,
+  
+    SHOW_PICTURE: 231,
+  
     NAME_CHANGE: 320,
     NICKNAME_CHANGE: 324,
     PROFILE_CHANGE: 325,
+  
+    PLUGIN_CMD_MV: 356,
     PLUGIN_CMD_MZ: 357,
   };
 
@@ -175,11 +189,23 @@ function initStep1() {
   ]);
 
   function looksLikeNonText(s) {
-    const t = String(s);
-    if (!t.trim()) return true;
-    if (t.length <= 1) return true;
-    if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(t)) return true;
-    if (/\.(png|jpg|jpeg|webp|ogg|m4a|mp3|wav|json)$/i.test(t)) return true;
+    const t = String(s ?? "");
+    const trim = t.trim();
+    if (!trim) return true;
+  
+    if (trim.length <= 1) return /^[A-Za-z0-9]$/.test(trim);
+  
+    if (/^[+-]?\d+(\.\d+)?$/.test(trim)) return true;
+  
+    if (/\.(png|jpg|jpeg|js|html|css|otf|ttf|webp|ogg|m4a|mp3|wav|gif|mp4|webm|avi|woff|woff2|eot|svg|mov|json)$/i.test(trim)) return true;
+  
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(trim)) {
+      const isAllCaps = trim.toUpperCase() === trim;
+      const hasDigit = /\d/.test(trim);
+      const hasUnderscore = /_/.test(trim);
+      if (hasUnderscore || hasDigit || isAllCaps) return true;
+    }
+  
     return false;
   }
 
@@ -191,15 +217,92 @@ function initStep1() {
     }
     return data;
   }
+  
+  function scanJsStringLiterals(src) {
+    const s = String(src ?? "");
+    const lits = [];
+    let i = 0;
+    let idx = 0;
+  
+    while (i < s.length) {
+      const q = s[i];
+      if (q !== "'" && q !== '"') { i++; continue; }
+  
+      let j = i + 1;
+      let esc = false;
+      while (j < s.length) {
+        const c = s[j];
+        if (esc) { esc = false; j++; continue; }
+        if (c === "\\") { esc = true; j++; continue; }
+        if (c === q) break;
+        j++;
+      }
+  
+      if (j >= s.length) break;
+      lits.push({ literalIndex: idx++, quote: q, start: i, end: j + 1, inner: s.slice(i + 1, j) });
+      i = j + 1;
+    }
+    return lits;
+  }
+  
+  function unescapeJsStringInner(inner) {
+    const x = String(inner ?? "");
+    return x.replace(/\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|n|r|t|b|f|v|\\|'|")/g, (_, esc) => {
+      if (esc === "n") return "\n";
+      if (esc === "r") return "\r";
+      if (esc === "t") return "\t";
+      if (esc === "b") return "\b";
+      if (esc === "f") return "\f";
+      if (esc === "v") return "\v";
+      if (esc === "\\") return "\\";
+      if (esc === "'") return "'";
+      if (esc === '"') return '"';
+      if (esc.startsWith("x")) return String.fromCharCode(parseInt(esc.slice(1), 16));
+      if (esc.startsWith("u{")) return String.fromCodePoint(parseInt(esc.slice(2, -1), 16));
+      if (esc.startsWith("u")) return String.fromCharCode(parseInt(esc.slice(1), 16));
+      return esc;
+    });
+  }
+  
+  function escapeForJsString(text, quote) {
+    let s = String(text ?? "");
+    s = s
+      .replace(/\\/g, "\\\\")
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n")
+      .replace(/\t/g, "\\t");
+    if (quote === '"') s = s.replace(/"/g, '\\"');
+    else s = s.replace(/'/g, "\\'");
+    return s;
+  }
+  
+  function replaceNthJsStringLiteral(src, n, newText) {
+    const s = String(src ?? "");
+    const lits = scanJsStringLiterals(s);
+    const lit = lits[n];
+    if (!lit) return s;
+  
+    const newInner = escapeForJsString(newText, lit.quote);
+    return s.slice(0, lit.start + 1) + newInner + s.slice(lit.end - 1);
+  }
 
   function extractEventCommandList(list, pushEntry) {
     if (!Array.isArray(list)) return;
-
+  
     for (const cmd of list) {
       if (!cmd || typeof cmd !== "object") continue;
+  
       const code = cmd.code;
       const p = Array.isArray(cmd.parameters) ? cmd.parameters : [];
-
+  
+      if (code === CODES.SHOW_TEXT_START) {
+        const speaker = p[4];
+        if (typeof speaker === "string" && speaker.trim() && !looksLikeNonText(speaker)) {
+          pushEntry(speaker, cmd.parameters, 4, { type: "speakerName", code });
+        }
+        continue;
+      }
+  
       if (code === CODES.SHOW_TEXT_LINE || code === CODES.SCROLL_TEXT_LINE) {
         const line = p[0];
         if (typeof line === "string" && line.trim() && !looksLikeNonText(line)) {
@@ -207,7 +310,7 @@ function initStep1() {
         }
         continue;
       }
-
+  
       if (code === CODES.SHOW_CHOICES && Array.isArray(p[0])) {
         p[0].forEach((choice, idx) => {
           if (typeof choice === "string" && choice.trim() && !looksLikeNonText(choice)) {
@@ -216,14 +319,30 @@ function initStep1() {
         });
         continue;
       }
-
+  
       if (code === CODES.WHEN_CHOICE && typeof p[1] === "string") {
         if (p[1].trim() && !looksLikeNonText(p[1])) {
           pushEntry(p[1], cmd.parameters, 1, { type: "whenChoice", code });
         }
         continue;
       }
-
+  
+      if (code === CODES.COMMENT || code === CODES.COMMENT_MORE) {
+        const cmt = p[0];
+        if (typeof cmt === "string" && cmt.trim() && !looksLikeNonText(cmt)) {
+          pushEntry(cmt, cmd.parameters, 0, { type: "comment", code });
+        }
+        continue;
+      }
+  
+      if (code === CODES.SHOW_PICTURE) {
+        const picName = p[1];
+        if (typeof picName === "string" && picName.trim() && !looksLikeNonText(picName)) {
+          pushEntry(picName, cmd.parameters, 1, { type: "pictureName", code });
+        }
+        continue;
+      }
+  
       if (
         (code === CODES.NAME_CHANGE || code === CODES.NICKNAME_CHANGE || code === CODES.PROFILE_CHANGE) &&
         typeof p[1] === "string" && p[1].trim() && !looksLikeNonText(p[1])
@@ -231,14 +350,46 @@ function initStep1() {
         pushEntry(p[1], cmd.parameters, 1, { type: "actorText", code });
         continue;
       }
-
+  
+      if (code === CODES.PLUGIN_CMD_MV) {
+        const s = p[0];
+        if (typeof s === "string" && s.trim() && !looksLikeNonText(s)) {
+          pushEntry(s, cmd.parameters, 0, { type: "pluginCmdMV", code });
+        }
+        continue;
+      }
+  
       if (code === CODES.PLUGIN_CMD_MZ) {
-        const args = p.find(v => v && typeof v === "object" && !Array.isArray(v));
-        if (args && typeof args === "object") {
+        const pluginName = p[0];
+        const commandName = p[1];
+        const args = p[2];
+  
+        if (typeof pluginName === "string" && pluginName.trim() && !looksLikeNonText(pluginName)) {
+          pushEntry(pluginName, cmd.parameters, 0, { type: "pluginNameMZ", code });
+        }
+        if (typeof commandName === "string" && commandName.trim() && !looksLikeNonText(commandName)) {
+          pushEntry(commandName, cmd.parameters, 1, { type: "commandNameMZ", code });
+        }
+  
+        if (args && typeof args === "object" && !Array.isArray(args)) {
           Object.keys(args).forEach((k) => {
             const v = args[k];
             if (typeof v === "string" && v.trim() && !looksLikeNonText(v)) {
-              pushEntry(v, args, k, { type: "pluginArg", code, key: k });
+              pushEntry(v, args, k, { type: "pluginArgMZ", code, key: k });
+            }
+          });
+        }
+        continue;
+      }
+  
+      if (code === CODES.SCRIPT || code === CODES.SCRIPT_MORE) {
+        const scriptLine = p[0];
+        if (typeof scriptLine === "string" && scriptLine.trim()) {
+          const lits = scanJsStringLiterals(scriptLine);
+          lits.forEach((lit) => {
+            const text = unescapeJsStringInner(lit.inner);
+            if (text.trim() && !looksLikeNonText(text)) {
+              pushEntry(text, cmd.parameters, 0, { type: "scriptLiteral", code, literalIndex: lit.literalIndex });
             }
           });
         }
@@ -530,7 +681,12 @@ function initStep1() {
 
       const refs = state.textGroups.get(oldText) || [];
       for (const r of refs) {
-        r.ref[r.index] = newText;
+        if (r.extra && r.extra.type === "scriptLiteral") {
+          const current = String(r.ref[r.index] ?? "");
+          r.ref[r.index] = replaceNthJsStringLiteral(current, r.extra.literalIndex, newText);
+        } else {
+          r.ref[r.index] = newText;
+        }
         updated++;
       }
 
