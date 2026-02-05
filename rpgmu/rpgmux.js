@@ -76,6 +76,13 @@ function initStep1() {
   ui.status.textContent = "✅ READY - Awaiting file(s)…";
   console.log("[RPGMU]: Loaded");
 
+  const EXTRACT_MODE = "dialogue"; // "dialogue" | "dialogue+ui" | "all"
+  
+  const EXTRACT_PLUGIN_TEXT = true; // true/false
+  const PLUGIN_TEXT_ALLOWLIST = ["D_TEXT"];
+  
+  const EXTRACT_SCRIPT_TEXT = "safe"; // "off" | "safe" | "aggressive"
+  
   const state = {
     filesData: [],
     textEntries: [],
@@ -160,6 +167,7 @@ function initStep1() {
   const CODES = {
     SHOW_TEXT_START: 101,
     SHOW_TEXT_LINE: 401,
+  
     SCROLL_TEXT_START: 105,
     SCROLL_TEXT_LINE: 405,
   
@@ -171,12 +179,6 @@ function initStep1() {
   
     SCRIPT: 355,
     SCRIPT_MORE: 655,
-  
-    SHOW_PICTURE: 231,
-  
-    NAME_CHANGE: 320,
-    NICKNAME_CHANGE: 324,
-    PROFILE_CHANGE: 325,
   
     PLUGIN_CMD_MV: 356,
     PLUGIN_CMD_MZ: 357,
@@ -285,6 +287,84 @@ function initStep1() {
     const newInner = escapeForJsString(newText, lit.quote);
     return s.slice(0, lit.start + 1) + newInner + s.slice(lit.end - 1);
   }
+  
+  function stripRpgTextCodesForCheck(s) {
+    let t = String(s ?? "");
+  
+    t = t.replace(/\\[VvNnPp]\[\d+\]/g, "");
+    t = t.replace(/\\[Cc]\[\d+\]/g, "");
+    t = t.replace(/\\[Ii]\[\d+\]/g, "");
+    t = t.replace(/\\[Gg]/g, "");
+    t = t.replace(/\\[{}<>|.^!]/g, "");
+    t = t.replace(/\\\w+\[[^\]]*\]/g, "");
+    t = t.replace(/\\\w+/g, "");
+    t = t.replace(/[ \t\u3000]+/g, "");
+    return t;
+  }
+  
+  function isControlOnlyLine(s) {l
+    return stripRpgTextCodesForCheck(s).length === 0;
+  }
+  
+  function looksLikeAssetOrCommandLine(s) {
+    const t = String(s ?? "").trim();
+    if (!t) return true;
+  
+    if (/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)+$/.test(t)) return true;
+  
+    if (/^[A-Z][A-Z0-9_]+(\s|$)/.test(t)) return true;
+  
+    if (/^\w+\s*:\s*.+$/.test(t)) return true;
+  
+    if (/^[+-]?\d+(\.\d+)?$/.test(t)) return true;
+    if (/^\d+\s*-\s*\d+$/.test(t)) return true;
+  
+    return false;
+  }
+  
+  function isLikelyHumanDialogue(text, extraType) {
+    const t = String(text ?? "");
+    if (!t.trim()) return false;
+  
+    if (
+      extraType === "eventText" ||
+      extraType === "scrollText" ||
+      extraType === "choice" ||
+      extraType === "whenChoice" ||
+      extraType === "speakerName"
+    ) {
+      if (isControlOnlyLine(t)) return false;
+      return true;
+    }
+  
+    if (isControlOnlyLine(t)) return false;
+    if (looksLikeAssetOrCommandLine(t)) return false;
+  
+    const core = stripRpgTextCodesForCheck(t);
+    if (EXTRACT_MODE === "dialogue" && core.length <= 3 && !/[。！？!?…「」『』]/.test(t)) return false;
+  
+    return true;
+  }
+  
+  function parseMvPluginTextCommand(full) {
+    const s = String(full ?? "");
+    const m = s.match(/^(D_TEXT)(\s+)([\s\S]*?)(\s+[+-]?\d+(?:\.\d+)?)?\s*$/);
+    if (!m) return null;
+    const cmd = m[1];
+    const prefix = m[1] + m[2];
+    const text = m[3];
+    const suffix = m[4] ? m[4] : "";
+    return { cmd, prefix, text, suffix };
+  }
+  
+  function isScriptLineLikelyAddsMessage(line, litStart, litEnd) {
+    const s = String(line ?? "");
+    const a = Math.max(0, litStart - 80);
+    const b = Math.min(s.length, litEnd + 80);
+    const around = s.slice(a, b);
+  
+    return /\$gameMessage\s*\.\s*add\s*\(/.test(around);
+  }
 
   function extractEventCommandList(list, pushEntry) {
     if (!Array.isArray(list)) return;
@@ -297,99 +377,101 @@ function initStep1() {
   
       if (code === CODES.SHOW_TEXT_START) {
         const speaker = p[4];
-        if (typeof speaker === "string" && speaker.trim() && !looksLikeNonText(speaker)) {
-          pushEntry(speaker, cmd.parameters, 4, { type: "speakerName", code });
+        if (typeof speaker === "string" && speaker.trim()) {
+          if (isLikelyHumanDialogue(speaker, "speakerName")) {
+            pushEntry(speaker, cmd.parameters, 4, { type: "speakerName", code });
+          }
         }
         continue;
       }
   
-      if (code === CODES.SHOW_TEXT_LINE || code === CODES.SCROLL_TEXT_LINE) {
+      if (code === CODES.SHOW_TEXT_LINE) {
         const line = p[0];
-        if (typeof line === "string" && line.trim() && !looksLikeNonText(line)) {
-          pushEntry(line, cmd.parameters, 0, { type: "eventText", code });
+        if (typeof line === "string" && line.trim()) {
+          if (isLikelyHumanDialogue(line, "eventText")) {
+            pushEntry(line, cmd.parameters, 0, { type: "eventText", code });
+          }
+        }
+        continue;
+      }
+  
+      if (code === CODES.SCROLL_TEXT_LINE) {
+        const line = p[0];
+        if (typeof line === "string" && line.trim()) {
+          if (isLikelyHumanDialogue(line, "scrollText")) {
+            pushEntry(line, cmd.parameters, 0, { type: "scrollText", code });
+          }
         }
         continue;
       }
   
       if (code === CODES.SHOW_CHOICES && Array.isArray(p[0])) {
         p[0].forEach((choice, idx) => {
-          if (typeof choice === "string" && choice.trim() && !looksLikeNonText(choice)) {
-            pushEntry(choice, p[0], idx, { type: "choice", code });
+          if (typeof choice === "string" && choice.trim()) {
+            if (isLikelyHumanDialogue(choice, "choice")) {
+              pushEntry(choice, p[0], idx, { type: "choice", code });
+            }
           }
         });
         continue;
       }
   
       if (code === CODES.WHEN_CHOICE && typeof p[1] === "string") {
-        if (p[1].trim() && !looksLikeNonText(p[1])) {
-          pushEntry(p[1], cmd.parameters, 1, { type: "whenChoice", code });
+        const s = p[1];
+        if (s.trim() && isLikelyHumanDialogue(s, "whenChoice")) {
+          pushEntry(s, cmd.parameters, 1, { type: "whenChoice", code });
         }
         continue;
       }
   
       if (code === CODES.COMMENT || code === CODES.COMMENT_MORE) {
-        const cmt = p[0];
-        if (typeof cmt === "string" && cmt.trim() && !looksLikeNonText(cmt)) {
-          pushEntry(cmt, cmd.parameters, 0, { type: "comment", code });
+        if (EXTRACT_MODE === "all") {
+          const cmt = p[0];
+          if (typeof cmt === "string" && cmt.trim() && !looksLikeAssetOrCommandLine(cmt)) {
+            pushEntry(cmt, cmd.parameters, 0, { type: "comment", code });
+          }
         }
         continue;
       }
   
-      if (code === CODES.SHOW_PICTURE) {
-        const picName = p[1];
-        if (typeof picName === "string" && picName.trim() && !looksLikeNonText(picName)) {
-          pushEntry(picName, cmd.parameters, 1, { type: "pictureName", code });
-        }
-        continue;
-      }
-  
-      if (
-        (code === CODES.NAME_CHANGE || code === CODES.NICKNAME_CHANGE || code === CODES.PROFILE_CHANGE) &&
-        typeof p[1] === "string" && p[1].trim() && !looksLikeNonText(p[1])
-      ) {
-        pushEntry(p[1], cmd.parameters, 1, { type: "actorText", code });
-        continue;
-      }
-  
-      if (code === CODES.PLUGIN_CMD_MV) {
-        const s = p[0];
-        if (typeof s === "string" && s.trim() && !looksLikeNonText(s)) {
-          pushEntry(s, cmd.parameters, 0, { type: "pluginCmdMV", code });
-        }
-        continue;
-      }
-  
-      if (code === CODES.PLUGIN_CMD_MZ) {
-        const pluginName = p[0];
-        const commandName = p[1];
-        const args = p[2];
-  
-        if (typeof pluginName === "string" && pluginName.trim() && !looksLikeNonText(pluginName)) {
-          pushEntry(pluginName, cmd.parameters, 0, { type: "pluginNameMZ", code });
-        }
-        if (typeof commandName === "string" && commandName.trim() && !looksLikeNonText(commandName)) {
-          pushEntry(commandName, cmd.parameters, 1, { type: "commandNameMZ", code });
-        }
-  
-        if (args && typeof args === "object" && !Array.isArray(args)) {
-          Object.keys(args).forEach((k) => {
-            const v = args[k];
-            if (typeof v === "string" && v.trim() && !looksLikeNonText(v)) {
-              pushEntry(v, args, k, { type: "pluginArgMZ", code, key: k });
+      if (code === CODES.PLUGIN_CMD_MV && EXTRACT_PLUGIN_TEXT) {
+        const full = p[0];
+        if (typeof full === "string" && full.trim()) {
+          const parsed = parseMvPluginTextCommand(full);
+          if (parsed && PLUGIN_TEXT_ALLOWLIST.includes(parsed.cmd)) {
+            const txt = parsed.text;
+            if (txt.trim() && isLikelyHumanDialogue(txt, "pluginText")) {
+              pushEntry(txt, cmd.parameters, 0, {
+                type: "pluginTextMV",
+                code,
+                cmd: parsed.cmd,
+                prefix: parsed.prefix,
+                suffix: parsed.suffix,
+              });
             }
-          });
+          }
         }
         continue;
       }
   
-      if (code === CODES.SCRIPT || code === CODES.SCRIPT_MORE) {
-        const scriptLine = p[0];
-        if (typeof scriptLine === "string" && scriptLine.trim()) {
-          const lits = scanJsStringLiterals(scriptLine);
+      if ((code === CODES.SCRIPT || code === CODES.SCRIPT_MORE) && EXTRACT_SCRIPT_TEXT !== "off") {
+        const line = p[0];
+        if (typeof line === "string" && line.trim()) {
+          const lits = scanJsStringLiterals(line);
           lits.forEach((lit) => {
             const text = unescapeJsStringInner(lit.inner);
-            if (text.trim() && !looksLikeNonText(text)) {
-              pushEntry(text, cmd.parameters, 0, { type: "scriptLiteral", code, literalIndex: lit.literalIndex });
+            if (!text.trim()) return;
+  
+            if (EXTRACT_SCRIPT_TEXT === "safe") {
+              if (!isScriptLineLikelyAddsMessage(line, lit.start, lit.end)) return;
+            }
+  
+            if (isLikelyHumanDialogue(text, "eventText")) {
+              pushEntry(text, cmd.parameters, 0, {
+                type: "scriptLiteral",
+                code,
+                literalIndex: lit.literalIndex,
+              });
             }
           });
         }
@@ -681,9 +763,11 @@ function initStep1() {
 
       const refs = state.textGroups.get(oldText) || [];
       for (const r of refs) {
-        if (r.extra && r.extra.type === "scriptLiteral") {
+        if (r.extra?.type === "scriptLiteral") {
           const current = String(r.ref[r.index] ?? "");
           r.ref[r.index] = replaceNthJsStringLiteral(current, r.extra.literalIndex, newText);
+        } else if (r.extra?.type === "pluginTextMV") {
+          r.ref[r.index] = String(r.extra.prefix ?? "") + newText + String(r.extra.suffix ?? "");
         } else {
           r.ref[r.index] = newText;
         }
