@@ -302,7 +302,7 @@ function initStep1() {
     return t;
   }
   
-  function isControlOnlyLine(s) {l
+  function isControlOnlyLine(s) {
     return stripRpgTextCodesForCheck(s).length === 0;
   }
   
