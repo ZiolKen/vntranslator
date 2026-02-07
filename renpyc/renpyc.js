@@ -64,6 +64,37 @@ let state = {
   showDiff: false,
 };
 
+const MAX_UPLOAD_MB = 200;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+
+function formatBytes(bytes) {
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+}
+
+function validateUpload(files) {
+  const arr = Array.from(files || []);
+  if (!arr.length) return { ok: false, msg: "No files selected." };
+
+  let total = 0;
+  for (const f of arr) {
+    total += f.size || 0;
+    if ((f.size || 0) > MAX_UPLOAD_BYTES) {
+      return {
+        ok: false,
+        msg: `File "${f.name}" is too heavy (${formatBytes(f.size)}). Max is ${MAX_UPLOAD_MB}MB.`,
+      };
+    }
+  }
+  if (total > MAX_UPLOAD_BYTES) {
+    return {
+      ok: false,
+      msg: `Total size is too heavy (${formatBytes(total)}). Max is ${MAX_UPLOAD_MB}MB.`,
+    };
+  }
+  return { ok: true };
+}
+
 function showError(msg) {
   el.err.hidden = !msg;
   el.err.textContent = msg || "";
@@ -465,10 +496,16 @@ async function refreshTree(where) {
   else state.outputTree = data.tree;
 }
 
-
 async function uploadFiles(files) {
   try {
     showError("");
+
+    const check = validateUpload(files);
+    if (!check.ok) {
+      showError(check.msg);
+      return;
+    }
+
     el.runBtn.disabled = true;
     const res = await createJob(files);
     state.jobId = res.job_id;
