@@ -29,6 +29,19 @@ body{
   color: var(--fg);
 }
 
+.logo{
+  width:40px; height:40px; border-radius:12px;
+  display:grid; place-items:center;
+  background: transparent;
+}
+.logo img{
+  width:40px;
+  height:40px;
+  object-fit: cover;
+  border-radius: 12px;
+  display:block;
+}
+
 .top{
   display:flex;
   gap:12px;
