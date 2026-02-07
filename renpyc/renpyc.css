@@ -29,6 +29,7 @@ body{
   color: var(--fg);
 }
 
+.brand{display:flex; align-items:center; gap:12px}
 .logo{
   width:40px; height:40px; border-radius:12px;
   display:grid; place-items:center;
@@ -41,6 +42,8 @@ body{
   border-radius: 12px;
   display:block;
 }
+.brand-title{font-weight:800; font-size:14px}
+.brand-subtitle{font-size:12px; color:var(--muted)}
 
 .top{
   display:flex;
