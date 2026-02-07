@@ -1,0 +1,254 @@
+:root{
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #666666;
+  --line: #dddddd;
+  --soft: #f6f6f6;
+  --btn: #efefef;
+  --btn2: #e5e5e5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root{
+    --bg: #0f1115;
+    --fg: #eaeaea;
+    --muted: #a0a0a0;
+    --line: #2a2f3a;
+    --soft: #151922;
+    --btn: #1b2130;
+    --btn2: #222a3b;
+  }
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.top{
+  display:flex;
+  gap:12px;
+  justify-content:space-between;
+  align-items:flex-start;
+  padding:12px;
+  border-bottom:1px solid var(--line);
+}
+.title{ font-weight:700; font-size:16px; }
+.sub{ color:var(--muted); font-size:12px; margin-top:2px; }
+.top-right{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.inline{ display:flex; gap:6px; align-items:center; color:var(--muted); font-size:12px; }
+.sep{ width:1px; height:22px; background:var(--line); display:inline-block; margin:0 4px; }
+
+select,input,button,textarea{
+  font: inherit;
+  color: inherit;
+}
+select,input,textarea{
+  background: var(--bg);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:7px 10px;
+}
+button{
+  background: var(--btn);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:7px 10px;
+  cursor:pointer;
+}
+button:hover{ background: var(--btn2); }
+button:disabled{ opacity:.55; cursor:not-allowed; }
+
+.mutebtn{ background: transparent; }
+.mutebtn:hover{ background: var(--soft); }
+
+.layout{
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:12px;
+  padding:12px;
+  height: calc(100vh - 62px);
+}
+
+.side, .main{
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  background: var(--soft);
+}
+
+.side{
+  padding:12px;
+  overflow:auto;
+}
+.main{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.drop{
+  border:1px dashed var(--line);
+  border-radius:10px;
+  padding:12px;
+  background: var(--bg);
+}
+.drop input[type=file]{ display:none; }
+.drop-title{ font-weight:700; margin-bottom:6px; }
+.drop-text{ color:var(--muted); font-size:12px; margin-top:2px; }
+
+.row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+.row-tight{ margin-top:8px; }
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background: var(--btn);
+  cursor:pointer;
+  user-select:none;
+}
+.btn input{ display:none; }
+
+.tabbtn{ width: calc(50% - 4px); }
+.search{ width:100%; margin-top:10px; background: var(--bg); }
+.meta{ margin-top:10px; color:var(--muted); font-size:12px; }
+
+.box{
+  margin-top:10px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background: var(--bg);
+}
+.box summary{ cursor:pointer; font-weight:700; }
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+.grid label{ display:flex; flex-direction:column; gap:6px; }
+.grid span{ color:var(--muted); font-size:12px; }
+.hint{ color:var(--muted); font-size:12px; margin-top:8px; }
+code{ padding:1px 5px; border-radius:6px; background: var(--soft); border:1px solid var(--line); }
+
+.tree{
+  margin-top:10px;
+  background: var(--bg);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+}
+.item{
+  padding:5px 8px;
+  border-radius:8px;
+  cursor:pointer;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.item:hover{ background: var(--soft); }
+.item.active{ outline:2px solid rgba(120,120,120,.25); background: var(--soft); }
+.indent{ margin-left: 14px; }
+
+.err{
+  margin-top:10px;
+  white-space:pre-wrap;
+  border:1px solid #cc4444;
+  background: rgba(204,68,68,.06);
+  border-radius:10px;
+  padding:10px;
+}
+
+.bar{
+  padding:12px;
+  border-bottom:1px solid var(--line);
+  background: var(--bg);
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:10px;
+}
+.bar-title{ font-weight:700; }
+.bar-sub{ color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.tabs{
+  display:flex;
+  gap:6px;
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+  background: var(--bg);
+  overflow:auto;
+}
+.tab{
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  padding:6px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background: var(--bg);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.tab.active{ background: var(--soft); }
+.tab .x{ color:var(--muted); padding:0 6px; border-radius:8px; }
+.tab .x:hover{ background: var(--soft); }
+
+.preview{
+  flex:1;
+  overflow:auto;
+  padding:12px;
+  background: var(--bg);
+}
+.placeholder{ color:var(--muted); font-size:12px; }
+
+textarea.editor{
+  width:100%;
+  height:60vh;
+  border-radius:10px;
+  padding:10px;
+  resize:vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12.5px;
+}
+img.previewImg{ max-width:100%; max-height:60vh; border:1px solid var(--line); border-radius:10px; }
+
+.logs{
+  border-top:1px solid var(--line);
+  background: var(--bg);
+  padding:12px;
+}
+.logs-title{ font-weight:700; margin-bottom:6px; }
+pre{ margin:0; white-space:pre-wrap; }
+
+.diffBox{
+  padding:12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre;
+  overflow:auto;
+  max-height:60vh;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background: var(--bg);
+}
+.diffLine{ display:block; padding:0 8px; border-radius:8px; }
+.diffLine.add{ background: rgba(0,180,90,.10); }
+.diffLine.del{ background: rgba(200,60,60,.10); }
+
+@media (max-width: 980px){
+  .layout{ grid-template-columns:1fr; height:auto; }
+  .tabbtn{ width:auto; flex:1; }
+  .grid{ grid-template-columns:1fr; }
+}
