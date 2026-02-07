@@ -491,105 +491,106 @@ input[type="file"]::-webkit-file-upload-button:hover{
   .grid2{grid-template-columns:1fr}
 }
  
-                .progress-container {
-                    margin: 20px 0 10px;
-                }
+.progress-container {
+    margin: 20px 0 10px;
+}
  
-                progress {
-                    width: 100%;
-                    height: 10px;
-                    border-radius: 5px;
-                    background-color: rgba(0, 255, 255, 0.1);
-                    border: 1px solid var(--border-color);
-                }
+progress {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgba(0, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+}
  
-                progress::-webkit-progress-bar {
-                    background-color: transparent;
-                    border-radius: 5px;
-                }
+progress::-webkit-progress-bar {
+    background-color: transparent;
+    border-radius: 5px;
+}
  
-                progress::-webkit-progress-value {
-                    background: linear-gradient(90deg, var(--neon-magenta), var(--neon-cyan));
-                    border-radius: 5px;
-                    transition: width 0.3s ease;
-                    box-shadow: 0 0 10px var(--neon-cyan);
-                }
+progress::-webkit-progress-value {
+    background: linear-gradient(90deg, var(--neon-magenta), var(--neon-cyan));
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px var(--neon-cyan);
+}
  
-                #progressText {
-                    text-align: center;
-                    margin-top: 8px;
-                    font-size: 0.9rem;
-                    color: var(--text-secondary);
-                }
+#progressText {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
  
-                .log-container {
-                    max-height: 350px;
-                    width: auto;
-                    overflow-y: auto;
-                    border: 1px solid var(--border-color);
-                    border-radius: 12px;
-                    padding: 15px;
-                    background-color: rgba(2, 0, 26, 0.7);
-                    font-size: 0.9rem;
-                }
+.log-container {
+    max-height: 350px;
+    width: auto;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    background-color: rgba(2, 0, 26, 0.7);
+    font-size: 0.9rem;
+}
  
-                .log-container::-webkit-scrollbar {
-                    width: 8px;
-                }
+.log-container::-webkit-scrollbar {
+    width: 8px;
+}
  
-                .log-container::-webkit-scrollbar-track {
-                    background: transparent;
-                }
+.log-container::-webkit-scrollbar-track {
+    background: transparent;
+}
  
-                .log-container::-webkit-scrollbar-thumb {
-                    background-color: var(--neon-cyan);
-                    border-radius: 4px;
-                }
+.log-container::-webkit-scrollbar-thumb {
+    background-color: var(--neon-cyan);
+    border-radius: 4px;
+}
  
-                .log-entry {
-                    margin-bottom: 10px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-                    animation: fadeIn 0.5s ease;
-                }
+.log-entry {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+    animation: fadeIn 0.5s ease;
+}
  
-                .log-success {
-                    color: var(--neon-green);
-                }
+.log-success {
+    color: var(--neon-green);
+}
  
-                .log-error {
-                    color: var(--neon-red);
-                }
+.log-error {
+    color: var(--neon-red);
+}
  
-                .log-warning {
-                    color: var(--neon-yellow);
-                }
+.log-warning {
+    color: var(--neon-yellow);
+}
  
-                .log-info {
-                    color: var(--neon-cyan);
-                }
+.log-info {
+    color: var(--neon-cyan);
+}
  
-                .translation-log {
-                    border-left: 2px solid var(--neon-magenta);
-                    padding-left: 10px;
-                    margin: 8px 0;
-                }
+.translation-log {
+    border-left: 2px solid var(--neon-magenta);
+    padding-left: 10px;
+    margin: 8px 0;
+}
  
-                .translation-original {
-                    color: var(--text-secondary);
-                    word-break: break-word;
-                }
+.translation-original {
+    color: var(--text-secondary);
+    word-break: break-word;
+}
  
-                .translation-result {
-                    color: var(--neon-green);
-                    word-break: break-word;
-                    font-weight: bold;
-                }
+.translation-result {
+    color: var(--neon-green);
+    word-break: break-word;
+    font-weight: bold;
+}
  
 .tab-bar{
   background: transparent;
   border: 0;
   padding: 8px;
+  max-width: 1150px;
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -650,44 +651,44 @@ input[type="file"]::-webkit-file-upload-button:hover{
   color: rgba(34,197,94,.9);
 }
  
-                .progress-wrapper {
-                    position: relative;
-                    width: 100%;
-                    color: #fff;
-                }
+.progress-wrapper {
+    position: relative;
+    width: 100%;
+    color: #fff;
+}
  
-                .progress-container {
-                    width: 100%;
-                    background-color: transparent;
-                    border-radius: 9999px;
-                    
-                    height: 18px;
-                    
-                    position: relative;
-                    overflow: hidden;
-                    border: 1px solid var(--text-secondary);
-                    text-align: center;
-                    display: flex;
-                }
+.progress-container {
+    width: 100%;
+    background-color: transparent;
+    border-radius: 9999px;
+    
+    height: 18px;
+    
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--text-secondary);
+    text-align: center;
+    display: flex;
+}
  
-                .progress-bar {
-                    background-color: var(--neon-green);
-                    height: 100%;
-                    width: 0%;
-                    transition: width 0.3s ease;
-                }
+.progress-bar {
+    background-color: var(--neon-green);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+}
  
-                .progress-text {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -90%);
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                    pointer-events: none;
-                    white-space: nowrap;
-                    color: #fff;
-                }
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -90%);
+    font-size: 0.875rem;
+    font-weight: 500;
+    pointer-events: none;
+    white-space: nowrap;
+    color: #fff;
+}
                 
 #saveBtn{
   margin-top: 10px;
