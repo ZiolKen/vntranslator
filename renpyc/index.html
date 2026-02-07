@@ -9,11 +9,13 @@
 
 <body>
   <header class="top">
+    <a href="/">
     <div class="top-left">
-      <div class="title">Ren'Py Compiler</div>
-      <div class="sub" id="apiInfo"></div>
+      <div class="title">VN Translator</div>
+      <div class="sub" style="color:#ffeeee">Ren'Py Compiler</div>
       <div class="sub" id="jobBadge">No job</div>
     </div>
+    </a>
 
     <div class="top-right">
       <select id="mode" title="Mode">
@@ -46,7 +48,7 @@
       <div id="drop" class="drop">
         <input id="fileInput" type="file" multiple />
         <div class="drop-title">Upload</div>
-        <div class="drop-text">Drag n Drop or click to choose.</div>
+        <div class="drop-text">Drag n Drop or click to choose. (Max 200MB)</div>
         <div class="drop-text">Support multiple file or ZIP. (.rpi usually requires a .rpa file with the same name.)</div>
 
         <div class="row">
@@ -151,6 +153,7 @@
   </main>
 
   <script src="./renpyc.js"></script>
+  <div id="apiInfo" style="display:none"></div>
 </body>
 
 </html>
