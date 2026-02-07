@@ -585,11 +585,16 @@ progress::-webkit-progress-value {
     word-break: break-word;
     font-weight: bold;
 }
+
+.grid2 > *{
+  min-width: 0;
+}
  
 .tab-bar{
   background: transparent;
   border: 0;
   padding: 8px;
+  flex-wrap: nowrap;
   min-width: 0;
   display: flex;
   gap: 8px;
