@@ -590,7 +590,7 @@ progress::-webkit-progress-value {
   background: transparent;
   border: 0;
   padding: 8px;
-  max-width: 1150px;
+  min-width: 0;
   display: flex;
   gap: 8px;
   overflow-x: auto;
