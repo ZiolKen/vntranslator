@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ren'Py Compiler | VN Translator</title>
+  <link rel="stylesheet" href="./renpyc.css" />
+</head>
+
+<body>
+  <header class="top">
+    <div class="top-left">
+      <div class="title">Ren'Py Compiler</div>
+      <div class="sub" id="apiInfo"></div>
+      <div class="sub" id="jobBadge">No job</div>
+    </div>
+
+    <div class="top-right">
+      <select id="mode" title="Mode">
+        <option value="auto">Auto</option>
+        <option value="decompile">Decompile .rpyc</option>
+        <option value="extract_rpa">Extract .rpa</option>
+        <option value="extract_rpi">Extract .rpi</option>
+        <option value="pack_rpa">Pack/Repack .rpa</option>
+      </select>
+
+      <label class="inline">
+        <input type="checkbox" id="tryHarder" />
+        try-harder
+      </label>
+
+      <button id="runBtn">Run</button>
+      <button id="saveBtn" disabled>Save</button>
+      <button id="diffBtn" class="mutebtn" disabled>Diff</button>
+
+      <span class="sep"></span>
+
+      <button id="zipBtn" disabled>Download ZIP</button>
+      <button id="fileBtn" class="mutebtn" disabled>Download file</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Sidebar -->
+    <aside class="side">
+      <div id="drop" class="drop">
+        <input id="fileInput" type="file" multiple />
+        <div class="drop-title">Upload</div>
+        <div class="drop-text">Drag n Drop or click to choose.</div>
+        <div class="drop-text">Support multiple file or ZIP. (.rpi usually requires a .rpa file with the same name.)</div>
+
+        <div class="row">
+          <label class="btn">
+            <input id="folderInput" type="file" multiple webkitdirectory />
+            Select folder
+          </label>
+        </div>
+      </div>
+
+      <div class="row row-tight">
+        <button id="inputTab" class="tabbtn">Input</button>
+        <button id="outputTab" class="tabbtn">Output</button>
+      </div>
+
+      <input id="search" class="search" placeholder="Search..." />
+
+      <div class="meta">
+        Selected folder: <b id="selectedFolder">none</b>
+      </div>
+
+      <details class="box">
+        <summary>Pack/Repack</summary>
+
+        <div class="grid">
+          <label>
+            <span>Source where</span>
+            <select id="packWhere">
+              <option value="output">output</option>
+              <option value="input">input</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Source folder path</span>
+            <input id="packPath" placeholder="e.g. rpa_extract/game (empty=root)" />
+          </label>
+
+          <label>
+            <span>Archive name</span>
+            <input id="packName" value="repacked.rpa" />
+          </label>
+
+          <label>
+            <span>RPA version</span>
+            <select id="packVersion">
+              <option value="3">v3</option>
+              <option value="2">v2</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Key (hex)</span>
+            <input id="packKey" value="0xDEADBEEF" />
+          </label>
+
+          <label>
+            <span>Padding</span>
+            <input id="packPadding" type="number" value="0" min="0" />
+          </label>
+        </div>
+
+        <div class="row">
+          <button id="useSelectedBtn" class="mutebtn">Use selected folder</button>
+          <button id="repackBtn" class="mutebtn">Repack now</button>
+        </div>
+
+        <div class="hint">
+          Tip: Extract .rpa → edit in output → select folder <code>output:rpa_extract/&lt;name&gt;</code> → Repack.
+        </div>
+      </details>
+
+      <div class="row row-tight">
+        <button id="mkdirBtn" class="mutebtn" disabled>New folder</button>
+        <button id="renameBtn" class="mutebtn" disabled>Rename/Move</button>
+        <button id="deleteBtn" class="mutebtn" disabled>Delete</button>
+      </div>
+
+      <div id="tree" class="tree"></div>
+
+      <div id="err" class="err" hidden></div>
+    </aside>
+
+    <!-- Main content -->
+    <section class="main">
+      <div class="bar">
+        <div class="bar-title">Preview / Editor</div>
+        <div class="bar-sub" id="activeFile">No file</div>
+      </div>
+
+      <div class="tabs" id="tabs"></div>
+
+      <div id="preview" class="preview">
+        <div class="placeholder">Select 1 file to preview.</div>
+      </div>
+
+      <div class="logs">
+        <div class="logs-title">Logs</div>
+        <pre id="logs">No logs yet.</pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="./renpyc.js"></script>
+</body>
+
+</html>
