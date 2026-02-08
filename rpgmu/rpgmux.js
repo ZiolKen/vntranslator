@@ -215,6 +215,63 @@
       commentPrefix: /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::|\s)\s*([\s\S]*)$/,
       trailingNumber: /(\s+[+-]?\d+(?:\.\d+)?)\s*$/,
     };
+    
+    function looksLikeJsCodeLine(s) {
+      const t = String(s ?? "").trim();
+      if (!t) return false;
+    
+      if (/^(?:var|let|const)\s+[A-Za-z_$][\w$]*/.test(t)) return true;
+    
+      if (/^(?:if|for|while|switch)\s*\(/.test(t)) return true;
+    
+      if (/[{};]/.test(t)) return true;
+      if (/\$game[A-Za-z_]\w*/.test(t)) return true;
+    
+      if (/[=]/.test(t) && /[A-Za-z_$][\w$]*\s*\.\s*[A-Za-z_$][\w$]*/.test(t)) return true;
+      if (/\w\s*\([^)]*\)\s*;?$/.test(t) && /[=.$]/.test(t)) return true;
+    
+      return false;
+    }
+    
+    function looksLikeLooseIdToken(s) {
+      const t = String(s ?? "").trim();
+      if (t.length < 2 || t.length > 24) return false;
+    
+      if (!/^[A-Za-z0-9_-]+$/.test(t)) return false;
+    
+      if (t === t.toLowerCase()) return true;
+      if (/\d$/.test(t)) return true;
+      if (/[A-Z]/.test(t) && /[a-z]/.test(t)) return true;
+      if (/[-_]/.test(t)) return true;
+    
+      return false;
+    }
+    
+    function looksLikeUiCounterLine(s) {
+      const raw = String(s ?? "");
+      const t = raw.trim();
+      if (!t) return true;
+    
+      const tt = t.replace(/[\u3000\s]/g, "");
+    
+      if (
+        /^[（(].*[\\][Vv]\[\d+\].*[)）]$/.test(tt) &&
+        /\/\d+/.test(tt)
+      ) {
+        return true;
+      }
+    
+      let core = stripRpgTextCodesForCheck(t);
+      core = core
+        .replace(/[\u3000\s]/g, "")
+        .replace(/[()（）［］【】\[\]{}<>「」『』、。・…‥:：;；\/\-\+＝=]/g, "")
+        .replace(/\d+/g, "");
+    
+      if (core.length <= 1) return true;
+      if (/^(?:枚|個|回|%|％)+$/.test(core)) return true;
+    
+      return false;
+    }
 
     function stripRpgTextCodesForCheck(s) {
       let t = String(s ?? "");
@@ -253,6 +310,11 @@
     function looksLikeAssetOrCommandLine(s) {
       const t = String(s ?? "").trim();
       if (!t) return true;
+    
+      if (looksLikeJsCodeLine(t)) return true;
+      if (looksLikeUiCounterLine(t)) return true;
+      if (looksLikeLooseIdToken(t)) return true;
+    
       if (RE.pathLike.test(t)) return true;
       if (RE.allCapsCmd.test(t)) return true;
       if (RE.keyValue.test(t)) return true;
@@ -266,19 +328,29 @@
       const t = String(text ?? "");
       if (!t.trim()) return false;
       if (isControlOnlyLine(t)) return false;
-
-      if (kind === "speakerName" || kind === "eventText" || kind === "scrollText" || kind === "choice" || kind === "whenChoice") {
+    
+      if (
+        kind === "speakerName" ||
+        kind === "eventText" ||
+        kind === "scrollText" ||
+        kind === "choice" ||
+        kind === "whenChoice"
+      ) {
         return true;
       }
-
+    
       if (kind === "commentText" || kind === "pluginText" || kind === "scriptLiteral") {
+        if (looksLikeJsCodeLine(t)) return false;
+        if (looksLikeLooseIdToken(t)) return false;
+        if (looksLikeUiCounterLine(t)) return false;
         if (looksLikeAssetOrCommandLine(t)) return false;
+    
         const core = stripRpgTextCodesForCheck(t);
         if (!core) return false;
         if (core.length <= 1 && /^[A-Za-z0-9]$/.test(core)) return false;
         return true;
       }
-
+    
       return !looksLikeAssetOrCommandLine(t);
     }
 
@@ -870,24 +942,25 @@
         } else if (SETTINGS.extract.pluginCommands.mv356 && code === CODES.PLUGIN_CMD_MV) {
           const full = p[0];
           if (typeof full === "string" && full.trim()) {
-            const parts = parseMvPluginTextAll(full);
-            for (const part of parts) {
-              if (!part || !part.text || !part.text.trim()) continue;
-              if (!isLikelyHumanText(part.text, "pluginText")) continue;
-        
-              if (part.kind === "quoted") {
-                pushEntry(part.text, cmd.parameters, 0, {
-                  type: "pluginTextMVQuoted",
-                  code,
-                  literalIndex: part.literalIndex,
-                });
-              } else {
-                pushEntry(part.text, cmd.parameters, 0, {
-                  type: "pluginTextMVSpan",
-                  code,
-                  prefix: part.prefix,
-                  suffix: part.suffix,
-                });
+            const cmdToken = full.trim().split(/\s+/)[0] || "";
+            if (!SETTINGS.extract.pluginCommands.allowlist.includes(cmdToken)) {
+            } else {
+              const parsed = parseMvPluginTextAll(full);
+              if (parsed && isLikelyHumanText(parsed.text, "pluginText")) {
+                if (parsed.kind === "quoted") {
+                  pushEntry(parsed.text, cmd.parameters, 0, {
+                    type: "pluginTextMVQuoted",
+                    code,
+                    literalIndex: parsed.literalIndex,
+                  });
+                } else {
+                  pushEntry(parsed.text, cmd.parameters, 0, {
+                    type: "pluginTextMV",
+                    code,
+                    prefix: parsed.prefix,
+                    suffix: parsed.suffix,
+                  });
+                }
               }
             }
           }
