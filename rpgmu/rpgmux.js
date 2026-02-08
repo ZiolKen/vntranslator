@@ -373,13 +373,138 @@
 
     function parseCommentTextLine(line) {
       const s = String(line ?? "");
-      const m = s.match(RE.commentPrefix);
-      if (!m) return null;
-      const key = String(m[1] || "").toUpperCase();
-      const val = String(m[2] || "");
-      const allow = SETTINGS.extract.comments.allowlistPrefixes.some((p) => key === String(p).toUpperCase());
+      let i = 0;
+      while (i < s.length && /\s/u.test(s[i])) i++;
+    
+      let keyStart = i;
+      if (keyStart >= s.length) return null;
+      if (!/[A-Za-z_]/.test(s[keyStart])) return null;
+      i++;
+      while (i < s.length && /[A-Za-z0-9_]/.test(s[i])) i++;
+      const key = s.slice(keyStart, i);
+      if (!key) return null;
+    
+      const allow = SETTINGS.extract.comments.allowlistPrefixes.some(
+        (p) => String(p).toUpperCase() === key.toUpperCase()
+      );
       if (!allow) return null;
-      return val;
+    
+      let j = i;
+      while (j < s.length && /\s/u.test(s[j])) j++;
+    
+      if (j < s.length && (s[j] === ":" || s[j] === "：" || s[j] === "=" || s[j] === "＝")) {
+        j++;
+        while (j < s.length && /\s/u.test(s[j])) j++;
+      } else {
+        if (j === i) return null;
+      }
+    
+      const prefix = s.slice(0, j);
+      const text = s.slice(j);
+      if (!text.trim()) return null;
+    
+      return { key, text, prefix, suffix: "" };
+    }
+    
+    function isFlagToken(t) {
+      const x = String(t ?? "").trim();
+      return /^(?:ON|OFF|TRUE|FALSE|YES|NO|null|nil)$/i.test(x);
+    }
+    
+    function isNumericOrRangeToken(t) {
+      const x = String(t ?? "").trim();
+      return RE.numeric.test(x) || RE.range.test(x);
+    }
+    
+    function parseMvPluginTextAll(full) {
+      const s = String(full ?? "");
+      const out = [];
+    
+      let i = 0;
+      while (i < s.length && /\s/u.test(s[i])) i++;
+      const cmdStart = i;
+      while (i < s.length && !/\s/u.test(s[i])) i++;
+      const cmdEnd = i;
+      const cmd = s.slice(cmdStart, cmdEnd).trim();
+      if (!cmd) return out;
+    
+      const lits = scanJsStringLiterals(s);
+      if (lits.length) {
+        for (const lit of lits) {
+          const text = unescapeJsStringInner(lit.inner);
+          if (!text.trim()) continue;
+          if (!isLikelyHumanText(text, "pluginText")) continue;
+          out.push({
+            kind: "quoted",
+            cmd,
+            literalIndex: lit.literalIndex,
+            text,
+          });
+        }
+        return out;
+      }
+    
+      const tail = s.slice(cmdEnd);
+      const firstNonWs = tail.search(/\S/u);
+      if (firstNonWs === -1) return out;
+    
+      const absStart = cmdEnd + firstNonWs;
+    
+      const wordRe = /\S+/gu;
+      wordRe.lastIndex = absStart;
+      const tokens = [];
+      let m;
+      while ((m = wordRe.exec(s))) {
+        tokens.push({ start: m.index, end: m.index + m[0].length, text: m[0] });
+      }
+      if (!tokens.length) return out;
+    
+      const keepTok = (t) => {
+        if (!t) return false;
+        if (isNumericOrRangeToken(t)) return false;
+        if (isFlagToken(t)) return false;
+        if (looksLikeNonText(t)) return false;
+        if (looksLikeAssetOrCommandLine(t)) return false;
+        return true;
+      };
+    
+      let best = null;
+      let runStart = null;
+      let runEnd = null;
+    
+      const commitRun = () => {
+        if (runStart == null) return;
+        const len = runEnd - runStart;
+        if (!best || len > best.len) best = { start: runStart, end: runEnd, len };
+        runStart = null;
+        runEnd = null;
+      };
+    
+      for (const tok of tokens) {
+        if (keepTok(tok.text)) {
+          if (runStart == null) runStart = tok.start;
+          runEnd = tok.end;
+        } else {
+          commitRun();
+        }
+      }
+      commitRun();
+    
+      if (!best) return out;
+    
+      const text = s.slice(best.start, best.end);
+      if (!text.trim()) return out;
+      if (!isLikelyHumanText(text, "pluginText")) return out;
+    
+      out.push({
+        kind: "span",
+        cmd,
+        prefix: s.slice(0, best.start),
+        suffix: s.slice(best.end),
+        text,
+      });
+    
+      return out;
     }
 
     function parseMvPluginText(full) {
@@ -727,23 +852,42 @@
         } else if (SETTINGS.extract.comments.enabled && (code === CODES.COMMENT || code === CODES.COMMENT_MORE)) {
           const raw = p[0];
           if (typeof raw === "string" && raw.trim()) {
-            const allowText = parseCommentTextLine(raw);
-            if (typeof allowText === "string" && allowText.trim() && isLikelyHumanText(allowText, "commentText")) {
-              pushEntry(allowText, cmd.parameters, 0, { type: "commentText", code, wrap: "prefixKey" });
+            const parsed = parseCommentTextLine(raw);
+            if (parsed && parsed.text && parsed.text.trim() && isLikelyHumanText(parsed.text, "commentText")) {
+              pushEntry(parsed.text, cmd.parameters, 0, {
+                type: "commentTextKV",
+                code,
+                prefix: parsed.prefix,
+                suffix: parsed.suffix,
+              });
             } else if (SETTINGS.extract.comments.dialogueLikeFallback) {
               const t = raw.trim();
-              if (isLikelyHumanText(t, "commentText") && !looksLikeAssetOrCommandLine(t)) pushEntry(t, cmd.parameters, 0, { type: "commentTextRaw", code });
+              if (isLikelyHumanText(t, "commentText") && !looksLikeAssetOrCommandLine(t)) {
+                pushEntry(t, cmd.parameters, 0, { type: "commentTextRaw", code });
+              }
             }
           }
         } else if (SETTINGS.extract.pluginCommands.mv356 && code === CODES.PLUGIN_CMD_MV) {
           const full = p[0];
           if (typeof full === "string" && full.trim()) {
-            const parsed = parseMvPluginText(full);
-            if (parsed && isLikelyHumanText(parsed.text, "pluginText")) {
-              if (parsed.kind === "quoted") {
-                pushEntry(parsed.text, cmd.parameters, 0, { type: "pluginTextMVQuoted", code, literalIndex: parsed.literalIndex });
+            const parts = parseMvPluginTextAll(full);
+            for (const part of parts) {
+              if (!part || !part.text || !part.text.trim()) continue;
+              if (!isLikelyHumanText(part.text, "pluginText")) continue;
+        
+              if (part.kind === "quoted") {
+                pushEntry(part.text, cmd.parameters, 0, {
+                  type: "pluginTextMVQuoted",
+                  code,
+                  literalIndex: part.literalIndex,
+                });
               } else {
-                pushEntry(parsed.text, cmd.parameters, 0, { type: "pluginTextMV", code, prefix: parsed.prefix, suffix: parsed.suffix });
+                pushEntry(part.text, cmd.parameters, 0, {
+                  type: "pluginTextMVSpan",
+                  code,
+                  prefix: part.prefix,
+                  suffix: part.suffix,
+                });
               }
             }
           }
@@ -825,6 +969,10 @@
             const current = String(r.ref[r.index] ?? "");
             r.ref[r.index] = replaceNthJsStringLiteral(current, r.extra.literalIndex, newText);
           } else if (r.extra?.type === "pluginTextMV") {
+            r.ref[r.index] = String(r.extra.prefix ?? "") + newText + String(r.extra.suffix ?? "");
+          } else if (r.extra?.type === "commentTextKV") {
+            r.ref[r.index] = String(r.extra.prefix ?? "") + newText + String(r.extra.suffix ?? "");
+          } else if (r.extra?.type === "pluginTextMVSpan") {
             r.ref[r.index] = String(r.extra.prefix ?? "") + newText + String(r.extra.suffix ?? "");
           } else {
             r.ref[r.index] = newText;
