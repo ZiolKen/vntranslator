@@ -79,6 +79,7 @@
         choices: true,
         speakerName: true,
         scrollText: true,
+        commonEventName: true,
         comments: {
           enabled: true,
           allowlistPrefixes: ["D_TEXT", "TEXT", "MSG", "MESSAGE"],
@@ -869,6 +870,18 @@
         if (!Array.isArray(arr)) return;
         for (const ce of arr) {
           if (!ce || typeof ce !== "object") continue;
+          if (SETTINGS.extract.commonEventName) {
+            const nm = ce.name;
+            if (
+              typeof nm === "string" &&
+              nm.trim() &&
+              !looksLikeNonText(nm) &&
+              !looksLikeAssetOrCommandLine(nm) &&
+              isLikelyHumanText(nm, "commentText") // dùng filter an toàn, tránh dính code/điều khiển
+            ) {
+              pushEntry(nm, ce, "name", { type: "commonEventName" });
+            }
+          }
           await extractEventCommandList(ce.list, pushEntry, maybeYield);
         }
         return;
