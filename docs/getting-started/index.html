@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>Quick start | VN Translator</title>
+    <meta name="description" content="Get started with VN Translator in minutes: choose a tool, load source files, pick a translation service, review in preview, and export safely." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Getting started", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>Quick start</h1>
+<p>This guide helps you go from <strong>zero → first working translation</strong> with minimal risk.</p>
+<h2>1) Pick the correct tool</h2>
+<ul>
+<li>
+<p>Ren’Py (<code>.rpy</code> scripts): use <strong>Ren’Py Translator</strong> or <strong>Pro Ren’Py Translator</strong></p>
+<ul>
+<li>Single file: <a href="/renpy/">Ren’Py Translator</a></li>
+<li>Multi-file project + Translation Memory: <a href="/prenpy/">Pro Ren’Py Translator</a></li>
+</ul>
+</li>
+<li>
+<p>RPG Maker MV/MZ (<code>data/*.json</code>): use <strong>RPG Maker Translator</strong> or <strong>RPGM Ultimate</strong></p>
+<ul>
+<li>Single JSON: <a href="/rpgm/">RPG Maker Translator</a></li>
+<li>Many JSON files + batch pipeline: <a href="/rpgmu/">RPGM Ultimate</a></li>
+</ul>
+</li>
+<li>
+<p>Quick editing / manual fixes: <a href="/game-text-editor/">Game Text Editor</a></p>
+</li>
+</ul>
+<h2>2) Prepare your source files</h2>
+<h3>Ren’Py</h3>
+<ul>
+<li>Use the original project folder you open in <strong>Ren’Py Launcher</strong></li>
+<li>Scripts are usually in: <code>game/*.rpy</code></li>
+</ul>
+<p>If you can’t find <code>.rpy</code>, read: <a href="/renpy/how-to-get-renpy-rpy.html">How to get .rpy files</a></p>
+<h3>RPG Maker MV/MZ</h3>
+<ul>
+<li>Use the original project folder</li>
+<li>Data files are usually in: <code>data/*.json</code><br />
+Example: <code>Actors.json</code>, <code>System.json</code>, <code>CommonEvents.json</code>, <code>Map001.json</code></li>
+</ul>
+<p>If you’re not sure which files: <a href="/rpgm/how-to-get-rpgm-json.html">How to get RPGM JSON</a></p>
+<h2>3) Choose a translation service</h2>
+<p>VN Translator supports multiple translation backends. Most users start with:</p>
+<ul>
+<li><strong>DeepSeek</strong> (API key) — best structure preservation for VN text</li>
+<li><strong>OpenAI</strong> (API key) — highest quality, usually more expensive</li>
+<li><strong>DeepL</strong> (API key) — strong for many languages, can be strict about formatting</li>
+<li><strong>Lingva / Google</strong> — free options, but riskier for tag/control-code safety</li>
+</ul>
+<p>See: <a href="/docs/translation-services/">Translation services</a> and <a href="/docs/api-keys/">API keys</a></p>
+<h2>4) Translate in small batches</h2>
+<ul>
+<li>Start with <strong>one file</strong></li>
+<li>Use a batch size like <strong>10–30 lines</strong> for the first run</li>
+<li>If everything looks stable, increase batch size gradually</li>
+</ul>
+<p>This approach reduces:</p>
+<ul>
+<li>retries on failures</li>
+<li>partial outputs</li>
+<li>broken tags/control codes</li>
+</ul>
+<h2>5) QA in Preview &amp; Editor</h2>
+<p>After translation:</p>
+<ul>
+<li>Open the tool’s <strong>Preview / Editor</strong></li>
+<li>Check:
+<ul>
+<li>tags (Ren’Py <code>{i}{/i}</code>, <code>{color=...}</code>)</li>
+<li>variables (Ren’Py <code>[name]</code>)</li>
+<li>control codes (RPGM <code>\V[1]</code>, <code>\N[3]</code>, <code>\C[2]</code>, <code>\I[10]</code>)</li>
+<li>line breaks, spacing, punctuation</li>
+</ul>
+</li>
+</ul>
+<p>Fix issues immediately, then export again.</p>
+<h2>6) Export and test in the engine</h2>
+<ul>
+<li>Replace translated files back into the project</li>
+<li>Run the game:
+<ul>
+<li>Ren’Py: launch from Ren’Py Launcher</li>
+<li>RPG Maker: playtest from the editor, or build and test</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>✅ Always test after each export. VN engines fail fast when formatting breaks.</p>
+</blockquote>
+<h2>A safe “first translation” checklist</h2>
+<ul>
+<li>[ ] I’m translating from the <strong>original project</strong> (not a random build)</li>
+<li>[ ] I backed up the project folder</li>
+<li>[ ] I started with a small batch size</li>
+<li>[ ] I used Preview &amp; Editor to check tags/control codes</li>
+<li>[ ] I tested the game after exporting</li>
+</ul>
+
+
+          <script type="text/plain" data-docs="md">
+# Quick start
+
+This guide helps you go from **zero → first working translation** with minimal risk.
+
+## 1) Pick the correct tool
+
+- Ren’Py (`.rpy` scripts): use **Ren’Py Translator** or **Pro Ren’Py Translator**  
+  - Single file: [Ren’Py Translator](/renpy/)  
+  - Multi-file project + Translation Memory: [Pro Ren’Py Translator](/prenpy/)
+
+- RPG Maker MV/MZ (`data/*.json`): use **RPG Maker Translator** or **RPGM Ultimate**  
+  - Single JSON: [RPG Maker Translator](/rpgm/)  
+  - Many JSON files + batch pipeline: [RPGM Ultimate](/rpgmu/)
+
+- Quick editing / manual fixes: [Game Text Editor](/game-text-editor/)
+
+## 2) Prepare your source files
+
+### Ren’Py
+- Use the original project folder you open in **Ren’Py Launcher**
+- Scripts are usually in: `game/*.rpy`
+
+If you can’t find `.rpy`, read: [How to get .rpy files](/renpy/how-to-get-renpy-rpy.html)
+
+### RPG Maker MV/MZ
+- Use the original project folder
+- Data files are usually in: `data/*.json`  
+  Example: `Actors.json`, `System.json`, `CommonEvents.json`, `Map001.json`
+
+If you’re not sure which files: [How to get RPGM JSON](/rpgm/how-to-get-rpgm-json.html)
+
+## 3) Choose a translation service
+
+VN Translator supports multiple translation backends. Most users start with:
+
+- **DeepSeek** (API key) — best structure preservation for VN text
+- **OpenAI** (API key) — highest quality, usually more expensive
+- **DeepL** (API key) — strong for many languages, can be strict about formatting
+- **Lingva / Google** — free options, but riskier for tag/control-code safety
+
+See: [Translation services](/docs/translation-services/) and [API keys](/docs/api-keys/)
+
+## 4) Translate in small batches
+
+- Start with **one file**
+- Use a batch size like **10–30 lines** for the first run
+- If everything looks stable, increase batch size gradually
+
+This approach reduces:
+- retries on failures
+- partial outputs
+- broken tags/control codes
+
+## 5) QA in Preview & Editor
+
+After translation:
+- Open the tool’s **Preview / Editor**
+- Check:
+  - tags (Ren’Py `{i}{/i}`, `{color=...}`)
+  - variables (Ren’Py `[name]`)
+  - control codes (RPGM `\V[1]`, `\N[3]`, `\C[2]`, `\I[10]`)
+  - line breaks, spacing, punctuation
+
+Fix issues immediately, then export again.
+
+## 6) Export and test in the engine
+
+- Replace translated files back into the project
+- Run the game:
+  - Ren’Py: launch from Ren’Py Launcher
+  - RPG Maker: playtest from the editor, or build and test
+
+> ✅ Always test after each export. VN engines fail fast when formatting breaks.
+
+## A safe “first translation” checklist
+
+- [ ] I’m translating from the **original project** (not a random build)
+- [ ] I backed up the project folder
+- [ ] I started with a small batch size
+- [ ] I used Preview & Editor to check tags/control codes
+- [ ] I tested the game after exporting
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
