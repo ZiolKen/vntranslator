@@ -1,121 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+    <meta name="theme-color" content="#0b0b10" />
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <meta name="theme-color" content="#000000">
-    <title>Translation Preview & Editor</title>
-    <link rel="stylesheet" href="preview.css">
-    <link rel="stylesheet" href="btailwind.css">
-</head>
+    <title>RPG Maker Preview & Editor | VN Translator</title>
 
-<body>
-    <div class="zcontainer">
-        <h1>Translation Preview & Editor</h1>
- 
-        <div class="warning-panel hidden" id="globalWarning">
-            <span>⚠️</span>
-            <div>
-                <strong>Warning:</strong> Some translations contain potential issues. 
-                <span id="warningCount">0 items</span> need manual review.
-                <button id="showWarningsBtn" class="btn-warning" style="margin-left: 10px;">Show All</button>
-            </div>
-        </div>
- 
-        <div class="zcard">
-            <div class="controls">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search translations...">
-                </div>
-                <div class="filter-group">
-                    <select id="filterModified">
-                        <option value="all">All Items</option>
-                        <option value="modified">Modified Only</option>
-                        <option value="unmodified">Unmodified Only</option>
-                        <option value="warnings">With Warnings</option>
-                    </select>
-                    <select id="filterLength">
-                        <option value="any">Any length</option>
-                        <option value="short">Short (1-10 chars)</option>
-                        <option value="medium">Medium (11-30 chars)</option>
-                        <option value="long">Long (31+ chars)</option>
-                    </select>
-                    <input type="text" id="filterPath" placeholder="Filter path..." style="width: 150px;">
-                    <select id="itemsPerPage">
-                        <option value="10">10 per page</option>
-                        <option value="25" selected>25 per page</option>
-                        <option value="50">50 per page</option>
-                        <option value="100">100 per page</option>
-                    </select>
-                </div>
-                <button id="downloadBtn" class="btn-success">Download Edited JSON</button>
-            </div>
- 
-            <div id="textList"></div>
- 
-            <div class="pagination" id="pagination"></div>
- 
-            <div class="status-bar">
-                <div id="statusText">Loading translations...</div>
-                <div id="itemCount">0 items (0 modified, 0 warnings)</div>
-            </div>
-        </div>
-    </div>
- 
-    <div class="code-alert">
-    <div class="code-alert-header">
-        <svg class="code-alert-icon" viewBox="0 0 24 24">
-            <path fill="#E2B341" d="M11 3h2v14h-2zm0 4h2v2h-2z"/>
-            <circle cx="12" cy="19" r="2" fill="#E2B341"/>
-        </svg>
-        <h3 class="code-alert-title">Code Integrity Guidelines</h3>
-    </div>
-    <div class="code-alert-content">
-        <p class="code-alert-subtitle">To maintain game stability, strictly observe these rules when editing:</p>
- 
-        <div class="code-alert-grid">
-            <div class="code-alert-rule">
-                <div class="rule-icon">✓</div>
-                <div>
-                    <strong>Preserve Original Codes</strong>
-                    <p>Maintain exact formatting of all control codes (e.g., <code>\v[1]</code>, <code>\c[12]</code>)</p>
-                </div>
-            </div>
- 
-            <div class="code-alert-rule">
-                <div class="rule-icon">✗</div>
-                <div>
-                    <strong>No Unauthorized Changes</strong>
-                    <p>Never add/remove brackets, backslashes or special characters</p>
-                </div>
-            </div>
- 
-            <div class="code-alert-rule">
-    <div class="rule-icon">⚠</div>
-    <div>
-        <strong>Warning System Limitations</strong>
-        <p>The warning system may produce false positives. For example, modifying text after control codes like <code>\n<\N[1]>wait</code> (changing "wait" to other text) may trigger warnings unnecessarily. Always ensure control codes (<code>\n<\N[1]></code> etc.) remain unchanged, but note that some RPG Maker logic (like "if" statements) may appear as regular text - exercise caution when editing these segments.</p>
-        <p><strong>Important:</strong> The warning system should not be solely relied upon. If you're confident the translation is correct despite warnings (especially for text portions after preserved codes), you may proceed. However, always verify that all control codes remain intact.</p>
-    </div>
-</div>
-        </div>
- 
-        <div class="code-alert-footer">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#E2B341" stroke-width="2"/>
-            </svg>
-            <span>Violations may cause game runtime errors</span>
-        </div>
-    </div>
-</div>
-<div class="ztext-center zmt-8 zmb-2">
-    <a href="./" class="zinline-block zbg-blue-600 ztext-white zpx-5 zpy-2 zrounded-full zshadow zhover:bg-blue-700 ztransition">⬅️ Back to Translator</a>
-</div>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-<script src="./preview.js" defer></script>
-    
-</body>
+    <link rel="icon" href="../favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/logo.jpeg" />
 
+    <link rel="stylesheet" href="./preview.css" />
+  </head>
+
+  <body>
+    <header class="pv-topbar">
+      <a class="pv-brand" href="./" aria-label="Back to RPG Maker Translator">
+        <span class="pv-brand__logo" aria-hidden="true">
+          <img src="../assets/logo.jpeg" alt="" />
+        </span>
+        <span class="pv-brand__text">
+          <span class="pv-brand__name">VN Translator</span>
+          <span class="pv-brand__sub">RPG Maker Preview & Editor</span>
+        </span>
+      </a>
+
+      <div class="pv-meta" id="metaChips" aria-live="polite"></div>
+
+      <div class="pv-actions">
+        <button class="pv-btn" id="sessionsBtn" type="button">Sessions</button>
+        <button class="pv-btn pv-btn--primary" id="downloadBtn" type="button" disabled>Download JSON</button>
+        <a class="pv-btn" href="./">Back</a>
+      </div>
+    </header>
+
+    <main class="pv-layout">
+      <aside class="pv-sidebar">
+        <div class="pv-sideTools">
+          <input id="searchInput" class="pv-input" type="search" placeholder="Search in original / translation" autocomplete="off" />
+
+          <div class="pv-toolRow">
+            <select id="filterSelect" class="pv-select" aria-label="Filter">
+              <option value="all">All</option>
+              <option value="unreviewed">Unreviewed</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="edited">Edited</option>
+              <option value="empty">Empty</option>
+              <option value="warnings">Warnings</option>
+            </select>
+
+            <select id="scopeSelect" class="pv-select" aria-label="Search scope">
+              <option value="both">Both</option>
+              <option value="original">Original</option>
+              <option value="translation">Translation</option>
+            </select>
+          </div>
+
+          <div class="pv-stats" id="statsBar"></div>
+        </div>
+
+        <div id="listViewport" class="pv-listViewport" tabindex="0" aria-label="Dialogs list">
+          <div id="listSpacer" class="pv-listSpacer"></div>
+          <div id="listItems" class="pv-listItems"></div>
+        </div>
+
+        <div class="pv-bulkBar" id="bulkBar" hidden>
+          <div class="pv-bulkLeft">
+            <div class="pv-bulkCount" id="bulkCount">0 selected</div>
+            <button class="pv-btn" id="bulkClearSelection" type="button">Clear</button>
+          </div>
+          <div class="pv-bulkActions">
+            <button class="pv-btn" id="bulkReview" type="button">Mark reviewed</button>
+            <button class="pv-btn" id="bulkUnreview" type="button">Unreview</button>
+            <button class="pv-btn" id="bulkRestore" type="button">Restore MT</button>
+            <button class="pv-btn pv-btn--warn" id="bulkRetranslate" type="button">Retranslate</button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="pv-main">
+        <div class="pv-panels">
+          <section class="pv-panel pv-editor" aria-label="Editor">
+            <div class="pv-panelHead">
+              <div>
+                <div class="pv-panelTitle">Editor</div>
+                <div class="pv-panelSub" id="editorSub">No dialog selected</div>
+              </div>
+              <div class="pv-save" id="saveIndicator" aria-live="polite"></div>
+            </div>
+            <div class="pv-panelBody">
+              <div class="pv-field">
+                <div class="pv-label">Original</div>
+                <textarea id="originalBox" class="pv-textarea" readonly></textarea>
+              </div>
+
+              <div class="pv-field">
+                <div class="pv-label">Translation</div>
+                <textarea id="translationBox" class="pv-textarea" placeholder="Type your translation here"></textarea>
+                <div class="pv-warnings" id="warnings"></div>
+              </div>
+
+              <div class="pv-editorActions">
+                <button class="pv-btn" id="toggleReviewedBtn" type="button" disabled>Mark reviewed</button>
+                <button class="pv-btn" id="restoreBtn" type="button" disabled>Restore MT</button>
+                <button class="pv-btn pv-btn--warn" id="retranslateBtn" type="button" disabled>Retranslate</button>
+                <button class="pv-btn" id="copyOriginalBtn" type="button" disabled>Copy original</button>
+                <button class="pv-btn" id="copyTranslationBtn" type="button" disabled>Copy translation</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="pv-panel pv-preview" aria-label="Preview">
+            <div class="pv-panelHead">
+              <div>
+                <div class="pv-panelTitle">Preview</div>
+                <div class="pv-panelSub">RPG Maker-like message window</div>
+              </div>
+            </div>
+            <div class="pv-panelBody">
+              <div class="pv-stage">
+                <div class="pv-rpgmBox">
+                  <div class="pv-rpgmName" id="vnName">Narrator</div>
+                  <div class="pv-rpgmText" id="vnText"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pv-panel pv-context" aria-label="JSON context">
+            <div class="pv-panelHead">
+              <div>
+                <div class="pv-panelTitle">JSON Context</div>
+                <div class="pv-panelSub">Location and type</div>
+              </div>
+            </div>
+            <div class="pv-panelBody">
+              <div class="pv-code" id="contextBox"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div class="pv-modal" id="sessionModal" aria-hidden="true">
+      <div class="pv-modalCard" role="dialog" aria-modal="true" aria-labelledby="sessionModalTitle">
+        <div class="pv-modalHead">
+          <div>
+            <div class="pv-modalTitle" id="sessionModalTitle">Sessions</div>
+            <div class="pv-modalHint">Pick an existing session or delete old ones</div>
+          </div>
+          <button class="pv-btn" id="closeSessionsBtn" type="button">Close</button>
+        </div>
+        <div class="pv-modalBody">
+          <div class="pv-sessionList" id="sessionList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-toastHost" id="toastHost" aria-live="polite"></div>
+
+    <script src="./db.js"></script>
+    <script src="./preview.js"></script>
+  </body>
 </html>
