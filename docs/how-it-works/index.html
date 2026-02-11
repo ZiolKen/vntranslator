@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>How it works | VN Translator</title>
+    <meta name="description" content="Learn how VN Translator processes your files, preserves game formatting, and stores sessions locally using IndexedDB." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Introduction", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>How VN Translator works</h1>
+<p>VN Translator is designed to keep game data <strong>valid</strong> while translating only the parts that should be translated.</p>
+<h2>The high-level pipeline</h2>
+<ol>
+<li><strong>Load a source file</strong> in the browser (<code>.rpy</code>, <code>.json</code>, <code>.txt</code>, …)</li>
+<li><strong>Extract translatable strings</strong> (dialogue, UI text, etc.)</li>
+<li><strong>Protect placeholders</strong> (tags, variables, control codes)</li>
+<li>Send batches of text to a translation backend (DeepSeek / OpenAI / DeepL / Lingva)</li>
+<li><strong>Validate and merge</strong> translations back into the original structure</li>
+<li>Open <strong>Preview &amp; Editor</strong> for QA</li>
+<li><strong>Export</strong> translated files back to your machine</li>
+</ol>
+<h2>What gets “protected”</h2>
+<p>Different engines have different rules. VN Translator tries to keep these unchanged:</p>
+<h3>Ren’Py</h3>
+<ul>
+<li>text tags: <code>{i}</code>, <code>{b}</code>, <code>{color=#fff}</code>, <code>{size=+10}</code>, …</li>
+<li>tag pairs must remain balanced: <code>{i}...{/i}</code></li>
+<li>interpolation / variables: <code>[player_name]</code></li>
+<li>escape sequences: <code>\n</code>, <code>\&quot;</code>, …</li>
+</ul>
+<h3>RPG Maker MV/MZ</h3>
+<ul>
+<li>control codes: <code>\V[1]</code>, <code>\N[3]</code>, <code>\C[2]</code>, <code>\I[10]</code>, <code>\G</code>, …</li>
+<li>literal backslashes and JSON escapes</li>
+<li>line breaks and spacing that affect message windows</li>
+</ul>
+<h2>Local storage &amp; stability</h2>
+<p>VN Translator stores session data <strong>locally</strong> in your browser to enable:</p>
+<ul>
+<li>resuming translation</li>
+<li>preview/editor sync</li>
+<li>safer recovery after refresh/crash</li>
+<li>better performance than <code>localStorage</code> for larger datasets</li>
+</ul>
+<p>Most tools use <strong>IndexedDB</strong> (browser database).<br />
+To reset everything: clear the site’s storage in your browser settings.</p>
+<p>See: <a href="/docs/privacy-security/">Privacy &amp; security</a></p>
+<h2>What leaves your device</h2>
+<ul>
+<li>Your raw file is processed in the browser.</li>
+<li><strong>Text segments</strong> are sent to the translation provider when you translate.</li>
+</ul>
+
+          <script type="text/plain" data-docs="md">
+# How VN Translator works
+
+VN Translator is designed to keep game data **valid** while translating only the parts that should be translated.
+
+## The high-level pipeline
+
+1. **Load a source file** in the browser (`.rpy`, `.json`, `.txt`, …)
+2. **Extract translatable strings** (dialogue, UI text, etc.)
+3. **Protect placeholders** (tags, variables, control codes)
+4. Send batches of text to a translation backend (DeepSeek / OpenAI / DeepL / Lingva)
+5. **Validate and merge** translations back into the original structure
+6. Open **Preview & Editor** for QA
+7. **Export** translated files back to your machine
+
+## What gets “protected”
+
+Different engines have different rules. VN Translator tries to keep these unchanged:
+
+### Ren’Py
+- text tags: `{i}`, `{b}`, `{color=#fff}`, `{size=+10}`, …
+- tag pairs must remain balanced: `{i}...{/i}`
+- interpolation / variables: `[player_name]`
+- escape sequences: `\n`, `\"`, …
+
+### RPG Maker MV/MZ
+- control codes: `\V[1]`, `\N[3]`, `\C[2]`, `\I[10]`, `\G`, …
+- literal backslashes and JSON escapes
+- line breaks and spacing that affect message windows
+
+## Local storage & stability
+
+VN Translator stores session data **locally** in your browser to enable:
+- resuming translation
+- preview/editor sync
+- safer recovery after refresh/crash
+- better performance than `localStorage` for larger datasets
+
+Most tools use **IndexedDB** (browser database).  
+To reset everything: clear the site’s storage in your browser settings.
+
+See: [Privacy & security](/docs/privacy-security/)
+
+## What leaves your device
+
+- Your raw file is processed in the browser.
+- **Text segments** are sent to the translation provider when you translate.
+- If you need maximum control, self-host the project from the GitHub source.
+
+Repo: [github.com/ZiolKen/vntranslator](https://github.com/ZiolKen/vntranslator)
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
