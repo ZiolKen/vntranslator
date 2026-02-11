@@ -1,154 +1,343 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
- 
-<head>
-    <meta charset="UTF-8">
-    <title>How to Extract .rpy Files from Ren'Py Games (PC & Android)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        html,
-        body {
-            height: 100%;
-        }
- 
-        body {
-            min-height: 100vh;
-        }
- 
-        .maincard {
-            background: #212837ec;
-            box-shadow: 0 6px 32px 0 #0005;
-            border-radius: 1.25rem;
-            margin: 0.7rem 0.5rem;
-            max-width: 520px;
-            width: 100%;
-        }
- 
-        .scroll-body {
-            max-height: 84vh;
-            overflow-y: auto;
-            padding-bottom: 2.2rem !important;
-            scroll-behavior: smooth;
-        }
- 
-        @media (max-width: 600px) {
-            .maincard {
-                margin: 0.5rem 0.1rem;
-            }
- 
-            .scroll-body {
-                max-height: 93vh;
-            }
-        }
- 
-        .hint {
-            background: #2563eb22;
-            color: #bae6fd;
-            border-left: 3px solid #2563eb;
-            padding: 0.55rem 0.9rem;
-            margin-bottom: 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.98rem;
-        }
-    </style>
-</head>
- 
-<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-start pt-2">
-    <div class="maincard flex flex-col w-full border border-gray-700">
-        <div class="px-5 pt-6 pb-3 text-center bg-gradient-to-tr from-slate-900 via-blue-900 to-sky-500 rounded-t-2xl shadow">
-            <h1 class="text-2xl font-bold mb-1 text-white drop-shadow">📖 Extracting <span class="text-sky-300">.rpy</span> Scripts from Ren'Py Games</h1>
-            <p class="text-base text-blue-100">For both PC & Android – Updated for 2025</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ren'Py Scripts (.rpy) — Where to Find Them</title>
+    <meta name="description" content="Locate Ren'Py .rpy script files safely for translation and editing. Source-first workflow, common layouts, formatting rules, and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "Ren'Py",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get .rpy files", href: "./how-to-get-renpy-rpy.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="./" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">Ren&apos;Py • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
         </div>
-        <div class="scroll-body px-5 pt-5 pb-3 md:px-8">
- 
-            <div class="hint mb-3">
-                <b>Why do this?</b><br>
-                Some Ren'Py games store their story/dialog in plain <span class="font-mono bg-gray-700 px-1 rounded">.rpy</span> files, while others use <span class="font-mono bg-gray-700 px-1 rounded">.rpyc</span> (encrypted/compiled) or <span class="font-mono bg-gray-700 px-1 rounded">.rpa</span> (archives). To translate, mod, or back up the story, you need to get the <b>.rpy</b> source first!
-            </div>
- 
-            <h2 class="text-lg font-bold text-blue-400 mt-2 mb-1">🖥️ On PC (Windows, Mac, Linux):</h2>
-            <ol class="list-decimal pl-6 space-y-2 text-gray-100 mb-5">
-                <li>
-                    <b>Find the game folder:</b>
-                    Usually in <span class="font-mono bg-gray-700 px-2 rounded">GameFolder/game/</span> or wherever you installed/extracted it.
-                </li>
-                <li>
-                    <b>Check for <span class="font-mono bg-gray-700 px-1 rounded">.rpy</span> files.</b>
-                    If you see files like <span class="font-mono bg-gray-700 px-1 rounded">script.rpy</span>, <span class="font-mono bg-gray-700 px-1 rounded">dialogue.rpy</span>, etc — that's the source! You can upload them directly to a translator.
-                </li>
-                <li>
-                    <b>If only <span class="font-mono bg-gray-700 px-1 rounded">.rpa</span> or <span class="font-mono bg-gray-700 px-1 rounded">.rpyc</span> exist:</b>
-                    <ul class="list-disc pl-5 mt-1 text-gray-300 text-sm">
-                        <li>
-                            <b>To extract .rpa files (archives):</b><br>
-                            Use the <a href="https://grviewer.com/tab/rpa-extractor-online" target="_blank" rel="noopener" class="text-blue-300 underline">RPA Extractor Online</a>.
-                            <span class="text-gray-400 block">Just upload your <b>.rpa</b> file, click extract, then download the results.<br>If you see <b>.rpy</b> files after extraction — you're done!</span>
-                        </li>
-                        <li class="mt-2">
-                            <b>If you get .rpyc (compiled/encrypted scripts):</b><br>
-                            Use the <a href="https://grviewer.com/tab/rpyc-decompiler-online" target="_blank" rel="noopener" class="text-blue-300 underline">RPYC Decompiler Online</a>.<br>
-                            <span class="text-gray-400">Upload your <b>.rpyc</b> file, click decompile, then download the resulting <b>.rpy</b> script.
-                                This works for most standard Ren'Py games.</span>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    Once you have a <b>.rpy</b> script file, you can open it with Notepad, Notepad++, VSCode, or upload it to this translator tool.
-                </li>
-            </ol>
- 
-            <h2 class="text-lg font-bold text-green-400 mt-4 mb-1">📱 On Android (Phone or Tablet):</h2>
-            <ol class="list-decimal pl-6 space-y-2 text-gray-100 mb-5">
-                <li>Run your Ren'Py game at least once to make sure its data folder exists.</li>
-                <li>
-                    Use a file manager (like <b>ZArchiver</b> or <b>Solid Explorer</b>) and go to:<br>
-                    <span class="font-mono bg-gray-700 px-2 rounded">/storage/emulated/0/Android/data/[package.name.of.game]/files/game/</span>
-                </li>
-                <li>
-                    <b>If you see .rpy files:</b>
-                    Copy them to a safe location, and upload for translation or editing.
-                </li>
-                <li>
-                    <b>If you see .rpa or .rpyc only:</b>
-                    <ul class="list-disc pl-5 mt-1 text-gray-300 text-sm">
-                        <li>
-                            <b>Extract .rpa:</b>
-                            Upload your .rpa file to <a href="https://grviewer.com/tab/rpa-extractor-online" target="_blank" rel="noopener" class="text-blue-300 underline">RPA Extractor Online</a> (works from Android browser).
-                        </li>
-                        <li>
-                            <b>Decompile .rpyc:</b>
-                            Upload your .rpyc file to <a href="https://grviewer.com/tab/rpyc-decompiler-online" target="_blank" rel="noopener" class="text-blue-300 underline">RPYC Decompiler Online</a>.
-                        </li>
-                        <li>
-                            <span class="text-yellow-200">If your phone can't upload big files, move them to PC first.</span>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    After you get your <b>.rpy</b> script, you can translate, mod, or re-pack it as you wish.
-                </li>
-            </ol>
- 
-            <h2 class="text-lg font-bold text-yellow-400 mt-4 mb-1">🔒 Tips, Warnings, and Troubleshooting</h2>
-            <ul class="list-disc pl-6 text-gray-200 text-base mb-4">
-                <li>Not all games can be extracted: some developers use custom encryption/protection.</li>
-                <li>For advanced guides and more Ren’Py tools, see <a href="https://lemmasoft.renai.us/forums/" target="_blank" rel="noopener" class="text-blue-300 underline">Lemmasoft Forums</a> or Discord communities.</li>
-                <li>Always back up original files before modifying.</li>
-                <li>These methods are for legitimate modding, translation, or backup purposes only. Respect developers’ copyrights!</li>
-            </ul>
- 
-            <div class="hint">
-                <b>Video Tutorials:</b><br>
-                • <a href="https://www.youtube.com/results?search_query=extract+rpa+renpy" target="_blank" rel="noopener" class="text-blue-300 underline">Extract .rpa Ren'Py</a><br>
-                • <a href="https://www.youtube.com/results?search_query=decompile+rpyc+renpy" target="_blank" rel="noopener" class="text-blue-300 underline">Decompile .rpyc Ren'Py</a>
-            </div>
- 
-            <div class="text-center mt-8 mb-2">
-                <a href="./" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full shadow hover:bg-blue-700 transition">⬅️ Back to Translator</a>
-            </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">Optimized for local use</div>
         </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>How to get the <span class="gb-inlineCode">.rpy</span> files</h1>
+          <p class="lead">
+            The most stable way to translate a Ren&apos;Py game is to work from the original project source.
+            In Ren&apos;Py, story and dialogue usually live in <span class="gb-inlineCode">.rpy</span> script files.
+          </p>
+
+          <div class="gb-callout" data-variant="info">
+            <div class="gb-calloutIcon" aria-hidden="true">✓</div>
+            <div>
+              <div class="gb-calloutTitle">Source-first workflow</div>
+              <p>
+                Use the same project folder you open in <strong>Ren&apos;Py Launcher</strong>. This prevents version mismatch,
+                missing assets, and “works on my machine” bugs.
+              </p>
+            </div>
+          </div>
+
+          <h2>What you should have</h2>
+          <ul>
+            <li>The original Ren&apos;Py project folder (recommended), not only the built/distributed game.</li>
+            <li>Permission to translate the project (especially if you are not the developer/publisher).</li>
+            <li>A backup strategy (zip copy or version control) before you edit any scripts.</li>
+          </ul>
+
+          <h2>Where Ren&apos;Py scripts usually live</h2>
+          <p>
+            In most projects, scripts are inside the <span class="gb-inlineCode">game/</span> directory.
+            Common filenames include <span class="gb-inlineCode">script.rpy</span>, <span class="gb-inlineCode">screens.rpy</span>,
+            <span class="gb-inlineCode">options.rpy</span>, and custom chapter files.
+          </p>
+
+          <pre><code>MyRenPyGame/
+  game/
+    script.rpy
+    chapter_01.rpy
+    chapter_02.rpy
+    screens.rpy
+    options.rpy
+    images/
+    audio/
+  renpy/
+  README.txt</code></pre>
+
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>Path / file</th>
+                <th>What it contains</th>
+                <th>Translate?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="gb-inlineCode">game/script.rpy</span></td>
+                <td>Main story flow, dialogue, labels</td>
+                <td>Usually yes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">game/chapter_*.rpy</span></td>
+                <td>Split story files (per chapter / route)</td>
+                <td>Usually yes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">game/screens.rpy</span></td>
+                <td>UI strings (menus/settings), screen definitions</td>
+                <td>Sometimes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">game/options.rpy</span></td>
+                <td>Config / metadata (game title), some visible strings</td>
+                <td>Sometimes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">renpy/</span></td>
+                <td>Engine files</td>
+                <td><strong>No</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>Recommended workflow</h2>
+          <ol>
+            <li>Open the game in <strong>Ren&apos;Py Launcher</strong>.</li>
+            <li>Click <strong>Open Project Directory</strong> to locate the project folder.</li>
+            <li>Open <span class="gb-inlineCode">game/</span> and pick the <span class="gb-inlineCode">.rpy</span> files you need.</li>
+            <li>Import into the Translator, translate, then use <strong>Preview/Edit</strong> for QA.</li>
+            <li>Export and replace/update the scripts in the same project, then run the game to test.</li>
+          </ol>
+
+          <div class="gb-callout" data-variant="warn">
+            <div class="gb-calloutIcon" aria-hidden="true">⚠</div>
+            <div>
+              <div class="gb-calloutTitle">Do not break Ren&apos;Py syntax</div>
+              <p>
+                Keep indentation, quotes, and text tags intact. Ren&apos;Py is strict about whitespace and string formatting.
+              </p>
+            </div>
+          </div>
+
+          <h2>Ren&apos;Py formatting rules to preserve</h2>
+          <ul>
+            <li>
+              <strong>Text tags</strong> like <span class="gb-inlineCode">{i}</span>, <span class="gb-inlineCode">{b}</span>, <span class="gb-inlineCode">{color=#fff}</span>
+              must remain balanced (<span class="gb-inlineCode">{/i}</span>, <span class="gb-inlineCode">{/b}</span>, etc.).
+            </li>
+            <li>
+              <strong>Interpolation / variables</strong> like <span class="gb-inlineCode">[player_name]</span> must stay unchanged.
+            </li>
+            <li>
+              <strong>Escapes</strong> like <span class="gb-inlineCode">\n</span> or <span class="gb-inlineCode">\"</span> must remain valid.
+            </li>
+            <li>
+              <strong>Leading spaces</strong> before dialogue can be meaningful in some scripts. Avoid “auto-trim”.
+            </li>
+          </ul>
+
+          <h3>Good vs risky edits</h3>
+          <pre><code># Good: translated text, tags preserved
+e "{i}I will never forget{/i} [player_name]."
+
+# Risky: missing closing tag or modified variable name
+e "{i}I will never forget [playerName]."</code></pre>
+
+          <h2>If you only have a built game</h2>
+          <p>
+            Many distributed builds ship compiled scripts (<span class="gb-inlineCode">.rpyc</span>) and archives instead of editable source.
+            If you cannot find a <span class="gb-inlineCode">game/</span> folder containing <span class="gb-inlineCode">.rpy</span> files, you may not have what you need.
+          </p>
+          <ul>
+            <li><strong>If you are the developer:</strong> translate from your project source folder.</li>
+            <li><strong>If you are not the developer:</strong> ask for permission and a translation-friendly source package.</li>
+          </ul>
+
+          <div class="gb-callout" data-variant="danger">
+            <div class="gb-calloutIcon" aria-hidden="true">!</div>
+            <div>
+              <div class="gb-calloutTitle">Legal / safety note</div>
+              <p>
+                This guide does not cover bypassing protections or decompiling content you don&apos;t own.
+                Always respect the game&apos;s license and the developer&apos;s terms.
+              </p>
+            </div>
+          </div>
+
+          <h2>Quick checklist</h2>
+          <ul>
+            <li>You are working from the original project folder.</li>
+            <li>Scripts come from <span class="gb-inlineCode">game/</span> (not <span class="gb-inlineCode">renpy/</span>).</li>
+            <li>You preserve tags, variables, and indentation.</li>
+            <li>You run the game after exporting to validate there are no syntax errors.</li>
+          </ul>
+
+
+          <script type="text/markdown" data-docs="md">
+# How to get the `.rpy` files
+
+The most stable way to translate a Ren'Py game is to work from the original project source. In Ren'Py, story and dialogue usually live in `.rpy` script files.
+
+## Source-first workflow
+
+> ✅ Recommended: Use the same project folder you open in **Ren'Py Launcher**. This prevents version mismatch, missing assets, and fragile “works on my machine” builds.
+
+## What you should have
+
+- The original Ren'Py project folder (recommended), not only the built/distributed game
+- Permission to translate the project (especially if you are not the developer/publisher)
+- A backup strategy (zip copy or version control) before editing scripts
+
+## Where Ren'Py scripts usually live
+
+In most projects, scripts are inside the `game/` directory.
+
+```text
+MyRenPyGame/
+  game/
+    script.rpy
+    chapter_01.rpy
+    chapter_02.rpy
+    screens.rpy
+    options.rpy
+    images/
+    audio/
+  renpy/
+  README.txt
+```
+
+| Path / file | What it contains | Translate? |
+| --- | --- | --- |
+| `game/script.rpy` | Main story flow, dialogue, labels | Usually yes |
+| `game/chapter_*.rpy` | Split story files (per chapter / route) | Usually yes |
+| `game/screens.rpy` | UI strings (menus/settings), screen definitions | Sometimes |
+| `game/options.rpy` | Config / metadata (game title), some visible strings | Sometimes |
+| `renpy/` | Engine files | **No** |
+
+## Recommended workflow
+
+1. Open the game in **Ren'Py Launcher**.
+2. Click **Open Project Directory**.
+3. Open `game/` and pick the `.rpy` files you need.
+4. Import into the Translator, translate, then use **Preview/Edit** for QA.
+5. Export and replace/update scripts in the same project, then run the game to test.
+
+## Ren'Py formatting rules to preserve
+
+- **Text tags** like `{i}`, `{b}`, `{color=#fff}` must remain balanced (`{/i}`, `{/b}`, etc.).
+- **Interpolation / variables** like `[player_name]` must stay unchanged.
+- **Escapes** like `\n` or `\"` must remain valid.
+- **Indentation and leading spaces** matter in Ren'Py. Avoid “auto-trim”.
+
+### Good vs risky edits
+
+```rpy
+# Good: translated text, tags preserved
+e "{i}I will never forget{/i} [player_name]."
+
+# Risky: missing closing tag or modified variable name
+e "{i}I will never forget [playerName]."
+```
+
+## If you only have a built game
+
+Many distributed builds ship compiled scripts (`.rpyc`) and archives instead of editable source. If you cannot find a `game/` folder containing `.rpy` files, you may not have what you need.
+
+- **If you are the developer:** translate from your project source folder.
+- **If you are not the developer:** ask for permission and a translation-friendly source package.
+
+> ⚠️ Legal / safety note: This guide does not cover bypassing protections or decompiling content you don't own. Always respect the game's license and the developer's terms.
+
+## Quick checklist
+
+- [ ] Working from the original project folder
+- [ ] Scripts come from `game/` (not `renpy/`)
+- [ ] Tags, variables, indentation preserved
+- [ ] Game runs without syntax errors after export
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
     </div>
-</body>
- 
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="./docs.js"></script>
+  </body>
 </html>
