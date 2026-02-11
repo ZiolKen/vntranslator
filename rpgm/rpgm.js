@@ -58,6 +58,7 @@ const el = {
 const state = {
   json: null,
   fileName: null,
+  rawJsonText: null,
   dialogs: [],
   isRunning: false,
   isPaused: false,
@@ -1165,6 +1166,7 @@ el.jsonFile.addEventListener("change", async (e) => {
 
   try {
     const text = await file.text();
+    state.rawJsonText = text;
     state.json = JSON.parse(text);
   } catch (err) {
     log("⚠️ Failed to parse JSON file.", "error");
@@ -1225,37 +1227,45 @@ function buildPathForDialog(d) {
   ];
 }
 
-el.previewResultBtn.addEventListener("click", () => {
+el.previewResultBtn.addEventListener("click", async () => {
   if (!state.dialogs.length) {
     alert("⚠️ No translated data.");
     return;
   }
 
-  const texts = state.dialogs.map((d, idx) => ({
-    text: d.text,
-    path: [idx],
-    fieldName: "text",
-    index: idx
-  }));
-
-  const translated = state.dialogs.map(d => d.translated || d.text);
-
-  const data = {
-    texts,
-    translated,
-    model: el.translationModel.value,
-    targetLanguage: el.targetLanguage.value
-  };
-
-  try {
-    localStorage.setItem("translationPreviewData", JSON.stringify(data));
-  } catch (err) {
-    console.error(err);
-    alert("⚠️ Cannot write to localStorage.");
+  if (!window.VNDB || typeof window.VNDB.createSession !== "function") {
+    alert("⚠️ IndexedDB is not available. Please use a modern browser.");
     return;
   }
 
-  window.location.href = "preview.html";
+  const model = el.translationModel.value;
+  const targetLang = el.targetLanguage.value;
+  const fileName = state.fileName || "file.json";
+  const originalJsonText = state.rawJsonText || JSON.stringify(state.json, null, 2);
+
+  sessionStorage.setItem("deepseekApiKey", String(el.apiKey.value || "").trim());
+  sessionStorage.setItem("openaiApiKey", String(el.chatgptKey.value || "").trim());
+
+  const dialogs = state.dialogs.map(d => ({
+    original: d.text ?? "",
+    translated: d.translated ?? d.text ?? "",
+    code: d.code ?? ""
+  }));
+
+  try {
+    const id = await window.VNDB.createSession({
+      fileName,
+      originalJsonText,
+      targetLang,
+      model,
+      dialogs
+    });
+
+    window.location.href = "preview.html?session=" + encodeURIComponent(id);
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Cannot create preview session (IndexedDB).");
+  }
 });
 
 function escapeHtml(str) {
