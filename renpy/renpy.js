@@ -1158,24 +1158,50 @@
     log('⬇️ Downloaded translation log.', 'success');
   }
 
-  function handlePreview() {
-    if (!state.originalLines.length || !state.dialogs.length) {
+  async function handlePreview() {
+    if (!state.originalText || !state.dialogs.length) {
       alert('*️⃣ There is no data to preview yet.');
       return;
     }
-
-    try {
-      localStorage.setItem('originalLines', JSON.stringify(state.originalLines));
-      localStorage.setItem('detectedDialogs', JSON.stringify(state.dialogs.map(d => d.quote || '')));
-      localStorage.setItem('translatedDialogs', JSON.stringify(state.dialogs.map(d => d.translated || '')));
-      if (el.langTarget) localStorage.setItem('targetLang', el.langTarget.value);
-      if (el.modelSelect) localStorage.setItem('translationModel', el.modelSelect.value || 'deepseek');
-    } catch (err) {
-      alert('*️⃣ Unable to save preview data (storage quota/incognito).');
+  
+    if (!window.VNDB || typeof VNDB.createSession !== 'function') {
+      alert('*️⃣ Preview requires IndexedDB, but it is not available in this environment.');
       return;
     }
-
-    window.location.href = 'preview.html';
+  
+    const btn = el.previewBtn;
+    const prevText = btn ? btn.textContent : '';
+  
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Opening Preview...';
+      }
+  
+      const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
+      const targetLang = el.langTarget ? el.langTarget.value : 'English';
+      const deepseekKey = (el.apiKey && el.apiKey.value.trim()) || '';
+      const deeplKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
+  
+      if (deepseekKey) sessionStorage.setItem('deepseekApiKey', deepseekKey);
+      if (deeplKey) sessionStorage.setItem('deeplApiKey', deeplKey);
+  
+      const sessionId = await VNDB.createSession({
+        fileName: state.fileName || 'script.rpy',
+        originalText: state.originalText,
+        targetLang,
+        model,
+        dialogs: state.dialogs,
+      });
+  
+      window.location.href = 'preview.html?session=' + encodeURIComponent(sessionId);
+    } catch (err) {
+      alert('*️⃣ Unable to open preview. ' + (err?.message || err));
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = prevText || 'ℹ️ Preview/Edit Manual';
+      }
+    }
   }
 
   function handleFileChange(evt) {
