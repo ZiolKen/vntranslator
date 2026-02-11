@@ -562,3 +562,38 @@ a{color:inherit}
   .pv-main{height: auto}
   .pv-topbar{position:sticky; top:0; z-index: 50}
 }
+
+.pv-sidebar .pv-panels{
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  grid-template-columns: none;
+  grid-template-rows: none;
+  grid-template-areas: none;
+}
+
+.pv-sidebar > a.pv-btn{
+  width: calc(100% - 28px);
+  margin: 0 14px 12px;
+}
+
+.pv-sidebar .pv-panels{
+  margin: 0 14px 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  background: rgba(255,255,255,.03);
+}
+
+.pv-sidebar .pv-panels a.pv-btn{
+  width: 100%;
+}
+
+.pv-sidebar .pv-panels > div:last-child{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
