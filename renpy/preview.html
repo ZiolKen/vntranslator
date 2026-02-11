@@ -1,70 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
-    
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Preview & Edit Translated Dialog (Ren'Py)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+    <meta name="theme-color" content="#0b0b10" />
 
-  <style>
-    .spinner {
-      display: inline-block;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 1s ease-in-out infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
-  
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXTNE3VPWH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-BXTNE3VPWH');
-    </script>
-    
-</head>
+    <title>Ren'Py Preview & Editor | VN Translator</title>
 
-<body class="bg-gray-900 min-h-screen text-gray-100">
-  <div class="max-w-2xl mx-auto px-2 py-6 space-y-6">
-    <h1 class="text-xl font-bold text-center mb-2">🔎 Preview & Edit Translated Dialog</h1>
-    <div id="model-badge" class="text-center"></div>
-    <div id="list" class="space-y-4"></div>
-    <button onclick="downloadFile()" class="mt-6 w-full bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold shadow-lg transition">⬇️ Download Final .rpy</button>
-    <div id="watermark-place" class="flex justify-center mt-6"></div>
-    <div class="text-center mt-8 mb-2">
-        <a href="./" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full shadow hover:bg-blue-700 transition">⬅️ Back to Translator</a>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="icon" href="../favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="./preview.css" />
+  </head>
+
+  <body>
+    <header class="pv-topbar">
+      <a class="pv-brand" href="./" aria-label="Back to Ren'Py Translator">
+        <span class="pv-brand__logo" aria-hidden="true">
+          <img src="../assets/logo.jpeg" alt="" />
+        </span>
+        <span class="pv-brand__text">
+          <span class="pv-brand__name">VN Translator</span>
+          <span class="pv-brand__sub">Ren'Py Preview & Editor</span>
+        </span>
+      </a>
+
+      <div class="pv-meta" id="metaChips" aria-live="polite"></div>
+
+      <div class="pv-actions">
+        <button class="pv-btn" id="sessionsBtn" type="button">Sessions</button>
+        <button class="pv-btn pv-btn--primary" id="downloadBtn" type="button" disabled>Download .rpy</button>
+        <a class="pv-btn" href="./">Back</a>
+      </div>
+    </header>
+
+    <main class="pv-layout">
+      <aside class="pv-sidebar">
+        <div class="pv-sideTools">
+          <input id="searchInput" class="pv-input" type="search" placeholder="Search in original / translation" autocomplete="off" />
+
+          <div class="pv-toolRow">
+            <select id="filterSelect" class="pv-select" aria-label="Filter">
+              <option value="all">All</option>
+              <option value="unreviewed">Unreviewed</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="edited">Edited</option>
+              <option value="empty">Empty</option>
+              <option value="warnings">Warnings</option>
+            </select>
+
+            <select id="scopeSelect" class="pv-select" aria-label="Search scope">
+              <option value="both">Both</option>
+              <option value="original">Original</option>
+              <option value="translation">Translation</option>
+            </select>
+          </div>
+
+          <div class="pv-stats" id="statsBar"></div>
+        </div>
+
+        <div id="listViewport" class="pv-listViewport" tabindex="0" aria-label="Dialogs list">
+          <div id="listSpacer" class="pv-listSpacer"></div>
+          <div id="listItems" class="pv-listItems"></div>
+        </div>
+
+        <div class="pv-bulkBar" id="bulkBar" hidden>
+          <div class="pv-bulkLeft">
+            <div class="pv-bulkCount" id="bulkCount">0 selected</div>
+            <button class="pv-btn" id="bulkClearSelection" type="button">Clear</button>
+          </div>
+          <div class="pv-bulkActions">
+            <button class="pv-btn" id="bulkReview" type="button">Mark reviewed</button>
+            <button class="pv-btn" id="bulkUnreview" type="button">Unreview</button>
+            <button class="pv-btn" id="bulkRestore" type="button">Restore MT</button>
+            <button class="pv-btn pv-btn--warn" id="bulkRetranslate" type="button">Retranslate</button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="pv-main">
+        <div class="pv-panels">
+          <section class="pv-panel pv-editor" aria-label="Editor">
+            <div class="pv-panelHead">
+              <div>
+                <div class="pv-panelTitle">Editor</div>
+                <div class="pv-panelSub" id="editorSub">No dialog selected</div>
+              </div>
+              <div class="pv-save" id="saveIndicator" aria-live="polite"></div>
+            </div>
+            <div class="pv-panelBody">
+              <div class="pv-field">
+                <div class="pv-label">Original</div>
+                <textarea id="originalBox" class="pv-textarea" readonly></textarea>
+              </div>
+
+              <div class="pv-field">
+                <div class="pv-label">Translation</div>
+                <textarea id="translationBox" class="pv-textarea" placeholder="Type your translation here"></textarea>
+                <div class="pv-warnings" id="warnings"></div>
+              </div>
+
+              <div class="pv-editorActions">
+                <button class="pv-btn" id="toggleReviewedBtn" type="button" disabled>Mark reviewed</button>
+                <button class="pv-btn" id="restoreBtn" type="button" disabled>Restore MT</button>
+                <button class="pv-btn pv-btn--warn" id="retranslateBtn" type="button" disabled>Retranslate</button>
+                <button class="pv-btn" id="copyOriginalBtn" type="button" disabled>Copy original</button>
+                <button class="pv-btn" id="copyTranslationBtn" type="button" disabled>Copy translation</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="pv-panel pv-preview" aria-label="Preview">
+            <div class="pv-panelHead">
+              <div>
+                <div class="pv-panelTitle">Preview</div>
+                <div class="pv-panelSub">Web VN dialog box</div>
+              </div>
+            </div>
+            <div class="pv-panelBody">
+              <div class="pv-vnStage">
+                <div class="pv-vnBox">
+                  <div class="pv-vnName" id="vnName">Narrator</div>
+                  <div class="pv-vnText" id="vnText"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pv-panel pv-context" aria-label="Script context">
+            <div class="pv-panelHead">
+              <div>
+                <div class="pv-panelTitle">Script Context</div>
+                <div class="pv-panelSub">Nearby source lines</div>
+              </div>
+            </div>
+            <div class="pv-panelBody">
+              <div class="pv-code" id="contextBox"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div class="pv-modal" id="sessionModal" aria-hidden="true">
+      <div class="pv-modalCard" role="dialog" aria-modal="true" aria-labelledby="sessionModalTitle">
+        <div class="pv-modalHead">
+          <div>
+            <div class="pv-modalTitle" id="sessionModalTitle">Sessions</div>
+            <div class="pv-modalHint">Pick an existing session or delete old ones</div>
+          </div>
+          <button class="pv-btn" id="closeSessionsBtn" type="button">Close</button>
+        </div>
+        <div class="pv-modalBody">
+          <div class="pv-sessionList" id="sessionList"></div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <script src="./preview.js">
-  </script>
+    <div class="pv-toastHost" id="toastHost" aria-live="polite"></div>
 
-<script>
-        document.addEventListener("contextmenu", e => e.preventDefault());
-
-        document.addEventListener("keydown", e => {
-          if (
-            e.key === "F12" ||
-            (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
-            (e.ctrlKey && e.key === "U")
-          ) {
-            e.preventDefault();
-          }
-        });
-
-        console.log('%c░██████╗████████╗░█████╗░██████╗░██╗\n██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║\n╚█████╗░░░░██║░░░██║░░██║██████╔╝██║\n░╚═══██╗░░░██║░░░██║░░██║██╔═══╝░╚═╝\n██████╔╝░░░██║░░░╚█████╔╝██║░░░░░██╗\n╚═════╝░░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝', 'color: red; font-weight: bold;');
-</script>
-
-</body>
-
+    <script src="./db.js"></script>
+    <script src="./preview.js"></script>
+  </body>
 </html>
