@@ -1,82 +1,239 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
- 
-<head>
-    <meta charset="UTF-8">
-    <title>How to Get a ChatGPT API Key</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
- 
-<body class="bg-gray-900 text-white min-h-screen">
-    <div class="max-w-lg w-full mx-auto bg-gray-800 rounded-2xl p-4 shadow-2xl mt-6 mb-8">
- 
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-300 mb-4 leading-tight">How to Get a ChatGPT API Key</h1>
- 
-        <ol class="list-decimal space-y-3 pl-5 text-base leading-relaxed">
-            <li>
-                Visit the official OpenAI platform:<br>
-                <a href="https://platform.openai.com/" target="_blank" class="text-blue-400 underline hover:text-blue-200 break-all">https://platform.openai.com/</a>
-            </li>
-            <li>
-                If you do not have an account, click <b>Sign Up</b> and register with your email.<br>
-                If you already have an account, click <b>Log In</b>.
-            </li>
-            <li>
-                After logging in, go to your <b>API Keys</b> page from the sidebar.
-            </li>
-            <li>
-                Click <b>Create new secret key</b>, name it anything you like, and confirm.<br>
-                Copy your new API Key and keep it safe.
-            </li>
-            <li>
-                Add a payment method and top up your account to use the API.
-            </li>
-        </ol>
- 
-        <div class="mt-5 text-yellow-300 border-t border-gray-700 pt-3 text-sm">
-            <b>Note:</b> Never share your API key. If compromised, delete it immediately and create a new one.
-        </div>
- 
-        <div class="mt-6 bg-gray-700/80 rounded-lg p-3 border border-green-400 text-sm">
-            <div class="font-semibold text-green-300 mb-3">💡 Official Pricing (Aug 2025)</div>
-            <p class="text-gray-200 text-sm mb-3">Billed per <b>1M tokens</b> (input + output).<br> 1 token ≈ 3–4 English characters (~750 words ≈ 1,000 tokens).</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenAI API Key — Create & Use Safely</title>
+    <meta name="description" content="Step-by-step guide to create an OpenAI API key from the Developer Platform and configure it in VNTranslator. Includes billing separation, security and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "RPG Maker",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get RPG Maker JSON", href: "./how-to-get-rpgm-json.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get OpenAI API key", href: "./how-to-get-chatgpt-api-key.html" },
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
 
-            <div class="space-y-3">
-                <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
-                    <b class="text-white">gpt-4o</b>
-                    <p class="text-gray-300 text-sm">Input: $5.00 | Cached: $2.50<br>Output: $20.00</p>
-                    <p class="text-xs text-gray-400">Highest quality multimodal</p>
-                </div>
-                <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
-                    <b class="text-white">gpt-4o-mini</b>
-                    <p class="text-gray-300 text-sm">Input: $0.60 | Cached: $0.30<br>Output: $2.40</p>
-                    <p class="text-xs text-gray-400">Cheaper, good quality</p>
-                </div>
-                <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
-                    <b class="text-white">gpt-5</b>
-                    <p class="text-gray-300 text-sm">Input: $1.25 | Cached: $0.125<br>Output: $10.00</p>
-                    <p class="text-xs text-gray-400">New, more capable</p>
-                </div>
-                <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
-                    <b class="text-white">gpt-5-mini</b>
-                    <p class="text-gray-300 text-sm">Input: $0.25 | Cached: $0.025<br>Output: $2.00</p>
-                    <p class="text-xs text-gray-400">Balanced cost/performance</p>
-                </div>
-                <div class="bg-gray-800 p-3 rounded-lg border border-gray-600">
-                    <b class="text-white">gpt-5-nano</b>
-                    <p class="text-gray-300 text-sm">Input: $0.05 | Cached: $0.005<br>Output: $0.40</p>
-                    <p class="text-xs text-gray-400">Ultra cheap for bulk tasks</p>
-                </div>
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="./" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">RPG Maker • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">Optimized for local use</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
             </div>
- 
-            <p class="mt-3 text-xs text-gray-400">Source: <a href="https://openai.com/api/pricing" target="_blank" class="underline">OpenAI API Pricing</a> — may change over time.</p>
-        </div>
+          </div>
 
-      <div class="text-center mt-8 mb-2">
-                <a href="./" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full shadow hover:bg-blue-700 transition">⬅️ Back to Translator</a>
+          <h1>How to get an OpenAI API key</h1>
+          <p class="lead">
+            VNTranslator can use OpenAI models for translation. To connect, you need a <strong>Secret API key</strong> from the OpenAI Developer Platform
+            (not from the ChatGPT website).
+          </p>
+
+          <div class="gb-callout" data-variant="info">
+            <div class="gb-calloutIcon" aria-hidden="true">✓</div>
+            <div>
+              <div class="gb-calloutTitle">Important: ChatGPT billing is separate</div>
+              <p>
+                ChatGPT subscriptions (Plus/Business/Enterprise/Edu) and API usage are billed separately.
+                Make sure you are managing billing on <a class="gb-link" href="https://platform.openai.com/" target="_blank" rel="noopener">platform.openai.com</a>.
+              </p>
+            </div>
+          </div>
+
+          <h2>Step 1: Sign in to the OpenAI Developer Platform</h2>
+          <p>
+            Open <a class="gb-link" href="https://platform.openai.com/" target="_blank" rel="noopener">platform.openai.com</a> and sign in.
+            You may be asked to verify email/phone depending on your account status.
+          </p>
+
+          <h2>Step 2: Create a new secret key</h2>
+          <ol>
+            <li>
+              Go to the API keys page:
+              <a class="gb-link" href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener">platform.openai.com/account/api-keys</a>
+            </li>
+            <li>Click <strong>Create new secret key</strong>.</li>
+            <li>Optionally set <strong>permissions</strong> (All / Restricted / Read Only) depending on your security needs.</li>
+            <li>Copy the key and store it in a password manager. You may only be shown the full key once.</li>
+          </ol>
+
+          <div class="gb-callout" data-variant="danger">
+            <div class="gb-calloutIcon" aria-hidden="true">!</div>
+            <div>
+              <div class="gb-calloutTitle">Do not share your key</div>
+              <p>
+                Anyone with your key can use your quota. Never paste it into public GitHub repos, screenshots, or logs.
+                If leaked, revoke it immediately and create a new one.
+              </p>
+            </div>
+          </div>
+
+          <h2>Step 3: Set spending controls (recommended)</h2>
+          <ul>
+            <li>Enable billing / add a payment method in the API platform if required.</li>
+            <li>Set usage alerts or budgets per project to avoid surprises.</li>
+            <li>Start with a small test before translating large files.</li>
+          </ul>
+
+          <h2>Use the key in VNTranslator</h2>
+          <ol>
+            <li>Open the Translator page.</li>
+            <li>Select <strong>OpenAI</strong> as your translation service/model.</li>
+            <li>Paste the key into the <strong>OpenAI API Key</strong> field.</li>
+            <li>Run a short translation to confirm everything works.</li>
+          </ol>
+
+          <h2>Troubleshooting</h2>
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>Problem</th>
+                <th>What to do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Authentication error</td>
+                <td>Make sure you copied the full key. If needed, revoke it on the API keys page and create a new one.</td>
+              </tr>
+              <tr>
+                <td>Quota / billing errors</td>
+                <td>Check billing settings on the API platform and confirm you have an active payment method / credits.</td>
+              </tr>
+              <tr>
+                <td>Unexpected cost</td>
+                <td>Use smaller batches, choose a cheaper model, and set project budgets/alerts.</td>
+              </tr>
+            </tbody>
+          </table>
+
+
+          <script type="text/markdown" data-docs="md">
+# How to get an OpenAI API key
+
+VNTranslator can use OpenAI models for translation. To connect, you need a **Secret API key** from the OpenAI Developer Platform (not from the ChatGPT website).
+
+## Important: ChatGPT billing is separate
+
+> ✅ ChatGPT subscriptions (Plus/Business/Enterprise/Edu) and API usage are billed separately. Manage API billing at https://platform.openai.com/
+
+## Step 1: Sign in to the OpenAI Developer Platform
+
+Open https://platform.openai.com/ and sign in. You may need email/phone verification depending on your account status.
+
+## Step 2: Create a new secret key
+
+1. Go to https://platform.openai.com/account/api-keys
+2. Click **Create new secret key**.
+3. Optionally set **permissions** (All / Restricted / Read Only).
+4. Copy the key and store it in a password manager. You may only see the full key once.
+
+## Do not share your key
+
+> ❗ Anyone with your key can use your quota. Never paste it into public repos, screenshots, or logs. If leaked, revoke it immediately and create a new one.
+
+## Step 3: Set spending controls (recommended)
+
+- Enable billing / add a payment method in the API platform if required.
+- Set usage alerts or budgets per project to avoid surprises.
+- Start with a small test before translating large files.
+
+## Use the key in VNTranslator
+
+1. Open the Translator page.
+2. Select **OpenAI** as your translation service/model.
+3. Paste the key into the **OpenAI API Key** field.
+4. Run a short translation to confirm everything works.
+
+## Troubleshooting
+
+| Problem | What to do |
+| --- | --- |
+| Authentication error | Verify you copied the full key. Revoke/create a new one if needed. |
+| Quota / billing errors | Check billing settings on the API platform and confirm payment method / credits. |
+| Unexpected cost | Use smaller batches, choose a cheaper model, and set project budgets/alerts. |
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
       </div>
     </div>
-</body>
- 
+
+    <script src="./docs.js"></script>
+  </body>
 </html>
