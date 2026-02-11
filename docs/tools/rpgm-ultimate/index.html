@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>RPGM Ultimate | VN Translator</title>
+    <meta name="description" content="Batch workflow for RPG Maker MV/MZ: extract JSON to TXT, translate safely, and import translations back into JSON." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Tools", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>RPGM Ultimate</h1>
+<p>RPGM Ultimate is designed for multi-file RPG Maker workflows.</p>
+<p>Open the tool: <a href="/rpgmu/">RPGM Ultimate</a></p>
+<h2>What it does</h2>
+<ul>
+<li><strong>Step 1:</strong> Load one or more JSON files → export a TXT package for translation</li>
+<li><strong>Step 2:</strong> Translate the TXT (DeepSeek/DeepL/Lingva/Google depending on UI)</li>
+<li>Import translated TXT back → export final JSON files</li>
+</ul>
+<p>This reduces risk when translating many files because you can:</p>
+<ul>
+<li>translate in a consistent batch format</li>
+<li>re-run translation on unfinished lines</li>
+<li>keep JSON structure stable</li>
+</ul>
+<h2>Step 1 — Extraction &amp; packaging</h2>
+<ol>
+<li>Select original JSON file(s) from your <code>data/</code> folder</li>
+<li>Click <strong>Export TXT</strong></li>
+<li>You now have a translation-friendly TXT</li>
+</ol>
+<h2>Step 2 — Auto translation</h2>
+<ol>
+<li>Select the TXT file exported from Step 1</li>
+<li>Choose target language + translation service</li>
+<li>Set batch size (start small)</li>
+<li>Translate</li>
+<li>Import the translated TXT back into Step 1</li>
+<li>Save/export JSON</li>
+</ol>
+<h2>Best practices</h2>
+<ul>
+<li>Keep your original <code>data/</code> folder backed up</li>
+<li>Translate one file first (e.g., <code>System.json</code>) to validate your workflow</li>
+<li>Use Preview/editor steps in the tool to check control codes</li>
+</ul>
+<p>If you only need a single file quickly:</p>
+<ul>
+<li>use <a href="/rpgm/">RPG Maker Translator</a></li>
+</ul>
+
+
+          <script type="text/plain" data-docs="md">
+# RPGM Ultimate
+
+RPGM Ultimate is designed for multi-file RPG Maker workflows.
+
+Open the tool: [RPGM Ultimate](/rpgmu/)
+
+## What it does
+
+- **Step 1:** Load one or more JSON files → export a TXT package for translation
+- **Step 2:** Translate the TXT (DeepSeek/DeepL/Lingva/Google depending on UI)
+- Import translated TXT back → export final JSON files
+
+This reduces risk when translating many files because you can:
+- translate in a consistent batch format
+- re-run translation on unfinished lines
+- keep JSON structure stable
+
+## Step 1 — Extraction & packaging
+
+1. Select original JSON file(s) from your `data/` folder
+2. Click **Export TXT**
+3. You now have a translation-friendly TXT
+
+## Step 2 — Auto translation
+
+1. Select the TXT file exported from Step 1
+2. Choose target language + translation service
+3. Set batch size (start small)
+4. Translate
+5. Import the translated TXT back into Step 1
+6. Save/export JSON
+
+## Best practices
+
+- Keep your original `data/` folder backed up
+- Translate one file first (e.g., `System.json`) to validate your workflow
+- Use Preview/editor steps in the tool to check control codes
+
+If you only need a single file quickly:
+- use [RPG Maker Translator](/rpgm/)
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
