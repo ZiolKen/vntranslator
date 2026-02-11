@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>Formatting & placeholders | VN Translator</title>
+    <meta name="description" content="A practical guide to preserving tags, variables, and control codes in Ren’Py and RPG Maker to prevent broken scripts and invalid JSON." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Workflows", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>Formatting &amp; placeholders</h1>
+<p>Most machine translation failures in VN/RPG projects are not “bad translation” — they are <strong>formatting breakage</strong>.</p>
+<p>This page lists what you should preserve and how to QA it.</p>
+<h2>Ren’Py essentials</h2>
+<h3>Text tags</h3>
+<p>Keep tags exactly and ensure they close:</p>
+<ul>
+<li><code>{i}...{/i}</code></li>
+<li><code>{b}...{/b}</code></li>
+<li><code>{color=#fff}...{/color}</code></li>
+<li><code>{size=+10}...{/size}</code></li>
+</ul>
+<h3>Variables / interpolation</h3>
+<p>Do not change anything inside <code>[...]</code>:</p>
+<ul>
+<li><code>[player_name]</code></li>
+<li><code>[points]</code></li>
+</ul>
+<h3>Escape sequences</h3>
+<p>Preserve escapes like:</p>
+<ul>
+<li><code>\n</code></li>
+<li><code>\&quot;</code></li>
+</ul>
+<h2>RPG Maker essentials (MV/MZ)</h2>
+<h3>Control codes (examples)</h3>
+<ul>
+<li><code>\V[1]</code> variable value</li>
+<li><code>\N[3]</code> actor name</li>
+<li><code>\C[2]</code> color</li>
+<li><code>\I[10]</code> icon</li>
+<li><code>\G</code> currency</li>
+<li><code>\{</code> <code>\}</code> text size</li>
+</ul>
+<h3>JSON escaping</h3>
+<p>RPG Maker strings are inside JSON, which uses escapes:</p>
+<ul>
+<li>a single backslash often becomes <code>\\</code> in JSON text</li>
+<li>line breaks may be <code>\n</code> or <code>\\n</code> depending on context</li>
+</ul>
+<p>If you break escaping:</p>
+<ul>
+<li>the JSON becomes invalid</li>
+<li>the game may fail to boot</li>
+</ul>
+<h2>QA patterns that catch most issues</h2>
+<ul>
+<li>Compare placeholders before/after:
+<ul>
+<li>Ren’Py: count <code>{</code> and <code>}</code></li>
+<li>RPG Maker: search for <code>\V[</code> and ensure it still exists</li>
+</ul>
+</li>
+<li>Search for broken sequences:
+<ul>
+<li><code>{/i</code> missing <code>}</code></li>
+<li><code>\V[</code> changed to <code>V[</code> (lost backslash)</li>
+</ul>
+</li>
+<li>Use Preview tools to visually confirm message windows</li>
+</ul>
+<h2>If you’re unsure</h2>
+<ul>
+<li>use smaller batch sizes</li>
+<li>translate fewer lines</li>
+<li>fix manually in editor</li>
+</ul>
+<p>This is slower but dramatically safer for production builds.</p>
+
+
+          <script type="text/plain" data-docs="md">
+# Formatting & placeholders
+
+Most machine translation failures in VN/RPG projects are not “bad translation” — they are **formatting breakage**.
+
+This page lists what you should preserve and how to QA it.
+
+## Ren’Py essentials
+
+### Text tags
+Keep tags exactly and ensure they close:
+
+- `{i}...{/i}`
+- `{b}...{/b}`
+- `{color=#fff}...{/color}`
+- `{size=+10}...{/size}`
+
+### Variables / interpolation
+Do not change anything inside `[...]`:
+
+- `[player_name]`
+- `[points]`
+
+### Escape sequences
+Preserve escapes like:
+
+- `\n`
+- `\"`
+
+## RPG Maker essentials (MV/MZ)
+
+### Control codes (examples)
+
+- `\V[1]` variable value
+- `\N[3]` actor name
+- `\C[2]` color
+- `\I[10]` icon
+- `\G` currency
+- `\{` `\}` text size
+
+### JSON escaping
+
+RPG Maker strings are inside JSON, which uses escapes:
+- a single backslash often becomes `\\` in JSON text
+- line breaks may be `\n` or `\\n` depending on context
+
+If you break escaping:
+- the JSON becomes invalid
+- the game may fail to boot
+
+## QA patterns that catch most issues
+
+- Compare placeholders before/after:
+  - Ren’Py: count `{` and `}`
+  - RPG Maker: search for `\V[` and ensure it still exists
+- Search for broken sequences:
+  - `{/i` missing `}`
+  - `\V[` changed to `V[` (lost backslash)
+- Use Preview tools to visually confirm message windows
+
+## If you’re unsure
+
+- use smaller batch sizes
+- translate fewer lines
+- fix manually in editor
+
+This is slower but dramatically safer for production builds.
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
