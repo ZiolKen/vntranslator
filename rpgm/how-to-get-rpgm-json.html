@@ -1,162 +1,335 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
- 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG Maker JSON Files Location</title>
-    <link rel="stylesheet" href="btailwind.css">
-    <style>
-        :root {
-            --bg: #1a1a1a;
-            --text: #e0e0e0;
-            --primary: #6b9bdc;
-            --accent: #2ecc71;
-            --card: #2d2d2d;
-            --border: #444;
-        }
- 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            line-height: 1.6;
-            padding: 20px;
-            max-width: 700px;
-            margin: 0 auto;
-        }
- 
-        h1 {
-            color: var(--primary);
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--border);
-        }
- 
-        .section {
-            background: var(--card);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-            border: 1px solid var(--border);
-        }
- 
-        .folder-structure {
-            background: #252525;
-            padding: 15px;
-            border-radius: 6px;
-            font-family: monospace;
-            line-height: 1.8;
-            overflow-x: auto;
-        }
- 
-        .file-list {
-            padding-left: 20px;
-        }
- 
-        .file-list li {
-            margin-bottom: 10px;
-            position: relative;
-            padding-left: 25px;
-        }
- 
-        .file-list li:before {
-            content: "•";
-            color: var(--accent);
-            position: absolute;
-            left: 10px;
-            font-size: 1.2em;
-        }
- 
-        .file-path {
-            color: var(--accent);
-            font-family: monospace;
-            background: #252525;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
- 
-        .note {
-            font-style: italic;
-            color: #aaa;
-            margin-top: 15px;
-        }
- 
-        .warning {
-            color: #ffa726;
-            font-weight: bold;
-        }
- 
-        .tutorial-btn {
-            display: block;
-            background-color: #FF0000;
-            color: white;
-            text-align: center;
-            padding: 12px 20px;
-            margin: 30px auto;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            width: fit-content;
-            transition: background-color 0.3s;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
- 
-        .tutorial-btn:hover {
-            background-color: #CC0000;
-        }
- 
-        .tutorial-btn i {
-            margin-right: 8px;
-        }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
- 
-<body>
-    <h1>RPG Maker JSON Files Location</h1>
- 
-    <!-- Tutorial YouTube -->
-    <a href="https://youtube.com/shorts/EPuSdqxWPy4?si=ZdtJCd2jmJ3XErjw" class="tutorial-btn" target="_blank">
-        <i class="fab fa-youtube"></i> Video Tutorial
-    </a>
- 
-    <div class="section">
-        <h2>Folder Structure</h2>
-        <p>All game text is stored in JSON files located at:</p>
-        <div class="folder-structure">
-            www/<br>
-            ├── data/<br>
-            │ ├── Actors.json<br>
-            │ ├── Armors.json<br>
-            │ ├── CommonEvents.json<br>
-            │ ├── Items.json<br>
-            │ ├── Map001.json<br>
-            │ └── ...other files<br>
-            └── js/
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RPG Maker JSON — Where to Find Game Data Files</title>
+    <meta name="description" content="Find RPG Maker MV/MZ JSON files (data folder) safely for translation. Covers common layouts, control codes, and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "RPG Maker",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get RPG Maker JSON", href: "./how-to-get-rpgm-json.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get OpenAI API key", href: "./how-to-get-chatgpt-api-key.html" },
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="./" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">RPG Maker • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
         </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator / VNTl   •   <a href="/" rel="noopener" style="color:blue">Home</a>  <a href="https://t.me/ZiolKen" target="_blank" rel="noopener" style="color:blue">Contact</a></div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>How to get RPG Maker JSON</h1>
+          <p class="lead">
+            RPG Maker MV/MZ projects store most game text inside JSON files (usually in <span class="gb-inlineCode">data/</span>).
+            For a stable translation workflow, always start from the original project folder.
+          </p>
+
+          <div class="gb-callout" data-variant="info">
+            <div class="gb-calloutIcon" aria-hidden="true">✓</div>
+            <div>
+              <div class="gb-calloutTitle">Recommended</div>
+              <p>
+                Translate from the project source (the folder you open in RPG Maker). This avoids encrypted deployments,
+                missing data, and broken map event references.
+              </p>
+            </div>
+          </div>
+
+          <h2>Where the JSON files live</h2>
+          <p>
+            In both <strong>RPG Maker MV</strong> and <strong>RPG Maker MZ</strong>, the data files are typically in the <span class="gb-inlineCode">data/</span> folder.
+          </p>
+
+          <pre><code>MyRPGMakerGame/
+  data/
+    Actors.json
+    Armors.json
+    Classes.json
+    CommonEvents.json
+    Enemies.json
+    Items.json
+    Map001.json
+    Map002.json
+    Skills.json
+    States.json
+    System.json
+    Troops.json
+    Weapons.json
+  img/
+  audio/
+  js/
+  index.html</code></pre>
+
+          <h2>Which JSON files usually contain text?</h2>
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Common text inside</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="gb-inlineCode">MapXXX.json</span></td>
+                <td>Event dialogue, choices, item messages</td>
+                <td>Most story text often lives here</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">CommonEvents.json</span></td>
+                <td>Shared event dialogue / logic</td>
+                <td>Used across maps</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">System.json</span></td>
+                <td>UI terms, game title, menu strings</td>
+                <td>Be careful: changing certain fields can affect UI layout</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">Actors.json</span>, <span class="gb-inlineCode">Enemies.json</span></td>
+                <td>Names, profiles, descriptions</td>
+                <td>Keep placeholders/control codes intact</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">Items.json</span>, <span class="gb-inlineCode">Weapons.json</span>, <span class="gb-inlineCode">Armors.json</span></td>
+                <td>Item names, descriptions</td>
+                <td>Icons/metadata should not be edited</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">Skills.json</span>, <span class="gb-inlineCode">States.json</span></td>
+                <td>Skill/state names, descriptions, messages</td>
+                <td>Common in battle UI</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>Do not break RPG Maker control codes</h2>
+          <p>
+            RPG Maker text often contains control codes that must remain unchanged. VNTranslator Preview/Edit can help
+            you spot issues before exporting.
+          </p>
+          <ul>
+            <li><span class="gb-inlineCode">\V[n]</span> variable value</li>
+            <li><span class="gb-inlineCode">\N[n]</span> actor name</li>
+            <li><span class="gb-inlineCode">\P[n]</span> party member name</li>
+            <li><span class="gb-inlineCode">\G</span> currency unit</li>
+            <li><span class="gb-inlineCode">\C[n]</span> text color</li>
+            <li><span class="gb-inlineCode">\I[n]</span> icon index</li>
+            <li><span class="gb-inlineCode">\{</span>, <span class="gb-inlineCode">\}</span>, <span class="gb-inlineCode">\.</span>, <span class="gb-inlineCode">\|</span> timing/formatting controls</li>
+          </ul>
+
+          <pre><code>Good:
+"You got \I[64] Potion x\V[3]!"
+
+Bad (code removed):
+"You got Potion x3!"</code></pre>
+
+          <div class="gb-callout" data-variant="warn">
+            <div class="gb-calloutIcon" aria-hidden="true">⚠</div>
+            <div>
+              <div class="gb-calloutTitle">Keep JSON valid</div>
+              <p>
+                Do not remove quotes, commas, or brackets. One missing character can break the entire file and prevent the game from loading.
+              </p>
+            </div>
+          </div>
+
+          <h2>If you only have a deployed game</h2>
+          <p>
+            Some deployed builds encrypt or pack assets and may not include clean project JSON.
+            If you cannot find a readable <span class="gb-inlineCode">data/</span> folder with <span class="gb-inlineCode">.json</span> files,
+            ask the developer for a translation-friendly source package.
+          </p>
+
+          <div class="gb-callout" data-variant="danger">
+            <div class="gb-calloutIcon" aria-hidden="true">!</div>
+            <div>
+              <div class="gb-calloutTitle">Legal / safety note</div>
+              <p>
+                This guide does not cover bypassing protections or extracting content you don&apos;t own.
+                Always respect the game&apos;s license and the developer&apos;s terms.
+              </p>
+            </div>
+          </div>
+
+          <h2>Quick checklist</h2>
+          <ul>
+            <li>You are working from the original project folder.</li>
+            <li><span class="gb-inlineCode">data/*.json</span> files are readable and valid JSON.</li>
+            <li>Control codes are preserved.</li>
+            <li>You test the game after exporting.</li>
+          </ul>
+
+
+          <script type="text/markdown" data-docs="md">
+# How to get RPG Maker JSON
+
+RPG Maker MV/MZ projects store most game text inside JSON files (usually in `data/`). For a stable translation workflow, always start from the original project folder.
+
+## Recommended
+
+> ✅ Translate from the project source (the folder you open in RPG Maker). This avoids encrypted deployments, missing data, and broken map event references.
+
+## Where the JSON files live
+
+In both **RPG Maker MV** and **RPG Maker MZ**, the data files are typically in the `data/` folder.
+
+```text
+MyRPGMakerGame/
+  data/
+    Actors.json
+    Armors.json
+    Classes.json
+    CommonEvents.json
+    Enemies.json
+    Items.json
+    Map001.json
+    Map002.json
+    Skills.json
+    States.json
+    System.json
+    Troops.json
+    Weapons.json
+  img/
+  audio/
+  js/
+  index.html
+```
+
+## Which JSON files usually contain text?
+
+| File | Common text inside | Notes |
+| --- | --- | --- |
+| `MapXXX.json` | Event dialogue, choices, item messages | Most story text often lives here |
+| `CommonEvents.json` | Shared event dialogue / logic | Used across maps |
+| `System.json` | UI terms, game title, menu strings | Changing some fields can affect layout |
+| `Actors.json`, `Enemies.json` | Names, profiles, descriptions | Keep placeholders/control codes intact |
+| `Items.json`, `Weapons.json`, `Armors.json` | Item names, descriptions | Do not touch icons/metadata |
+| `Skills.json`, `States.json` | Skill/state names, descriptions, messages | Common in battle UI |
+
+## Do not break RPG Maker control codes
+
+Keep these intact:
+
+- `\V[n]` variable value
+- `\N[n]` actor name
+- `\P[n]` party member name
+- `\G` currency unit
+- `\C[n]` text color
+- `\I[n]` icon index
+- `\{`, `\}`, `\.`, `\|` timing/formatting controls
+
+```text
+Good:
+"You got \I[64] Potion x\V[3]!"
+
+Bad (code removed):
+"You got Potion x3!"
+```
+
+## Keep JSON valid
+
+> ⚠️ Do not remove quotes, commas, or brackets. One missing character can break the entire file and prevent the game from loading.
+
+## If you only have a deployed game
+
+Some deployed builds encrypt or pack assets and may not include clean project JSON. If you cannot find a readable `data/` folder with `.json` files, ask the developer for a translation-friendly source package.
+
+> ⚠️ Legal / safety note: This guide does not cover bypassing protections or extracting content you don't own. Always respect the game's license and the developer's terms.
+
+## Quick checklist
+
+- [ ] Working from the original project folder
+- [ ] `data/*.json` files are readable and valid JSON
+- [ ] Control codes preserved
+- [ ] Game tested after export
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
     </div>
- 
-    <div class="section">
-        <h2>Key Files for Translation</h2>
-        <ul class="file-list">
-            <li><span class="file-path">MapXXX.json</span> - Dialogues and event texts</li>
-            <li><span class="file-path">CommonEvents.json</span> - Shared event texts</li>
-            <li><span class="file-path">Items.json</span> - Item names and descriptions</li>
-            <li><span class="file-path">Weapons.json</span> - Weapon descriptions</li>
-            <li><span class="file-path">Armors.json</span> - Armor descriptions</li>
-            <li><span class="file-path">System.json</span> - Menu and system messages</li>
-        </ul>
-        <p class="note">Note: These files are normally not encrypted in RPG Maker MV/MZ.</p>
-        <p class="warning">Important: Not all JSON files contain dialogue text. If you don't find any dialogue in a particular JSON file, try checking other JSON files in the data folder. If none of the files appear to contain dialogue text, please report this issue to the tool developer.</p>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
     </div>
-    <div class="ztext-center zmt-8 zmb-2">
-        <a href="./" class="zinline-block zbg-blue-600 ztext-white zpx-5 zpy-2 zrounded-full zshadow zhover:bg-blue-700 ztransition">⬅️ Back to Translator</a>
-    </div>
-    
-</body>
- 
+
+    <script src="./docs.js"></script>
+  </body>
 </html>
