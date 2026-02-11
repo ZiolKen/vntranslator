@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>Ren’Py Translator | VN Translator</title>
+    <meta name="description" content="Step-by-step guide to translating Ren’Py .rpy scripts safely, preserving tags and variables, and using Preview &amp; Editor for QA." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Tools", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>Ren’Py Translator</h1>
+<p>Use this tool to translate <strong>Ren’Py <code>.rpy</code> scripts</strong> while preserving VN-specific formatting.</p>
+<p>Open the tool: <a href="/renpy/">Ren’Py Translator</a></p>
+<h2>When to use it</h2>
+<ul>
+<li>You have one <code>.rpy</code> file you want to translate now</li>
+<li>You want a simple workflow: upload → translate → preview → export</li>
+</ul>
+<p>If you want multi-file project translation with Translation Memory, use:
+<a href="/prenpy/">Pro Ren’Py Translator</a></p>
+<h2>Inputs</h2>
+<ul>
+<li><code>.rpy</code> script files from the <strong>Ren’Py project source</strong></li>
+<li>Usually located under: <code>game/*.rpy</code></li>
+</ul>
+<p>Guide: <a href="/renpy/how-to-get-renpy-rpy.html">How to get .rpy files</a></p>
+<h2>Step-by-step</h2>
+<ol>
+<li>Open <a href="/renpy/">Ren’Py Translator</a></li>
+<li>Choose a translation engine:
+<ul>
+<li>DeepSeek / DeepL / Lingva (depending on tool UI)</li>
+</ul>
+</li>
+<li>Select your target language</li>
+<li>Upload the <code>.rpy</code> file</li>
+<li>Start translation (begin with a small batch size if available)</li>
+<li>Open <strong>Preview &amp; Editor</strong> to QA and fix issues</li>
+<li>Export the translated <code>.rpy</code> and put it back into your <code>game/</code> folder</li>
+<li>Run the project and test</li>
+</ol>
+<h2>Ren’Py formatting rules (must preserve)</h2>
+<h3>Tags</h3>
+<p>Examples:</p>
+<ul>
+<li><code>{i}italic{/i}</code></li>
+<li><code>{b}bold{/b}</code></li>
+<li><code>{color=#fff}white{/color}</code></li>
+</ul>
+<p>Tags must remain balanced.</p>
+<h3>Variables / interpolation</h3>
+<p>Examples:</p>
+<ul>
+<li><code>[player_name]</code></li>
+<li><code>[points]</code></li>
+</ul>
+<p>Do not translate or rename variables.</p>
+<h3>Escapes</h3>
+<p>Examples:</p>
+<ul>
+<li><code>\n</code> (line break)</li>
+<li><code>\&quot;</code> (quote)</li>
+</ul>
+<p>Keep escapes valid.</p>
+<h2>Preview &amp; Editor (recommended QA)</h2>
+<p>Preview helps you catch:</p>
+<ul>
+<li>broken tags (missing <code>{/i}</code>)</li>
+<li>corrupted variables (<code>[player]</code> → <code>[playerName]</code>)</li>
+<li>extra quotes or missing braces</li>
+<li>awkward line breaks</li>
+</ul>
+<p>If you see a broken line:</p>
+<ul>
+<li>fix it in the editor</li>
+<li>re-export</li>
+<li>test again</li>
+</ul>
+<h2>Dialog Extractor &amp; Merge (advanced)</h2>
+<p>If you want a safer “dialogue-only” workflow:</p>
+<ul>
+<li>extract dialogues from <code>.rpy</code></li>
+<li>translate only extracted lines</li>
+<li>merge back into the original script</li>
+</ul>
+<p>Tool page: <a href="/renpy/rpy-dialog-extractor.html">Ren’Py Dialog Extractor</a></p>
+<h2>Best practices</h2>
+<ul>
+<li>Translate from <strong>source</strong>, not from random builds</li>
+<li>Back up before replacing scripts</li>
+<li>Translate one file first, test, then continue</li>
+</ul>
+
+
+          <script type="text/plain" data-docs="md">
+# Ren’Py Translator
+
+Use this tool to translate **Ren’Py `.rpy` scripts** while preserving VN-specific formatting.
+
+Open the tool: [Ren’Py Translator](/renpy/)
+
+## When to use it
+
+- You have one `.rpy` file you want to translate now
+- You want a simple workflow: upload → translate → preview → export
+
+If you want multi-file project translation with Translation Memory, use:
+[Pro Ren’Py Translator](/prenpy/)
+
+## Inputs
+
+- `.rpy` script files from the **Ren’Py project source**
+- Usually located under: `game/*.rpy`
+
+Guide: [How to get .rpy files](/renpy/how-to-get-renpy-rpy.html)
+
+## Step-by-step
+
+1. Open [Ren’Py Translator](/renpy/)
+2. Choose a translation engine:
+   - DeepSeek / DeepL / Lingva (depending on tool UI)
+3. Select your target language
+4. Upload the `.rpy` file
+5. Start translation (begin with a small batch size if available)
+6. Open **Preview & Editor** to QA and fix issues
+7. Export the translated `.rpy` and put it back into your `game/` folder
+8. Run the project and test
+
+## Ren’Py formatting rules (must preserve)
+
+### Tags
+Examples:
+- `{i}italic{/i}`
+- `{b}bold{/b}`
+- `{color=#fff}white{/color}`
+
+Tags must remain balanced.
+
+### Variables / interpolation
+Examples:
+- `[player_name]`
+- `[points]`
+
+Do not translate or rename variables.
+
+### Escapes
+Examples:
+- `\n` (line break)
+- `\"` (quote)
+
+Keep escapes valid.
+
+## Preview & Editor (recommended QA)
+
+Preview helps you catch:
+- broken tags (missing `{/i}`)
+- corrupted variables (`[player]` → `[playerName]`)
+- extra quotes or missing braces
+- awkward line breaks
+
+If you see a broken line:
+- fix it in the editor
+- re-export
+- test again
+
+## Dialog Extractor & Merge (advanced)
+
+If you want a safer “dialogue-only” workflow:
+- extract dialogues from `.rpy`
+- translate only extracted lines
+- merge back into the original script
+
+Tool page: [Ren’Py Dialog Extractor](/renpy/rpy-dialog-extractor.html)
+
+## Best practices
+
+- Translate from **source**, not from random builds
+- Back up before replacing scripts
+- Translate one file first, test, then continue
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
