@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>API keys | VN Translator</title>
+    <meta name="description" content="How to create and use API keys for DeepSeek, OpenAI, and DeepL with VN Translator — including safety tips and common errors." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Getting started", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>API keys</h1>
+<p>VN Translator can use paid translation APIs (DeepSeek / OpenAI / DeepL).<br />
+This page explains how to get keys safely and how to troubleshoot common issues.</p>
+<blockquote>
+<p>⚠️ Never share API keys publicly. Create a dedicated key for VN Translator when possible.</p>
+</blockquote>
+<h2>DeepSeek API key</h2>
+<ol>
+<li>Create/login to your account on the DeepSeek platform.</li>
+<li>Open the API keys page: https://platform.deepseek.com/api_keys</li>
+<li>Create a new key → copy it once.</li>
+<li>Add balance / enable billing if required by your plan.</li>
+<li>Paste the key into VN Translator when selecting <strong>DeepSeek</strong>.</li>
+</ol>
+<p>If you need a tool-specific guide:</p>
+<ul>
+<li>Ren’Py: <a href="/renpy/how-to-get-deepseek-api-key.html">How to get DeepSeek API key</a></li>
+<li>RPG Maker: <a href="/rpgm/how-to-get-deepseek-api-key.html">How to get DeepSeek API key</a></li>
+</ul>
+<h2>OpenAI API key</h2>
+<ol>
+<li>Create/login to your OpenAI developer account.</li>
+<li>Open the API keys page: https://platform.openai.com/account/api-keys</li>
+<li>Create a new secret key → copy it once.</li>
+<li>Make sure billing is enabled for API usage.</li>
+<li>Paste the key into VN Translator when selecting <strong>OpenAI / ChatGPT models</strong>.</li>
+</ol>
+<p>Notes:</p>
+<ul>
+<li>API usage is billed separately from consumer ChatGPT subscriptions.</li>
+<li>If you get <code>401 Unauthorized</code>, your key may be invalid or missing billing access.</li>
+</ul>
+<h2>DeepL API key</h2>
+<ol>
+<li>Create/login to your DeepL account.</li>
+<li>Choose a plan (Free or Pro API).</li>
+<li>Copy your <code>DeepL-Auth-Key</code>.</li>
+<li>Paste the key into VN Translator when selecting <strong>DeepL</strong>.</li>
+</ol>
+<p>DeepL has different endpoints for Free vs Pro. VN Translator handles this internally, but your key must match the plan.</p>
+<h2>Security best practices</h2>
+<ul>
+<li>Store keys in a password manager</li>
+<li>Use a dedicated key per device/project</li>
+<li>Revoke keys that have been exposed</li>
+<li>Avoid screenshots that show your key in the input field</li>
+</ul>
+<h2>Common errors</h2>
+<h3><code>401 Unauthorized</code></h3>
+<ul>
+<li>wrong key</li>
+<li>key revoked</li>
+<li>billing not enabled (for providers that require it)</li>
+</ul>
+<h3><code>429 Too Many Requests</code></h3>
+<ul>
+<li>rate limit reached</li>
+<li>reduce batch size and retry later</li>
+</ul>
+<h3>Network / CORS / timeout</h3>
+<ul>
+<li>try again</li>
+<li>switch to another service</li>
+</ul>
+
+
+          <script type="text/plain" data-docs="md">
+# API keys
+
+VN Translator can use paid translation APIs (DeepSeek / OpenAI / DeepL).  
+This page explains how to get keys safely and how to troubleshoot common issues.
+
+> ⚠️ Never share API keys publicly. Create a dedicated key for VN Translator when possible.
+
+## DeepSeek API key
+
+1. Create/login to your account on the DeepSeek platform.
+2. Open the API keys page: https://platform.deepseek.com/api_keys
+3. Create a new key → copy it once.
+4. Add balance / enable billing if required by your plan.
+5. Paste the key into VN Translator when selecting **DeepSeek**.
+
+If you need a tool-specific guide:
+- Ren’Py: [How to get DeepSeek API key](/renpy/how-to-get-deepseek-api-key.html)
+- RPG Maker: [How to get DeepSeek API key](/rpgm/how-to-get-deepseek-api-key.html)
+
+## OpenAI API key
+
+1. Create/login to your OpenAI developer account.
+2. Open the API keys page: https://platform.openai.com/account/api-keys
+3. Create a new secret key → copy it once.
+4. Make sure billing is enabled for API usage.
+5. Paste the key into VN Translator when selecting **OpenAI / ChatGPT models**.
+
+Notes:
+- API usage is billed separately from consumer ChatGPT subscriptions.
+- If you get `401 Unauthorized`, your key may be invalid or missing billing access.
+
+## DeepL API key
+
+1. Create/login to your DeepL account.
+2. Choose a plan (Free or Pro API).
+3. Copy your `DeepL-Auth-Key`.
+4. Paste the key into VN Translator when selecting **DeepL**.
+
+DeepL has different endpoints for Free vs Pro. VN Translator handles this internally, but your key must match the plan.
+
+## Security best practices
+
+- Store keys in a password manager
+- Use a dedicated key per device/project
+- Revoke keys that have been exposed
+- Avoid screenshots that show your key in the input field
+
+## Common errors
+
+### `401 Unauthorized`
+- wrong key
+- key revoked
+- billing not enabled (for providers that require it)
+
+### `429 Too Many Requests`
+- rate limit reached
+- reduce batch size and retry later
+
+### Network / CORS / timeout
+- try again
+- switch to another service
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
