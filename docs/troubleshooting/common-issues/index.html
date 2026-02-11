@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>Common issues | VN Translator</title>
+    <meta name="description" content="Fix common VN Translator problems: API errors, rate limits, invalid JSON, broken tags, and performance issues." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Troubleshooting", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>Common issues</h1>
+<p>This page lists frequent problems and the fastest fixes.</p>
+<h2>Translation API errors</h2>
+<h3>401 Unauthorized</h3>
+<ul>
+<li>key is wrong, revoked, or missing billing access</li>
+<li>re-create the key and try again</li>
+</ul>
+<p>See: <a href="/docs/api-keys/">API keys</a></p>
+<h3>429 Too Many Requests</h3>
+<ul>
+<li>rate limit reached</li>
+<li>reduce batch size</li>
+<li>wait and retry</li>
+<li>avoid running multiple translators in parallel tabs</li>
+</ul>
+<h3>Timeout / Network error</h3>
+<ul>
+<li>retry</li>
+<li>switch backend (DeepSeek ↔ OpenAI ↔ DeepL)</li>
+<li>check your connection</li>
+</ul>
+<h2>Ren’Py: “ScriptError” / traceback after replacing <code>.rpy</code></h2>
+<p>Most common causes:</p>
+<ul>
+<li>missing closing tag (e.g., <code>{i}</code> without <code>{/i}</code>)</li>
+<li>modified variable name (<code>[player]</code> changed)</li>
+<li>broken quotes or indentation</li>
+</ul>
+<p>Fix:</p>
+<ul>
+<li>open the file</li>
+<li>locate the failing line from traceback</li>
+<li>correct tags/variables</li>
+<li>export again</li>
+</ul>
+<h2>RPG Maker: game won’t start / “Invalid JSON”</h2>
+<p>Most common causes:</p>
+<ul>
+<li>broken quotes (<code>&quot;</code> not escaped)</li>
+<li>incorrect backslash escaping</li>
+<li>trailing commas</li>
+</ul>
+<p>Fix:</p>
+<ul>
+<li>validate the JSON in an editor</li>
+<li>restore escapes (<code>\\</code>)</li>
+<li>export again</li>
+</ul>
+<h2>Preview doesn’t show changes</h2>
+<ul>
+<li>refresh the preview page</li>
+<li>re-export translation and ensure the latest file is loaded</li>
+<li>clear old sessions if you have stale data</li>
+</ul>
+<h2>Performance issues</h2>
+<p>If the UI becomes slow:</p>
+<ul>
+<li>translate smaller batches</li>
+<li>translate fewer files at a time</li>
+<li>close heavy tabs</li>
+<li>clear old sessions/storage</li>
+</ul>
+<p>See: <a href="/docs/system-requirements/">System requirements</a></p>
+
+
+          <script type="text/plain" data-docs="md">
+# Common issues
+
+This page lists frequent problems and the fastest fixes.
+
+## Translation API errors
+
+### 401 Unauthorized
+- key is wrong, revoked, or missing billing access
+- re-create the key and try again
+
+See: [API keys](/docs/api-keys/)
+
+### 429 Too Many Requests
+- rate limit reached
+- reduce batch size
+- wait and retry
+- avoid running multiple translators in parallel tabs
+
+### Timeout / Network error
+- retry
+- switch backend (DeepSeek ↔ OpenAI ↔ DeepL)
+- check your connection
+
+## Ren’Py: “ScriptError” / traceback after replacing `.rpy`
+
+Most common causes:
+- missing closing tag (e.g., `{i}` without `{/i}`)
+- modified variable name (`[player]` changed)
+- broken quotes or indentation
+
+Fix:
+- open the file
+- locate the failing line from traceback
+- correct tags/variables
+- export again
+
+## RPG Maker: game won’t start / “Invalid JSON”
+
+Most common causes:
+- broken quotes (`"` not escaped)
+- incorrect backslash escaping
+- trailing commas
+
+Fix:
+- validate the JSON in an editor
+- restore escapes (`\\`)
+- export again
+
+## Preview doesn’t show changes
+
+- refresh the preview page
+- re-export translation and ensure the latest file is loaded
+- clear old sessions if you have stale data
+
+## Performance issues
+
+If the UI becomes slow:
+- translate smaller batches
+- translate fewer files at a time
+- close heavy tabs
+- clear old sessions/storage
+
+See: [System requirements](/docs/system-requirements/)
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
