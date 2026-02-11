@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>System requirements | VN Translator</title>
+    <meta name="description" content="Recommended browsers, memory, and file workflow requirements for using VN Translator smoothly and reliably." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Introduction", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>System requirements</h1>
+<p>VN Translator runs in the browser. For the smoothest experience, use a modern desktop browser.</p>
+<h2>Recommended setup</h2>
+<ul>
+<li><strong>OS:</strong> Windows / macOS / Linux</li>
+<li><strong>Browser:</strong> latest Chrome / Edge / Firefox</li>
+<li><strong>RAM:</strong> 8 GB+ recommended for large projects</li>
+<li><strong>Storage:</strong> enough space for exported files + backups</li>
+</ul>
+<h2>Mobile support</h2>
+<p>You can open the docs and some tools on mobile, but serious translation work is best on desktop because:</p>
+<ul>
+<li>large JSON and <code>.rpy</code> files require memory</li>
+<li>long sessions are easier with a keyboard</li>
+<li>some features (like folder access) vary by browser</li>
+</ul>
+<h2>Browser features used</h2>
+<p>Some tools use modern APIs:</p>
+<ul>
+<li><strong>File picker</strong>: for uploading a file</li>
+<li><strong>IndexedDB</strong>: for stable local session storage (translation state, preview sync, auto-save)</li>
+<li><strong>File System Access API</strong> <em>(optional)</em>: for folder-based workflows (best on Chromium browsers)</li>
+</ul>
+<p>If a feature is not supported in your browser:</p>
+<ul>
+<li>use a file-based workflow (export/import ZIP or single files)</li>
+<li>or switch to Chrome/Edge for advanced folder access</li>
+</ul>
+<h2>Connectivity</h2>
+<ul>
+<li>Translation APIs require a stable internet connection.</li>
+<li>If you use a free service (Lingva/Google), expect occasional downtime or throttling.</li>
+</ul>
+<h2>Troubleshooting performance</h2>
+<p>If the UI becomes slow:</p>
+<ul>
+<li>translate fewer files at a time</li>
+<li>lower batch size</li>
+<li>close other heavy tabs</li>
+<li>clear old sessions (see: <a href="/docs/privacy-security/">Privacy &amp; security</a>)</li>
+</ul>
+
+
+          <script type="text/plain" data-docs="md">
+# System requirements
+
+VN Translator runs in the browser. For the smoothest experience, use a modern desktop browser.
+
+## Recommended setup
+
+- **OS:** Windows / macOS / Linux
+- **Browser:** latest Chrome / Edge / Firefox
+- **RAM:** 8 GB+ recommended for large projects
+- **Storage:** enough space for exported files + backups
+
+## Mobile support
+
+You can open the docs and some tools on mobile, but serious translation work is best on desktop because:
+- large JSON and `.rpy` files require memory
+- long sessions are easier with a keyboard
+- some features (like folder access) vary by browser
+
+## Browser features used
+
+Some tools use modern APIs:
+
+- **File picker**: for uploading a file
+- **IndexedDB**: for stable local session storage (translation state, preview sync, auto-save)
+- **File System Access API** *(optional)*: for folder-based workflows (best on Chromium browsers)
+
+If a feature is not supported in your browser:
+- use a file-based workflow (export/import ZIP or single files)
+- or switch to Chrome/Edge for advanced folder access
+
+## Connectivity
+
+- Translation APIs require a stable internet connection.
+- If you use a free service (Lingva/Google), expect occasional downtime or throttling.
+
+## Troubleshooting performance
+
+If the UI becomes slow:
+- translate fewer files at a time
+- lower batch size
+- close other heavy tabs
+- clear old sessions (see: [Privacy & security](/docs/privacy-security/))
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
