@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>Translate a Ren’Py project | VN Translator</title>
+    <meta name="description" content="End-to-end workflow for translating a Ren’Py visual novel: sourcing .rpy files, translating safely, preview QA, and testing in Ren’Py." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+
+    <link rel="stylesheet" href="/docs/docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Workflows", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>Translate a Ren’Py project</h1>
+<p>This workflow is optimized for stability and minimal “random engine errors”.</p>
+<h2>0) Start with the source project</h2>
+<p>Open the game in <strong>Ren’Py Launcher</strong> and confirm you can run it.<br />
+Do not start from a random build if you can avoid it.</p>
+<h2>1) Backup</h2>
+<ul>
+<li>Zip the whole project folder, or</li>
+<li>initialize a git repo</li>
+</ul>
+<h2>2) Translate safely</h2>
+<h3>Option A: Single file flow</h3>
+<ol>
+<li>Open: <a href="/renpy/">Ren’Py Translator</a></li>
+<li>Upload a <code>.rpy</code> file (from <code>game/</code>)</li>
+<li>Translate, then QA in Preview</li>
+<li>Export and replace the file in the project</li>
+</ol>
+<h3>Option B: Project flow (recommended)</h3>
+<ol>
+<li>Open: <a href="/prenpy/">Pro Ren’Py Translator</a></li>
+<li>Open the project folder</li>
+<li>Translate missing/untranslated strings</li>
+<li>Fix warnings and export ZIP</li>
+</ol>
+<h2>3) QA checklist</h2>
+<ul>
+<li>tags are balanced (<code>{i}</code> → <code>{/i}</code>)</li>
+<li>variables unchanged (<code>[player_name]</code>)</li>
+<li>no broken quotes</li>
+<li>indentation preserved</li>
+</ul>
+<p>See: <a href="/docs/workflows/formatting-placeholders/">Formatting &amp; placeholders</a></p>
+<h2>4) Test in Ren’Py</h2>
+<ul>
+<li>Run from Ren’Py Launcher</li>
+<li>Click through scenes that contain:
+<ul>
+<li>formatted text</li>
+<li>menus</li>
+<li>UI screens</li>
+</ul>
+</li>
+</ul>
+<p>If you hit an error:</p>
+<ul>
+<li>read the traceback (it usually points to a line in <code>.rpy</code>)</li>
+<li>fix the broken line</li>
+<li>export again</li>
+</ul>
+<h2>5) Iterate</h2>
+<p>For VN projects, translation is iterative:</p>
+<ul>
+<li>translate → QA → test → adjust terminology → repeat</li>
+</ul>
+<p>Translation Memory helps a lot:</p>
+<ul>
+<li><a href="/prenpy/">Pro Ren’Py Translator</a></li>
+</ul>
+
+
+          <script type="text/plain" data-docs="md">
+# Translate a Ren’Py project
+
+This workflow is optimized for stability and minimal “random engine errors”.
+
+## 0) Start with the source project
+
+Open the game in **Ren’Py Launcher** and confirm you can run it.  
+Do not start from a random build if you can avoid it.
+
+## 1) Backup
+
+- Zip the whole project folder, or
+- initialize a git repo
+
+## 2) Translate safely
+
+### Option A: Single file flow
+1. Open: [Ren’Py Translator](/renpy/)
+2. Upload a `.rpy` file (from `game/`)
+3. Translate, then QA in Preview
+4. Export and replace the file in the project
+
+### Option B: Project flow (recommended)
+1. Open: [Pro Ren’Py Translator](/prenpy/)
+2. Open the project folder
+3. Translate missing/untranslated strings
+4. Fix warnings and export ZIP
+
+## 3) QA checklist
+
+- tags are balanced (`{i}` → `{/i}`)
+- variables unchanged (`[player_name]`)
+- no broken quotes
+- indentation preserved
+
+See: [Formatting & placeholders](/docs/workflows/formatting-placeholders/)
+
+## 4) Test in Ren’Py
+
+- Run from Ren’Py Launcher
+- Click through scenes that contain:
+  - formatted text
+  - menus
+  - UI screens
+
+If you hit an error:
+- read the traceback (it usually points to a line in `.rpy`)
+- fix the broken line
+- export again
+
+## 5) Iterate
+
+For VN projects, translation is iterative:
+- translate → QA → test → adjust terminology → repeat
+
+Translation Memory helps a lot:
+- [Pro Ren’Py Translator](/prenpy/)
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="/docs/docs.js"></script>
+  </body>
+</html>
