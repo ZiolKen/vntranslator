@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b10" />
+    <meta name="color-scheme" content="dark" />
+    <title>Overview | VN Translator</title>
+    <meta name="description" content="VN Translator is a web-based toolkit for translating Ren’Py visual novels, RPG Maker projects, and other game text formats. Learn the workflow, tools, and best practices." />
+
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {"categoryLabel": "Introduction", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="/" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="/assets/logo.jpeg" alt="" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">VNTl • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="/renpy/">Ren’Py</a>
+          <a class="gb-link" href="/rpgm/">RPG Maker</a>
+          <a class="gb-link" href="/game-text-editor/">Game Text Editor</a>
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>Overview</h1>
+<p>VN Translator is a <strong>web-based toolkit</strong> for translating <strong>visual novels</strong> and <strong>game projects</strong> (Ren’Py, RPG Maker MV/MZ, and more).<br />
+It is built around a simple idea: <strong>keep the game structure valid</strong>, translate safely, and <strong>QA in a real preview</strong> before shipping.</p>
+<blockquote>
+<p>✅ Best practice: Always translate from <strong>source files</strong>, keep a <strong>backup</strong>, and test in the engine after every export.</p>
+</blockquote>
+<h2>Choose a tool</h2>
+<ul>
+<li>
+<p><strong>Ren’Py Translator</strong> — translate a single <code>.rpy</code> file with engine-safe parsing.<br />
+Open: <code>/renpy/</code> → <a href="/renpy/">Ren’Py Translator</a></p>
+</li>
+<li>
+<p><strong>Pro Ren’Py Translator</strong> — multi-file workflow with Translation Memory, bulk edit, undo/redo, and ZIP export.<br />
+Open: <code>/prenpy/</code> → <a href="/prenpy/">Pro Ren’Py Translator</a></p>
+</li>
+<li>
+<p><strong>RPG Maker Translator</strong> — translate one JSON at a time (<code>data/*.json</code> for MV/MZ).<br />
+Open: <code>/rpgm/</code> → <a href="/rpgm/">RPG Maker Translator</a></p>
+</li>
+<li>
+<p><strong>RPGM Ultimate</strong> — batch workflow: <strong>JSON → TXT → translate → import back</strong> (ideal for multi-file projects).<br />
+Open: <code>/rpgmu/</code> → <a href="/rpgmu/">RPGM Ultimate</a></p>
+</li>
+<li>
+<p><strong>Game Text Editor</strong> — quick edits for <code>.rpy</code>, <code>.json</code>, <code>.ks</code> with find/replace.<br />
+Open: <code>/game-text-editor/</code> → <a href="/game-text-editor/">Game Text Editor</a></p>
+</li>
+<li>
+<p><strong>Ren’Py Compiler</strong> — extract <code>.rpa</code> and decompile <code>.rpyc</code> <em>(use only for projects you own or have permission to modify)</em>.<br />
+Open: <code>/renpyc/</code> → <a href="/renpyc/">Ren’Py Compiler</a></p>
+</li>
+</ul>
+<h2>Typical workflow</h2>
+<ol>
+<li><strong>Backup</strong> your project folder (ZIP copy or git).</li>
+<li>Get the <strong>right source files</strong>:
+<ul>
+<li>Ren’Py: <code>.rpy</code> inside the <code>game/</code> directory</li>
+<li>RPG Maker: <code>.json</code> inside the <code>data/</code> directory</li>
+</ul>
+</li>
+<li>Pick a <strong>translation service</strong> (DeepSeek / OpenAI / DeepL / Lingva) and set the target language.</li>
+<li>Translate in <strong>small batches</strong> to avoid rate-limit failures.</li>
+<li>Review everything in <strong>Preview &amp; Editor</strong> (tags, variables, control codes, line breaks).</li>
+<li>Export → replace files in your project → <strong>test in-game</strong>.</li>
+</ol>
+<h2>What VN Translator optimizes for</h2>
+<ul>
+<li><strong>Web-first</strong>: no installation. Your browser is the workspace.</li>
+<li><strong>Engine-safe</strong>: designed to preserve tags, variables, and control codes.</li>
+<li><strong>Preview-driven QA</strong>: fix formatting issues fast (before you rebuild your game).</li>
+</ul>
+<h2>Where to go next</h2>
+<ul>
+<li><a href="/docs/getting-started/">Quick start</a></li>
+<li><a href="/docs/how-it-works/">How VN Translator works</a></li>
+<li><a href="/docs/translation-services/">Translation services</a></li>
+<li><a href="/docs/api-keys/">API keys</a></li>
+<li><a href="/docs/troubleshooting/common-issues/">Common issues</a></li>
+</ul>
+<hr />
+<h3>Legal &amp; ethical use</h3>
+<p>VN Translator is meant for <strong>your own projects</strong> or projects where you have <strong>explicit permission</strong> to translate/edit.<br />
+Respect licenses and developer terms.</p>
+
+
+          <script type="text/plain" data-docs="md">
+# Overview
+
+VN Translator is a **web-based toolkit** for translating **visual novels** and **game projects** (Ren’Py, RPG Maker MV/MZ, and more).  
+It is built around a simple idea: **keep the game structure valid**, translate safely, and **QA in a real preview** before shipping.
+
+> ✅ Best practice: Always translate from **source files**, keep a **backup**, and test in the engine after every export.
+
+## Choose a tool
+
+- **Ren’Py Translator** — translate a single `.rpy` file with engine-safe parsing.  
+  Open: `/renpy/` → [Ren’Py Translator](/renpy/)
+
+- **Pro Ren’Py Translator** — multi-file workflow with Translation Memory, bulk edit, undo/redo, and ZIP export.  
+  Open: `/prenpy/` → [Pro Ren’Py Translator](/prenpy/)
+
+- **RPG Maker Translator** — translate one JSON at a time (`data/*.json` for MV/MZ).  
+  Open: `/rpgm/` → [RPG Maker Translator](/rpgm/)
+
+- **RPGM Ultimate** — batch workflow: **JSON → TXT → translate → import back** (ideal for multi-file projects).  
+  Open: `/rpgmu/` → [RPGM Ultimate](/rpgmu/)
+
+- **Game Text Editor** — quick edits for `.rpy`, `.json`, `.ks` with find/replace.  
+  Open: `/game-text-editor/` → [Game Text Editor](/game-text-editor/)
+
+- **Ren’Py Compiler** — extract `.rpa` and decompile `.rpyc` *(use only for projects you own or have permission to modify)*.  
+  Open: `/renpyc/` → [Ren’Py Compiler](/renpyc/)
+
+## Typical workflow
+
+1. **Backup** your project folder (ZIP copy or git).
+2. Get the **right source files**:
+   - Ren’Py: `.rpy` inside the `game/` directory
+   - RPG Maker: `.json` inside the `data/` directory
+3. Pick a **translation service** (DeepSeek / OpenAI / DeepL / Lingva) and set the target language.
+4. Translate in **small batches** to avoid rate-limit failures.
+5. Review everything in **Preview & Editor** (tags, variables, control codes, line breaks).
+6. Export → replace files in your project → **test in-game**.
+
+## What VN Translator optimizes for
+
+- **Web-first**: no installation. Your browser is the workspace.
+- **Engine-safe**: designed to preserve tags, variables, and control codes.
+- **Preview-driven QA**: fix formatting issues fast (before you rebuild your game).
+- **Open-source**: you can self-host for maximum control.  
+  Repo: [github.com/ZiolKen/vntranslator](https://github.com/ZiolKen/vntranslator)
+
+## Where to go next
+
+- [Quick start](/docs/getting-started/)
+- [How VN Translator works](/docs/how-it-works/)
+- [Translation services](/docs/translation-services/)
+- [API keys](/docs/api-keys/)
+- [Common issues](/docs/troubleshooting/common-issues/)
+
+---
+### Legal & ethical use
+
+VN Translator is meant for **your own projects** or projects where you have **explicit permission** to translate/edit.  
+Respect licenses and developer terms.
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="./docs.js"></script>
+  </body>
+</html>
