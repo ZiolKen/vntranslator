@@ -224,13 +224,23 @@ export const RENPY = (() => {
       let endOffset = -1;
 
       if (isTriple) {
-        const close = source.indexOf(delim, contentStart);
-        if (close === -1) {
+        let j = contentStart;
+        let bs = 0;
+        while (j < source.length) {
+          if (source.startsWith(delim, j) && (bs % 2 === 0)) {
+            contentEnd = j;
+            endOffset = j + delim.length;
+            break;
+          }
+          const c = source[j];
+          if (c === '\\') bs++;
+          else bs = 0;
+          j++;
+        }
+        if (endOffset === -1) {
           i = contentStart;
           continue;
         }
-        contentEnd = close;
-        endOffset = close + delim.length;
       } else {
         let j = contentStart;
         let esc = false;
@@ -361,17 +371,231 @@ export const RENPY = (() => {
     return pos;
   }
 
-  function escapeForRenpyString(text, quoteChar, isTriple) {
-    let t = String(text ?? '');
-    if (!isTriple) {
-      t = t.replace(/\r?\n/g, '\\n');
-      if (quoteChar === '"') t = t.replace(/"/g, '\\"');
-      else t = t.replace(/'/g, "\\'");
-      return t;
-    }
-    if (quoteChar === '"') return t.replace(/"""/g, '\\"""');
-    return t.replace(/'''/g, "\\'''");
+  
+  function isHexDigit(ch) {
+    return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
   }
+
+  function isRawPrefix(prefix) {
+    return /r/i.test(String(prefix || ''));
+  }
+
+  function normalizeRenpyNewlines(text) {
+    return String(text ?? '').replace(/\r\n|\r|\n|\u2028|\u2029/g, '\\n');
+  }
+
+  function ensureEvenTrailingBackslashes(text) {
+    const s = String(text ?? '');
+    let n = 0;
+    for (let i = s.length - 1; i >= 0 && s[i] === '\\'; i--) n++;
+    return (n % 2 === 0) ? s : (s + '\\');
+  }
+
+  function sanitizeBackslashEscapes(text, original, isRaw) {
+    if (isRaw) return String(text ?? '');
+    const s = String(text ?? '');
+    const orig = String(original ?? '');
+    let out = '';
+
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c !== '\\') {
+        out += c;
+        continue;
+      }
+
+      const next = s[i + 1];
+      if (next === undefined) {
+        out += '\\';
+        continue;
+      }
+
+      if (next === 'x') {
+        const a = s[i + 2];
+        const b = s[i + 3];
+        out += (isHexDigit(a) && isHexDigit(b)) ? '\\' : '\\\\';
+        continue;
+      }
+
+      if (next === 'u') {
+        const a = s[i + 2];
+        const b = s[i + 3];
+        const c1 = s[i + 4];
+        const d = s[i + 5];
+        out += (isHexDigit(a) && isHexDigit(b) && isHexDigit(c1) && isHexDigit(d)) ? '\\' : '\\\\';
+        continue;
+      }
+
+      if (next === 'U') {
+        let ok = true;
+        for (let k = 2; k <= 9; k++) {
+          if (!isHexDigit(s[i + k])) {
+            ok = false;
+            break;
+          }
+        }
+        out += ok ? '\\' : '\\\\';
+        continue;
+      }
+
+      if (next === 'N') {
+        let keep = false;
+        if (s[i + 2] === '{') {
+          const end = s.indexOf('}', i + 3);
+          if (end !== -1) {
+            const seq = s.slice(i, end + 1);
+            keep = !!(orig && orig.includes(seq));
+          }
+        }
+        out += keep ? '\\' : '\\\\';
+        continue;
+      }
+
+      out += '\\';
+    }
+
+    return out;
+  }
+
+  function escapeDelimiterQuotes(text, quoteChar) {
+    const s = String(text ?? '');
+    const q = (quoteChar === "'") ? "'" : '"';
+    let out = '';
+    let bs = 0;
+
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+
+      if (c === '\\') {
+        out += '\\';
+        bs++;
+        continue;
+      }
+
+      if (c === q) {
+        if (bs % 2 === 0) out += '\\' + q;
+        else out += q;
+      } else {
+        out += c;
+      }
+
+      bs = 0;
+    }
+
+    return ensureEvenTrailingBackslashes(out);
+  }
+
+  function escapeTripleDelim(text, quoteChar) {
+    const s = String(text ?? '');
+    const q = (quoteChar === "'") ? "'" : '"';
+    let out = '';
+    let bs = 0;
+    let i = 0;
+
+    while (i < s.length) {
+      const c = s[i];
+
+      if (c === '\\') {
+        out += '\\';
+        bs++;
+        i++;
+        continue;
+      }
+
+      if (c !== q) {
+        out += c;
+        bs = 0;
+        i++;
+        continue;
+      }
+
+      let j = i;
+      while (j < s.length && s[j] === q) j++;
+      const runLen = j - i;
+
+      if (runLen < 3) {
+        out += q.repeat(runLen);
+      } else {
+        const firstEscaped = (bs % 2 === 1);
+        if (runLen === 3 && firstEscaped) {
+          out += q.repeat(3);
+        } else {
+          for (let k = 0; k < runLen; k++) {
+            if (k % 3 === 2) out += '\\';
+            out += q;
+          }
+        }
+      }
+
+      bs = 0;
+      i = j;
+    }
+
+    return ensureEvenTrailingBackslashes(out);
+  }
+
+  function validateEscapedRenpyContent(text, quoteChar, isTriple) {
+    const s = String(text ?? '');
+    const q = (quoteChar === "'") ? "'" : '"';
+
+    if (!isTriple && /[\r\n\u2028\u2029]/.test(s)) return false;
+
+    let trail = 0;
+    for (let i = s.length - 1; i >= 0 && s[i] === '\\'; i--) trail++;
+    if (trail % 2 === 1) return false;
+
+    if (!isTriple) {
+      let bs = 0;
+      for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c === '\\') {
+          bs++;
+          continue;
+        }
+        if (c === q && (bs % 2 === 0)) return false;
+        bs = 0;
+      }
+      return true;
+    }
+
+    const delim = q + q + q;
+    for (let i = 0; i <= s.length - 3; i++) {
+      if (!s.startsWith(delim, i)) continue;
+      let bs = 0;
+      for (let j = i - 1; j >= 0 && s[j] === '\\'; j--) bs++;
+      if (bs % 2 === 0) return false;
+    }
+
+    return true;
+  }
+
+  function escapeFallback(text, quoteChar, isTriple) {
+    const q = (quoteChar === "'") ? "'" : '"';
+    let s = String(text ?? '');
+    if (!isTriple) s = normalizeRenpyNewlines(s);
+    s = s.replace(/\\/g, '\\\\');
+    s = s.replaceAll(q, '\\' + q);
+    return ensureEvenTrailingBackslashes(s);
+  }
+
+  function escapeForRenpyString(text, quoteChar, isTriple, prefix, original) {
+    const q = (quoteChar === "'") ? "'" : '"';
+    const raw = isRawPrefix(prefix);
+    let out = String(text ?? '');
+
+    if (!isTriple) out = normalizeRenpyNewlines(out);
+
+    out = sanitizeBackslashEscapes(out, original, raw);
+    out = isTriple ? escapeTripleDelim(out, q) : escapeDelimiterQuotes(out, q);
+
+    if (validateEscapedRenpyContent(out, q, isTriple)) return out;
+
+    const fb = escapeFallback(text, q, isTriple);
+    if (validateEscapedRenpyContent(fb, q, isTriple)) return fb;
+
+    return fb;
+  }
+
 
   function stmtHeadLower(line) {
     const m = String(line || '').trimStart().match(/^([A-Za-z_][\w\.]*)/);
@@ -531,6 +755,7 @@ export const RENPY = (() => {
           contentEnd: lit.contentEnd,
           quoteChar: lit.quoteChar,
           isTriple: lit.isTriple,
+          prefix: lit.prefix,
           quote: raw,
           maskedQuote: maskedInfo.masked,
           placeholderMap: maskedInfo.map,
@@ -550,7 +775,7 @@ export const RENPY = (() => {
       reps.push({
         start: d.contentStart,
         end: d.contentEnd,
-        value: escapeForRenpyString(d.translated, d.quoteChar, d.isTriple),
+        value: escapeForRenpyString(d.translated, d.quoteChar, d.isTriple, d.prefix, d.quote),
       });
     }
     reps.sort((a, b) => b.start - a.start);
