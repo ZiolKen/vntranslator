@@ -115,6 +115,7 @@
         lineIndex: Number.isFinite(d.lineIndex) ? d.lineIndex : null,
         contentStart: Number.isFinite(d.contentStart) ? d.contentStart : null,
         contentEnd: Number.isFinite(d.contentEnd) ? d.contentEnd : null,
+        prefix: typeof d.prefix === 'string' ? d.prefix : '',
         quoteChar: typeof d.quoteChar === 'string' ? d.quoteChar : '"',
         isTriple: Boolean(d.isTriple),
         quote: typeof d.quote === 'string' ? d.quote : '',
