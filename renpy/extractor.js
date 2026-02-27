@@ -34,7 +34,7 @@ const RGX_ASSET_PATH = /["'](images?|audio|music|voice|bg|sfx|movie|video|sounds
 
 const RGX_FULL_STRING = /^"((?:\\.|[^"\\])*)"$/;      
 const RGX_STRING_INSIDE = /"((?:\\.|[^"\\])*)"/;
-const RGX_DICT = /{\s*dialog:\s*["']([\s\S]*?)["']\s*,\s*line:\s*(\d+)\s*}/g;
+const RGX_DICT = /{\s*dialog:\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)')\s*,\s*line:\s*(\d+)\s*}/g;
 const RGX_ANY_STRING = /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/g;  
 
 const DIALOG_BLACKLIST = [
@@ -104,11 +104,171 @@ function isDialogLine(line) {
     return false;
 }
 
-function escapeDialog(str) {
-    return str
-        .replace(/\\/g, "\\\\")
-        .replace(/"/g, '\\"')
-        .replace(/\r?\n/g, "\\n");
+function normalizeRenpyNewlines(text) {
+    return String(text ?? '').replace(/[\r\n\u2028\u2029]/g, (m) => {
+        if (m === "\r") return "";
+        return "\\n";
+    });
+}
+
+function ensureEvenTrailingBackslashes(text) {
+    const s = String(text ?? '');
+    let trail = 0;
+    for (let i = s.length - 1; i >= 0 && s[i] === "\\"; i--) trail++;
+    return (trail % 2 === 1) ? (s + "\\") : s;
+}
+
+function sanitizeBackslashEscapes(text, original) {
+    const s = String(text ?? '');
+    const o = String(original ?? '');
+
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c !== "\\") {
+            out += c;
+            continue;
+        }
+
+        const next = s[i + 1];
+        if (next == null) {
+            out += "\\\\";
+            continue;
+        }
+
+        if (next === 'u') {
+            const hex = s.slice(i + 2, i + 6);
+            if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+                out += "\\u" + hex;
+                i += 5;
+            } else {
+                if (/\\u[0-9a-fA-F]{0,3}$/.test(o.slice(Math.max(0, i), Math.min(o.length, i + 6)))) out += "\\u";
+                else out += "\\\\u";
+                i += 1;
+            }
+            continue;
+        }
+
+        if (next === 'U') {
+            const hex = s.slice(i + 2, i + 10);
+            if (/^[0-9a-fA-F]{8}$/.test(hex)) {
+                out += "\\U" + hex;
+                i += 9;
+            } else {
+                if (/\\U[0-9a-fA-F]{0,7}$/.test(o.slice(Math.max(0, i), Math.min(o.length, i + 10)))) out += "\\U";
+                else out += "\\\\U";
+                i += 1;
+            }
+            continue;
+        }
+
+        if (next === 'x') {
+            const hex = s.slice(i + 2, i + 4);
+            if (/^[0-9a-fA-F]{2}$/.test(hex)) {
+                out += "\\x" + hex;
+                i += 3;
+            } else {
+                if (/\\x[0-9a-fA-F]{0,1}$/.test(o.slice(Math.max(0, i), Math.min(o.length, i + 4)))) out += "\\x";
+                else out += "\\\\x";
+                i += 1;
+            }
+            continue;
+        }
+
+        if (next === 'N') {
+            if (s[i + 2] === '{') {
+                const end = s.indexOf('}', i + 3);
+                if (end !== -1) {
+                    out += s.slice(i, end + 1);
+                    i = end;
+                    continue;
+                }
+            }
+            out += "\\\\N";
+            i += 1;
+            continue;
+        }
+
+        out += "\\" + next;
+        i += 1;
+    }
+
+    return ensureEvenTrailingBackslashes(out);
+}
+
+function escapeDelimiterQuotes(text, quoteChar) {
+    const s = String(text ?? '');
+    const q = quoteChar === "'" ? "'" : '"';
+    let out = '';
+    let bs = 0;
+
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c === "\\") {
+            bs++;
+            out += c;
+            continue;
+        }
+        if (c === q) {
+            if (bs % 2 === 0) out += "\\";
+            out += c;
+            bs = 0;
+            continue;
+        }
+        bs = 0;
+        out += c;
+    }
+
+    return ensureEvenTrailingBackslashes(out);
+}
+
+function validateEscapedRenpyContent(text, quoteChar) {
+    const s = String(text ?? '');
+    const q = quoteChar === "'" ? "'" : '"';
+
+    if (/[\r\n\u2028\u2029]/.test(s)) return false;
+
+    let trail = 0;
+    for (let i = s.length - 1; i >= 0 && s[i] === "\\"; i--) trail++;
+    if (trail % 2 === 1) return false;
+
+    let bs = 0;
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c === "\\") {
+            bs++;
+            continue;
+        }
+        if (c === q && (bs % 2 === 0)) return false;
+        bs = 0;
+    }
+
+    return true;
+}
+
+function escapeFallback(text, quoteChar) {
+    const q = quoteChar === "'" ? "'" : '"';
+    let s = String(text ?? '');
+    s = normalizeRenpyNewlines(s);
+    s = s.replace(/\\/g, "\\\\");
+    s = s.replaceAll(q, "\\" + q);
+    return ensureEvenTrailingBackslashes(s);
+}
+
+function escapeForRenpyString(text, quoteChar, original) {
+    const q = quoteChar === "'" ? "'" : '"';
+    let out = String(text ?? '');
+
+    out = normalizeRenpyNewlines(out);
+    out = sanitizeBackslashEscapes(out, original);
+    out = escapeDelimiterQuotes(out, q);
+
+    if (validateEscapedRenpyContent(out, q)) return out;
+
+    const fb = escapeFallback(text, q);
+    if (validateEscapedRenpyContent(fb, q)) return fb;
+
+    return fb;
 }
 
 /* ============================================================
@@ -138,7 +298,7 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
             if (!cleaned || /^[.\s]+$/.test(cleaned)) continue;
 
             dialogs.push({
-                dialog: escapeDialog(m[1]),
+                dialog: escapeForRenpyString(m[1], '"', m[1]),
                 line: i + 1
             });
 
@@ -180,10 +340,13 @@ document.getElementById("mergeBtn").addEventListener("click", async () => {
     const transText = await translated.text();
     const origText = await original.text();
 
-    const dialogs = [...transText.matchAll(RGX_DICT)].map(m => ({
-        dialog: escapeDialog(m[1]),
-        line: parseInt(m[2])
-    }));
+    const dialogs = [...transText.matchAll(RGX_DICT)].map(m => {
+        const raw = (m[1] ?? m[2] ?? '');
+        return {
+            dialog: escapeForRenpyString(raw, '"', raw),
+            line: parseInt(m[3])
+        };
+    });
 
     const origLines = origText.split(/\r?\n/);
 
