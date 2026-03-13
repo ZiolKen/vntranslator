@@ -321,6 +321,7 @@ export const RENPY = (() => {
   
       if (!inSingle && !inDouble) {
         if (c === '{' || c === '}') return true;
+        if (c === '[' || c === ']') return true;
       }
     }
   
@@ -337,6 +338,8 @@ export const RENPY = (() => {
     if (/[A-Z]/.test(t)) return false;
   
     if (!/[a-z]/.test(t)) return false;
+    
+    if (!/[0-9]/.test(t)) return false;
   
     return true;
   }
