@@ -45,58 +45,6 @@ export function maskTagsInText(text) {
   return { masked: result, map };
 }
 
-function hasBraceOutsideQuote(prefix) {
-  if (!prefix) return false;
-
-  let inSingle = false;
-  let inDouble = false;
-  let esc = false;
-
-  for (let i = 0; i < prefix.length; i++) {
-    const c = prefix[i];
-
-    if (esc) {
-      esc = false;
-      continue;
-    }
-
-    if (c === '\\') {
-      esc = true;
-      continue;
-    }
-
-    if (c === '"' && !inSingle) {
-      inDouble = !inDouble;
-      continue;
-    }
-
-    if (c === "'" && !inDouble) {
-      inSingle = !inSingle;
-      continue;
-    }
-
-    if (!inSingle && !inDouble) {
-      if (c === '{' || c === '}') return true;
-    }
-  }
-
-  return false;
-}
-
-function isLowercaseIdentifierLike(text) {
-  const t = stripMarkupForCheck(text);
-
-  if (!t) return false;
-
-  if (!/[-_]/.test(t)) return false;
-
-  if (/[A-Z]/.test(t)) return false;
-
-  if (!/[a-z]/.test(t)) return false;
-
-  return true;
-}
-
 export function unmaskTagsInText(text, map) {
   const s = String(text ?? '');
   if (!s || !map) return s;
@@ -339,6 +287,58 @@ export const RENPY = (() => {
       .replace(/\{[^{}]*\}/gs, '')
       .replace(/\[[^\[\]]*\]/gs, '')
       .trim();
+  }
+  
+  function hasBraceOutsideQuote(prefix) {
+    if (!prefix) return false;
+  
+    let inSingle = false;
+    let inDouble = false;
+    let esc = false;
+  
+    for (let i = 0; i < prefix.length; i++) {
+      const c = prefix[i];
+  
+      if (esc) {
+        esc = false;
+        continue;
+      }
+  
+      if (c === '\\') {
+        esc = true;
+        continue;
+      }
+  
+      if (c === '"' && !inSingle) {
+        inDouble = !inDouble;
+        continue;
+      }
+  
+      if (c === "'" && !inDouble) {
+        inSingle = !inSingle;
+        continue;
+      }
+  
+      if (!inSingle && !inDouble) {
+        if (c === '{' || c === '}') return true;
+      }
+    }
+  
+    return false;
+  }
+  
+  function isLowercaseIdentifierLike(text) {
+    const t = stripMarkupForCheck(text);
+  
+    if (!t) return false;
+  
+    if (!/[-_]/.test(t)) return false;
+  
+    if (/[A-Z]/.test(t)) return false;
+  
+    if (!/[a-z]/.test(t)) return false;
+  
+    return true;
   }
 
   function isMeaningfulText(text) {
