@@ -67,7 +67,7 @@ export const RENPY = (() => {
   const SCRIPT_SKIP_HEADS = new Set([
     'label','init','python','transform','style','screen','key','base_bar','left_bar','style_prefix',
     'define','default','translate','old','new','properties','thumb','right_bar','use','allow','auto',
-    'return','jump','call','if','elif','else','for','while','try','except','finally','idle','on',
+    'return','jump','call','if','elif','else','for','while','try','except','finally','idle','on','hover_color',
     'pass','break','continue','import','from','$','renpy','action','top_bar','bottom_bar','action',
     'outlines','outline_scaling','text_font','font','text_color','text_size','color','keysym','side',
     'xpos','ypos','xalign','yalign','align','anchor','pos','xysize','size','zorder','tag','background'
@@ -79,7 +79,7 @@ export const RENPY = (() => {
 
   const NON_TRANSLATABLE_ATTRS = new Set([
     'style','font','text_font','background','hover_sound','activate_sound','selected_sound','insensitive_sound',
-    'channel','play','start_image','image','add','xysize','xpos','ypos','align','anchor','zorder','tag'
+    'channel','play','start_image','image','add','xysize','xpos','ypos','align','anchor','zorder','tag','{','}'
   ]);
 
   const NON_TRANSLATABLE_CALLS = new Set([
