@@ -649,7 +649,6 @@ body.is-searchOpen .gb-searchOverlay{opacity:1;pointer-events:auto}
   :root{--toc-w:0px}
   .gb-shell{grid-template-columns:var(--sidebar-w) minmax(0,1fr)}
   .gb-toc{display:none}
-  .gb-iconBtn{display:none}
 }
 
 @media (max-width:940px){
@@ -669,7 +668,6 @@ body.is-searchOpen .gb-searchOverlay{opacity:1;pointer-events:auto}
   .gb-sidebarInner{top:0;height:100%}
   .gb-topLinks{display:none}
   .gb-sidebarClose{display:grid}
-  .gb-iconBtn{display:none}
 }
 
 @media (max-width:520px){
