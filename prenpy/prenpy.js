@@ -66,7 +66,7 @@ export const RENPY = (() => {
   const PREFIX_CHARS = new Set(['r','R','u','U','b','B','f','F']);
   const SCRIPT_SKIP_HEADS = new Set([
     'label','init','python','transform','style','screen','key','base_bar','left_bar','style_prefix',
-    'define','default','translate','old','new','properties','thumb','right_bar','use','allow','auto','old',
+    'define','default','translate','old','properties','thumb','right_bar','use','allow','auto',
     'return','jump','call','if','elif','else','for','while','try','except','finally','idle','on','hover_color',
     'pass','break','continue','import','from','$','renpy','action','top_bar','bottom_bar','action',
     'outlines','outline_scaling','text_font','font','text_color','text_size','color','keysym','side',
