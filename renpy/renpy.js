@@ -301,7 +301,7 @@
     const PREFIX_CHARS = new Set(['r','R','u','U','b','B','f','F']);
     const SCRIPT_SKIP_HEADS = new Set([
       'label','init','python','transform','style','screen','key',
-      'define','default','translate','old','new',
+      'define','default','translate','old',
       'return','jump','call','if','elif','else','for','while','try','except','finally',
       'pass','break','continue','import','from','$','renpy','action',
       'outlines','outline_scaling','text_font','font','text_color','text_size','color',
