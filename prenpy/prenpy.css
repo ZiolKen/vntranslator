@@ -339,9 +339,6 @@ textarea:hover,textarea:active,textarea:focus{
   .top-actions{
     gap: 6px;
   }
-  .btn,.input,.select,textarea{
-    font-size: 16px;
-  }
   .panel{
     padding: 10px;
   }
