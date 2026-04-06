@@ -108,6 +108,34 @@ export const Store = {
     db.close();
   },
 
+  async tmGetMany(target, sourceMaskedList) {
+    const keys = Array.from(new Set((sourceMaskedList || []).map(v => String(v ?? ''))));
+    if (!keys.length) return new Map();
+
+    const db = await openDb();
+    const tx = db.transaction(['tm'], 'readonly');
+    const store = tx.objectStore('tm');
+    const out = new Map();
+
+    const reqs = keys.map((sourceMasked) => {
+      const key = `${target}::${sourceMasked}`;
+      const req = store.get(key);
+      return new Promise((resolve, reject) => {
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve([sourceMasked, req.result || null]);
+      });
+    });
+
+    const rows = await Promise.all(reqs);
+    for (const [sourceMasked, value] of rows) {
+      if (value) out.set(sourceMasked, value);
+    }
+
+    await txDone(tx);
+    db.close();
+    return out;
+  },
+
   async tmGet(target, sourceMasked) {
     const db = await openDb();
     const tx = db.transaction(['tm'], 'readonly');

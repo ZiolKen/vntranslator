@@ -167,6 +167,7 @@ body{
   overflow:auto;
   background: rgba(0,0,0,.08);
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .grid{
   width:100%;
@@ -315,3 +316,42 @@ textarea:hover,textarea:active,textarea:focus{
 .metaStatus.meta-warn { color: #ff6a6a; font-weight: 700; }
 .metaStatus.meta-ok { color: #38c172; font-weight: 700; }
 .metaStatus.meta-none { opacity: 0.6; }
+
+@media (max-width: 1020px), (pointer: coarse){
+  body{
+    background-attachment: scroll;
+  }
+  .topbar{
+    backdrop-filter: none;
+  }
+  .panel{
+    box-shadow: none;
+  }
+  .file-list,.table-wrap,.tm-list,.log{
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px), (pointer: coarse){
+  .topbar{
+    padding: 10px 12px;
+  }
+  .top-actions{
+    gap: 6px;
+  }
+  .btn,.input,.select,textarea{
+    font-size: 16px;
+  }
+  .panel{
+    padding: 10px;
+  }
+  .grid thead th{
+    padding: 8px;
+  }
+  .grid tbody td{
+    padding: 6px 8px;
+  }
+  .col-meta{
+    width: 122px;
+  }
+}

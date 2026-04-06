@@ -1,5 +1,5 @@
 import { RENPY, unmaskTagsInText, RENPH_TEST_RE, OLD_RENPH_TEST_RE, TRANSLATOR_CREDIT } from './prenpy.js';
-import { normalizeLineEndings, restoreLineEndings, debounce, escapeHtml, clamp } from './utils.js';
+import { normalizeLineEndings, restoreLineEndings, debounce, escapeHtml, clamp, yieldToMain } from './utils.js';
 import { Store } from './storage.js';
 import { LANG_TO_CODE } from './languages.js';
 import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchLingva, translateBatchGoogle } from './engines.js';
@@ -8,6 +8,18 @@ import { buildMatcher, findAllInText, replaceAll, nextIndex, sortMatches } from 
 
 const PROJECT_ID = 'default';
 const Common = globalThis.VNTranslationCommon;
+const MOBILE_MQ = typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 1020px), (pointer: coarse)') : null;
+const IS_MOBILE_UI = !!(MOBILE_MQ && MOBILE_MQ.matches);
+const PERF = {
+  overscan: IS_MOBILE_UI ? 4 : 10,
+  importYieldEvery: IS_MOBILE_UI ? 1 : 3,
+  translatePaintEvery: IS_MOBILE_UI ? 2 : 1,
+  tmRenderLimit: IS_MOBILE_UI ? 160 : 400,
+  tmYieldEvery: IS_MOBILE_UI ? 40 : 120,
+  sidebarRefreshMs: IS_MOBILE_UI ? 180 : 80,
+  tableSearchMs: IS_MOBILE_UI ? 220 : 120,
+  saveDebounceMs: IS_MOBILE_UI ? 1600 : 800,
+};
 
 const el = (id) => document.getElementById(id);
 
@@ -100,7 +112,7 @@ const state = {
   },
   virtual: {
     rowHeight: 80,
-    overscan: 10,
+    overscan: PERF.overscan,
     lastStart: -1,
     lastEnd: -1,
     viewIndexByRow: new Map(),
@@ -211,8 +223,11 @@ function applyAction(action, dir /* undo, redo */) {
 
   state.editor.applying = true;
   try {
+    let countChanged = false;
     if (action.field === 'translated') {
+      const prevValue = d.translated;
       d.translated = value;
+      countChanged = adjustFileTranslatedCount(f, prevValue, value);
       const t = String(value ?? '').trim();
       if (t) Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), t, { source: dir }).catch(()=>{});
     } else if (action.field === 'flagged') {
@@ -221,10 +236,11 @@ function applyAction(action, dir /* undo, redo */) {
 
     if (action.path === state.activePath) {
       updateRowDOM(action.row);
-      renderTable({ resetSel: false, resetScroll: false });
+      refreshActiveGridAfterMutation();
     }
 
-    updateProjectStats();
+    if (countChanged) scheduleRefreshSidebar();
+    else updateProjectStats();
     if (ui.autoSave.checked) scheduleSaveActiveFile();
   } finally {
     state.editor.applying = false;
@@ -328,12 +344,64 @@ document.addEventListener('click', (e) => {
   }
 });
 
+function hasTranslatedValue(value) {
+  return String(value ?? '').trim().length > 0;
+}
+
+function getFileTotalCount(f) {
+  return Number.isFinite(f?.totalCount) ? f.totalCount : Array.isArray(f?.dialogs) ? f.dialogs.length : 0;
+}
+
+function getFileTranslatedCount(f) {
+  if (Number.isFinite(f?.translatedCount)) return f.translatedCount;
+  if (!Array.isArray(f?.dialogs)) return 0;
+  let count = 0;
+  for (const d of f.dialogs) if (hasTranslatedValue(d?.translated)) count++;
+  return count;
+}
+
+function syncFileMeta(f) {
+  if (!f) return;
+  f.totalCount = Array.isArray(f.dialogs) ? f.dialogs.length : 0;
+  f.translatedCount = getFileTranslatedCount(f);
+}
+
+function adjustFileTranslatedCount(f, prevValue, nextValue) {
+  if (!f) return false;
+  const prevFilled = hasTranslatedValue(prevValue);
+  const nextFilled = hasTranslatedValue(nextValue);
+  if (prevFilled === nextFilled) return false;
+  const base = Number.isFinite(f.translatedCount) ? f.translatedCount : getFileTranslatedCount(f);
+  f.translatedCount = Math.max(0, base + (nextFilled ? 1 : -1));
+  return true;
+}
+
+function shouldRebuildActiveView() {
+  return ui.rowFilter.value !== 'all' || String(ui.tableSearch.value || '').trim().length > 0;
+}
+
+function refreshActiveGridAfterMutation() {
+  if (!state.activePath) return;
+  if (shouldRebuildActiveView()) {
+    renderTable({ resetSel: false, resetScroll: false });
+    return;
+  }
+  renderVirtual(true);
+  updateSelAllUI();
+  setStatus(`${state.activePath} — ${state.activeView.length} rows shown`, null);
+}
+
+const scheduleRefreshSidebar = debounce(() => {
+  updateProjectStats();
+  renderFileList();
+}, PERF.sidebarRefreshMs);
+
 function updateProjectStats() {
   let strings = 0;
   let translated = 0;
   for (const f of state.files.values()) {
-    strings += f.dialogs.length;
-    translated += f.dialogs.filter(d => d.translated && String(d.translated).trim()).length;
+    strings += getFileTotalCount(f);
+    translated += getFileTranslatedCount(f);
   }
   ui.statFiles.textContent = String(state.files.size);
   ui.statStrings.textContent = String(strings);
@@ -365,7 +433,7 @@ function renderFileList() {
     const meta = document.createElement('div');
     meta.className = 'file-meta';
 
-    const translated = f.dialogs.filter(d => d.translated && String(d.translated).trim()).length;
+    const translated = getFileTranslatedCount(f);
 
     const pill1 = document.createElement('span');
     pill1.className = 'pill';
@@ -576,7 +644,9 @@ function renderRow(f, idx, warnOn) {
   
   ta.addEventListener('input', () => {
     const v = ta.value;
+    const prevValue = d.translated;
     d.translated = v;
+    const countChanged = adjustFileTranslatedCount(f, prevValue, v);
   
     if (ui.autoSave.checked) scheduleSaveActiveFile();
     scheduleUpdateTM(idx, v);
@@ -586,7 +656,8 @@ function renderRow(f, idx, warnOn) {
     status.className = 'metaStatus ' + (warnNow ? 'meta-warn' : hasNow ? 'meta-ok' : 'meta-none');
     status.textContent = warnNow ? 'PLACEHOLDER' : (hasNow ? 'OK' : '—');
   
-    updateProjectStats();
+    if (countChanged) scheduleRefreshSidebar();
+    else updateProjectStats();
     refreshMeta();
     updateSelAllUI();
   });
@@ -724,7 +795,7 @@ const scheduleSaveActiveFile = debounce(async () => {
   } catch (e) {
     log('Save failed: ' + (e?.message || e), 'err');
   }
-}, 800);
+}, PERF.saveDebounceMs);
 
 const scheduleUpdateTM = debounce(async (idx, value) => {
   const p = state.activePath;
@@ -762,6 +833,8 @@ async function hydrateFromStorage() {
       openFile(Array.from(state.files.keys()).sort()[0]);
     }
 
+    enableActions();
+    updateUndoRedoButtons();
     setStatus(state.files.size ? 'Project loaded from local storage.' : 'No project loaded.', '');
   } catch (e) {
     setStatus('Storage unavailable.', '');
@@ -808,7 +881,9 @@ async function importFiles(fileList) {
 
     const rawPath = file.webkitRelativePath || file.name;
     const path = uniquePath(rawPath);
-    state.files.set(path, { path, source: normalized, eol, dialogs });
+    const fileState = { path, source: normalized, eol, dialogs };
+    syncFileMeta(fileState);
+    state.files.set(path, fileState);
 
     if (ui.autoSave.checked) {
       await Store.saveFile(PROJECT_ID, path, {
@@ -832,6 +907,8 @@ async function importFiles(fileList) {
     }
 
     imported++;
+
+    if (imported % PERF.importYieldEvery === 0) await yieldToMain();
   }
 
   await Store.saveProject(state.project);
@@ -861,7 +938,7 @@ ui.fileFilter.addEventListener('input', renderFileList);
 ui.btnReload.addEventListener('click', async () => { await hydrateFromStorage(); });
 
 ui.rowFilter.addEventListener('change', renderTable);
-ui.tableSearch.addEventListener('input', debounce(renderTable, 120));
+ui.tableSearch.addEventListener('input', debounce(renderTable, PERF.tableSearchMs));
 ui.showWarnings.addEventListener('change', () => renderTable({ resetSel: false, resetScroll: false }));
 
 ui.extractMode.addEventListener('change', () => {
@@ -871,9 +948,10 @@ ui.extractMode.addEventListener('change', () => {
     const f = state.files.get(p);
     if (f) {
       f.dialogs = RENPY.extractDialogs(f.source);
+      syncFileMeta(f);
       if (ui.autoSave.checked) scheduleSaveActiveFile();
       renderTable();
-      updateProjectStats();
+      scheduleRefreshSidebar();
       log('Re-extracted current file using mode: ' + RENPY.getMode());
     }
   }
@@ -915,14 +993,27 @@ async function fillMissingFromTM(path) {
   const f = state.files.get(path);
   if (!f) return 0;
   const target = ui.targetLangSelect.value;
+  const pending = [];
+  for (let i = 0; i < f.dialogs.length; i++) {
+    const d = f.dialogs[i];
+    if (hasTranslatedValue(d.translated)) continue;
+    pending.push([i, String(d.maskedQuote ?? '')]);
+  }
+  if (!pending.length) return 0;
+
+  const hits = await Store.tmGetMany(target, pending.map(([, key]) => key));
   let filled = 0;
-  for (const d of f.dialogs) {
-    if (d.translated && String(d.translated).trim()) continue;
-    const hit = await Store.tmGet(target, String(d.maskedQuote ?? ''));
-    if (hit && String(hit.translation ?? '').trim()) {
+  for (let i = 0; i < pending.length; i++) {
+    const [rowIndex, key] = pending[i];
+    const hit = hits.get(key);
+    if (hit && hasTranslatedValue(hit.translation)) {
+      const d = f.dialogs[rowIndex];
+      const prevValue = d.translated;
       d.translated = String(hit.translation);
+      adjustFileTranslatedCount(f, prevValue, d.translated);
       filled++;
     }
+    if ((i + 1) % PERF.tmYieldEvery === 0) await yieldToMain();
   }
   return filled;
 }
@@ -948,6 +1039,8 @@ async function translateDialogs(path, indices) {
   log(`Translate: ${engine} → ${targetLang} (${list.length} items)`);
 
   let done = 0;
+  let batchCount = 0;
+  let sidebarDirty = false;
 
   for (let start = 0; start < list.length; start += batch) {
     const slice = list.slice(start, start + batch);
@@ -966,21 +1059,36 @@ async function translateDialogs(path, indices) {
       const out = String(translated[i] ?? '');
       const unmasked = unmaskTagsInText(out, d.placeholderMap);
       d.translated = unmasked;
+      if (adjustFileTranslatedCount(f, prev, unmasked)) sidebarDirty = true;
     
       pushHistory({ path, row: idx, field: 'translated', prev, next: String(unmasked ?? ''), ts: Date.now(), source: engine });
     
-      if (ui.autoSave.checked) {
+      if (ui.autoSave.checked && hasTranslatedValue(unmasked)) {
         Store.tmPut(targetLang, String(d.maskedQuote ?? ''), String(unmasked), { source: engine }).catch(()=>{});
       }
     }
 
     done += slice.length;
+    batchCount++;
     setStatus(`Translating… ${done}/${list.length}`, `${engine} → ${targetLang}`);
-    renderTable({ resetSel: false, resetScroll: false });
-    updateUndoRedoButtons();
+
+    const shouldPaint = done === list.length || (batchCount % PERF.translatePaintEvery === 0);
+    if (shouldPaint) {
+      refreshActiveGridAfterMutation();
+      updateUndoRedoButtons();
+      if (sidebarDirty) {
+        scheduleRefreshSidebar();
+        sidebarDirty = false;
+      } else {
+        updateProjectStats();
+      }
+      await yieldToMain();
+    }
+
     if (ui.autoSave.checked) scheduleSaveActiveFile();
   }
 
+  if (sidebarDirty) scheduleRefreshSidebar();
   setStatus(`Done. Translated ${done} line(s).`, '');
   setBusy(false);
 }
@@ -997,6 +1105,8 @@ ui.btnTranslateMissing.addEventListener('click', async () => {
     const filled = await fillMissingFromTM(p);
     if (filled) {
       log(`TM filled: ${filled} lines`);
+      scheduleRefreshSidebar();
+      refreshActiveGridAfterMutation();
       if (ui.autoSave.checked) scheduleSaveActiveFile();
     }
     setBusy(false);
@@ -1061,6 +1171,8 @@ ui.btnClear.addEventListener('click', async () => {
   ui.gridBody.innerHTML = '';
   updateProjectStats();
   renderFileList();
+  enableActions();
+  updateUndoRedoButtons();
   setStatus('Cleared.', '');
 });
 
@@ -1094,8 +1206,8 @@ ui.btnTmFillMissing.addEventListener('click', async () => {
   setStatus('Applying TM…', '');
   const filled = await fillMissingFromTM(p);
   setBusy(false);
-  renderTable();
-  updateProjectStats();
+  refreshActiveGridAfterMutation();
+  scheduleRefreshSidebar();
   ui.findStats.textContent = '';
   log(`TM filled: ${filled}`);
   if (ui.autoSave.checked) scheduleSaveActiveFile();
@@ -1155,13 +1267,17 @@ async function renderTM() {
     frag.appendChild(item);
 
     shown++;
-    if (shown >= 400) break;
+    if (shown % PERF.tmYieldEvery === 0) {
+      ui.tmList.appendChild(frag);
+      await yieldToMain();
+    }
+    if (shown >= PERF.tmRenderLimit) break;
   }
 
   ui.tmList.appendChild(frag);
 }
 
-ui.tmSearch.addEventListener('input', debounce(renderTM, 120));
+ui.tmSearch.addEventListener('input', debounce(renderTM, PERF.tableSearchMs));
 
 ui.btnTmExport.addEventListener('click', async () => {
   const target = ui.targetLangSelect.value;
@@ -1334,12 +1450,13 @@ ui.btnReplaceAll.addEventListener('click', async () => {
       const after = replaceAll(before, re, rep);
       if (after !== before) replaced++;
       d.translated = after;
+      adjustFileTranslatedCount(f, before, after);
       if (String(after).trim()) Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), String(after), { source: 'findreplace' }).catch(()=>{});
     }
   }
 
-  renderTable();
-  updateProjectStats();
+  refreshActiveGridAfterMutation();
+  scheduleRefreshSidebar();
   ensureMatches();
 
   if (ui.autoSave.checked) scheduleSaveActiveFile();
@@ -1372,11 +1489,14 @@ ui.btnReplaceOne.addEventListener('click', async () => {
   const before = text.slice(0, found.index);
   const after = text.slice(found.index + found[0].length);
   const out = before + String(rep ?? '') + after;
+  const prevValue = d.translated;
   d.translated = out;
+  adjustFileTranslatedCount(f, prevValue, out);
 
   Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), String(out), { source: 'findreplace' }).catch(()=>{});
   if (ui.autoSave.checked) scheduleSaveActiveFile();
-  renderTable();
+  refreshActiveGridAfterMutation();
+  scheduleRefreshSidebar();
   ensureMatches();
 });
 
@@ -1391,5 +1511,3 @@ ui.targetLangSelect.addEventListener('change', async () => {
 
 await hydrateFromStorage();
 enableActions();
-
-setInterval(() => enableActions(), 500);

@@ -59,3 +59,12 @@ export function restoreLineEndings(text, eol) {
   if (!eol || eol === '\n') return text;
   return String(text ?? '').replace(/\n/g, eol);
 }
+
+
+export async function yieldToMain() {
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    await new Promise(resolve => window.requestAnimationFrame(() => resolve()));
+    return;
+  }
+  await sleep(0);
+}
