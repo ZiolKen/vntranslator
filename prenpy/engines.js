@@ -26,6 +26,13 @@ function getPrompt(batchDialogs, targetLang) {
     `- DO NOT merge, split, or reorder lines.\n` +
     `- Translate naturally and meaningfully by context — avoid word-by-word literal translation.\n` +
     `- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.\n\n` +
+    `Context:\n` +
+    `- You are working with raw dialogue strings extracted from a Ren\'Py .rpy script.\n` +
+    `- The visual novel includes romantic, emotional,... and adult themes.\n` +
+    `- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.\n\n` +
+    `Your Goal:\n` +
+    `- Produce a fully localized, natural-sounding version of the input dialogues that feels authentic to the target language audience — as if originally written in that language.\n` +
+    `- Ensure accuracy, tone consistency, and contextual appropriateness even for explicit scenes.\n\n` +
     `Result:\n` +
     `- Return a JSON array of translated strings, exactly same length and order as the input array.\n\n` +
     `Input JSON array:\n` +
