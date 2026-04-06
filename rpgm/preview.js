@@ -866,6 +866,15 @@ Rules:
 - Use slang sparingly and only if it enhances natural tone and is easy to understand.
 - Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.
 
+Context:
+- You are working with raw dialogue strings extracted from a RPG Maker .json script.
+- The visual novel includes romantic, emotional,... and adult themes.
+- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.
+
+Your Goal:
+- Produce a fully localized, natural-sounding version of the input dialogues that feels authentic to the target language audience — as if originally written in that language.
+- Ensure accuracy, tone consistency, and contextual appropriateness even for explicit scenes.
+
 Result:
 - Return ONLY a translated JSON array of strings with the same length and order as input. No markdown, no comments.
 
