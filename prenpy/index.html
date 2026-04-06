@@ -74,11 +74,7 @@
 
         <div class="row gap">
           <label class="label">Engine</label>
-          <select class="select" id="engineSelect">
-            <option value="deepseek">DeepSeek</option>
-            <option value="deepl">DeepL</option>
-            <option value="lingva">Lingva</option>
-          </select>
+<select class="select" id="engineSelect"></select>
         </div>
 
         <div class="row gap">
@@ -135,9 +131,14 @@
           <button class="btn" id="btnTranslateSelected" disabled>Translate Selected</button>
         </div>
 
-        <div class="row gap">
-          <label class="label">API key (optional)</label>
-          <input class="input" id="apiKey" placeholder="DeepSeek / DeepL key (kept local)" />
+        <div class="row gap" id="deepseekKeyRow">
+          <label class="label">DeepSeek API key</label>
+          <input class="input" id="apiKey" placeholder="DeepSeek API key (kept local)" />
+        </div>
+
+        <div class="row gap" id="openaiKeyRow" style="display:none;">
+          <label class="label">OpenAI API key</label>
+          <input class="input" id="openaiApiKey" placeholder="OpenAI API key (kept local)" />
         </div>
       </div>
 
@@ -277,6 +278,7 @@
     </div>
   </div>
   
+  <script src="../api/translation-common.js"></script>
   <script src="../api/deepl-client.js"></script>
   <script src="../api/deepl-integration.js"></script>
 
