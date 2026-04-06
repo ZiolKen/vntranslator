@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  const Common = globalThis.VNTranslationCommon;
+
   const RPGPLH_TEST_RE = /__RPGPLH_\d+__/g;
 
   const el = {
@@ -172,10 +174,11 @@
   }
 
   function modelLabel(model) {
-    const m = String(model || '').toLowerCase().trim();
+    const m = Common ? Common.normalizeEngineId(model) : String(model || '').toLowerCase().trim();
     if (m === 'deepseek') return 'DeepSeek';
     if (m === 'lingva') return 'Lingva';
-    if (m.startsWith('gpt-')) return 'OpenAI ' + model;
+    if (m === 'google') return 'Google Translate';
+    if (Common && Common.isOpenAIEngine(m)) return Common.getEngineLabel(m);
     return model || 'Unknown';
   }
 
@@ -775,9 +778,9 @@
   }
 
   function getApiKeyForModel(model) {
-    const m = String(model || '').toLowerCase().trim();
+    const m = Common ? Common.normalizeEngineId(model) : String(model || '').toLowerCase().trim();
     if (m === 'deepseek') return String(sessionStorage.getItem('deepseekApiKey') || '').trim();
-    if (m.startsWith('gpt-')) return String(sessionStorage.getItem('openaiApiKey') || '').trim();
+    if (Common && Common.isOpenAIEngine(m)) return String(sessionStorage.getItem('openaiApiKey') || '').trim();
     return '';
   }
 
@@ -926,83 +929,48 @@ ${JSON.stringify(lines)}`;
   }
 
   async function translateOpenAI(lines, targetLang, apiKey, model) {
+    const normalizedModel = Common ? Common.normalizeEngineId(model) : model;
     const prompt = buildTranslatePrompt(lines, targetLang);
 
-    const body = {
-      model: model,
+    const data = await Common.requestOpenAIChat({
+      apiKey,
+      model: normalizedModel,
       messages: [
         { role: 'system', content: 'Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult game, NSFW content.' },
         { role: 'user', content: prompt },
       ],
-    };
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + apiKey,
-      },
-      body: JSON.stringify(body),
     });
 
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      throw new Error('OpenAI HTTP ' + res.status + (t ? ': ' + t : ''));
-    }
-
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content || '';
+    const content = Common.getChatContent(data);
     return parseTranslatedArray(content, lines.length);
   }
 
-  const LINGVA_HOSTS = [
-    'https://lingva.dialectapp.org',
-    'https://lingva.ml',
-    'https://translate.plausibility.cloud',
-    'https://lingva.vercel.app',
-    'https://lingva.garudalinux.org',
-    'https://lingva.lunar.icu',
-  ];
-
-  function normalizeLingvaTargetCode(code) {
-    const c = String(code || '').trim().toLowerCase();
-    if (c === 'zh' || c === 'zh-cn' || c === 'zh_cn') return 'zh-CN';
-    if (c === 'fil') return 'tl';
-    return c;
+  async function translateGoogle(lines, targetLang) {
+    return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
   }
-
   async function lingvaRequest(text, target) {
-    const t = normalizeLingvaTargetCode(target);
-
-    for (const host of LINGVA_HOSTS) {
-      try {
-        const res = await fetch(host + '/api/v1/auto/' + encodeURIComponent(t) + '/' + encodeURIComponent(text), { cache: 'no-store' });
-        if (!res.ok) continue;
-        const data = await res.json().catch(() => ({}));
-        const translated = data.translation || data.translatedText || data.result || '';
-        if (translated) return String(translated);
-      } catch {}
-    }
-
-    throw new Error('Lingva: all endpoints failed');
+    const out = await Common.translateLingvaLines([text], target, { concurrency: 1, delayMs: 0 });
+    return String(out[0] || '');
   }
 
   async function translateSingle(text, model, targetLang) {
-    const m = String(model || '').toLowerCase().trim();
+    const m = Common ? Common.normalizeEngineId(model) : String(model || '').toLowerCase().trim();
     if (m === 'lingva') {
       const out = await lingvaRequest(text, targetLang);
       return [out];
     }
 
+    if (m === 'google') return await translateGoogle([text], targetLang);
+
     const apiKey = getApiKeyForModel(m);
     if (!apiKey) {
       if (m === 'deepseek') throw new Error('Missing DeepSeek API key');
-      if (m.startsWith('gpt-')) throw new Error('Missing OpenAI API key');
+      if (Common && Common.isOpenAIEngine(m)) throw new Error('Missing OpenAI API key');
       throw new Error('Missing API key');
     }
 
     if (m === 'deepseek') return await translateDeepSeek([text], targetLang, apiKey);
-    if (m.startsWith('gpt-')) return await translateOpenAI([text], targetLang, apiKey, model);
+    if (Common && Common.isOpenAIEngine(m)) return await translateOpenAI([text], targetLang, apiKey, m);
 
     throw new Error('Unknown model: ' + model);
   }

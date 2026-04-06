@@ -1,6 +1,8 @@
 (function(){
 "use strict";
 
+const Common = globalThis.VNTranslationCommon;
+
 const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 const particleCount = isMobile ? 60 : 111;
 particlesJS("particles-js", {
@@ -38,6 +40,7 @@ const el = {
   targetLanguage: document.getElementById("targetLanguage"),
   batchSize: document.getElementById("batchSize"),
 
+
   progressBar: document.getElementById("progressBar"),
   progressText: document.getElementById("progressText"),
   logContainer: document.getElementById("logContainer"),
@@ -51,6 +54,11 @@ const el = {
   confirmLingvaBtn: document.getElementById("confirmLingvaBtn"),
   cancelLingvaBtn: document.getElementById("cancelLingvaBtn")
 };
+
+if (Common && el.translationModel) {
+  Common.fillEngineSelect(el.translationModel, el.translationModel.value);
+  el.translationModel.value = Common.normalizeEngineId(el.translationModel.value);
+}
 
 /* ------------------------------------------------------------
    State
@@ -792,33 +800,20 @@ async function translateBatchDeepSeek(batch, targetLang, apiKey) {
    Translator: ChatGPT (OpenAI)
 ------------------------------------------------------------ */
 async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
+  const normalizedModel = Common ? Common.normalizeEngineId(model) : model;
   const lines = batch.map(d => d.protectedText);
   const prompt = buildTranslatePrompt(lines, targetLang);
 
-  const body = {
-    model: model,
+  const data = await Common.requestOpenAIChat({
+    apiKey,
+    model: normalizedModel,
     messages: [
       { role: "system", content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating RPG Maker scripts, including adult game, NSFW content." },
       { role: "user", content: prompt }
     ]
-  };
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + apiKey
-    },
-    body: JSON.stringify(body)
   });
 
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error("ChatGPT HTTP " + res.status + ": " + t);
-  }
-
-  const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content || "";
+  const content = Common.getChatContent(data);
   const out = parseTranslatedArray(content, lines.length);
 
   if (out.length !== lines.length) {
@@ -831,125 +826,14 @@ async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
 /* ------------------------------------------------------------
    Translator: Lingva (Free)
 ------------------------------------------------------------ */
-const LINGVA_HOSTS = [
-  "https://lingva.dialectapp.org",
-  "https://lingva.ml",
-  "https://translate.plausibility.cloud",
-  "https://lingva.vercel.app",
-  "https://lingva.garudalinux.org",
-  "https://lingva.lunar.icu"
-];
-
-function normalizeLingvaTargetCode(code) {
-  const c = String(code || "").trim().toLowerCase();
-
-  if (c === "zh" || c === "zh-cn" || c === "zh_cn") return "zh-CN";
-
-  if (c === "fil") return "tl";
-
-  return c;
-}
-
-// ------------------------------------------------------------
-// Concurrency helper
-// ------------------------------------------------------------
-async function pMap(items, concurrency, mapper) {
-  const arr = Array.from(items || []);
-  const limit = Math.max(1, Number(concurrency) || 1);
-
-  const results = new Array(arr.length);
-  let nextIndex = 0;
-  let firstErr = null;
-
-  async function worker() {
-    while (true) {
-      const i = nextIndex++;
-      if (i >= arr.length) return;
-      if (firstErr) return;
-
-      try {
-        results[i] = await mapper(arr[i], i);
-      } catch (e) {
-        firstErr = e;
-        return;
-      }
-    }
-  }
-
-  const workers = Array.from({ length: Math.min(limit, arr.length) }, () => worker());
-  await Promise.all(workers);
-
-  if (firstErr) throw firstErr;
-  return results;
-}
-
-let _lingvaBestHost = null;
-
-async function lingvaFetch(path) {
-  const hosts = _lingvaBestHost
-    ? [_lingvaBestHost, ...LINGVA_HOSTS.filter(h => h !== _lingvaBestHost)]
-    : LINGVA_HOSTS.slice();
-
-  let lastErr = null;
-
-  for (const host of hosts) {
-    try {
-      const res = await fetch(host + path, { cache: "no-store" });
-      if (res.ok) {
-        _lingvaBestHost = host;
-        return res;
-      }
-      lastErr = new Error(`Lingva HTTP ${res.status} from ${host}`);
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-
-  throw lastErr || new Error("Lingva: all endpoints failed");
-}
-
-async function lingvaRequest(text, target) {
-  const t = normalizeLingvaTargetCode(target);
-
-  for (const host of LINGVA_HOSTS) {
-    try {
-      const res = await fetch(
-        host + "/api/v1/auto/" + encodeURIComponent(t) + "/" + encodeURIComponent(text)
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      return data.translation || data.translatedText || text;
-    } catch(e){}
-  }
-  throw new Error("Lingva: all endpoints failed");
-}
-
 async function translateBatchLingva(batchDialogs, targetLang) {
-  const langCode = normalizeLingvaTargetCode(targetLang);
+  const lines = batchDialogs.map(dialog => dialog.protectedText ?? dialog.text ?? "");
+  return Common.translateLingvaLines(lines, targetLang, { concurrency: 48, delayMs: 60 });
+}
 
-  const out = await pMap(batchDialogs, 48, async (dialog) => {
-    const text = dialog.protectedText ?? dialog.text ?? "";
-    if (!String(text).trim()) return text;
-
-    const path =
-      "/api/v1/auto/" +
-      encodeURIComponent(langCode) +
-      "/" +
-      encodeURIComponent(text);
-
-    const response = await lingvaFetch(path);
-    const data = await response.json().catch(() => ({}));
-
-    const translated = data.translation || data.translatedText || data.result || "";
-    if (!translated) {
-      throw new Error("⚠️ Lingva response did not contain a translation string.");
-    }
-
-    await delay(60);
-    return translated;
-  });
-
-  return out;
+async function translateBatchGoogle(batchDialogs, targetLang) {
+  const lines = batchDialogs.map(dialog => dialog.protectedText ?? dialog.text ?? "");
+  return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
 }
 
 /* ------------------------------------------------------------
@@ -957,6 +841,7 @@ async function translateBatchLingva(batchDialogs, targetLang) {
 ------------------------------------------------------------ */
 async function translateBatch(batch, model, targetLang) {
 
+  model = Common ? Common.normalizeEngineId(model) : model;
   const dk = el.apiKey.value.trim();
   const ck = el.chatgptKey.value.trim();
 
@@ -965,13 +850,17 @@ async function translateBatch(batch, model, targetLang) {
     return await translateBatchDeepSeek(batch, targetLang, dk);
   }
 
-  if (model.startsWith("gpt-")) {
+  if (Common && Common.isOpenAIEngine(model)) {
     if (!ck) throw new Error("Missing OpenAI API key");
     return await translateBatchChatGPT(batch, targetLang, ck, model);
   }
 
   if (model === "lingva") {
     return await translateBatchLingva(batch, targetLang);
+  }
+
+  if (model === "google") {
+    return await translateBatchGoogle(batch, targetLang);
   }
 
   throw new Error("Unknown translation model: " + model);
@@ -1006,7 +895,7 @@ function applyTranslations() {
    Translation Loop (Pause / Resume Safe)
 ------------------------------------------------------------ */
 async function translationLoop() {
-  const model = el.translationModel.value;
+  const model = Common ? Common.normalizeEngineId(el.translationModel.value) : el.translationModel.value;
   const targetLang = el.targetLanguage.value;
   const batchSize = Math.max(1, parseInt(el.batchSize.value) || 20);
 
@@ -1123,12 +1012,12 @@ async function startTranslationInternal() {
     return;
   }
 
-  const model = el.translationModel.value;
+  const model = Common ? Common.normalizeEngineId(el.translationModel.value) : el.translationModel.value;
   if (model === "deepseek" && !el.apiKey.value.trim()) {
     log("⚠️ DeepSeek requires API key!", "error");
     return;
   }
-  if (model.startsWith("gpt-") && !el.chatgptKey.value.trim()) {
+  if (Common && Common.isOpenAIEngine(model) && !el.chatgptKey.value.trim()) {
     log("⚠️ ChatGPT requires API key!", "error");
     return;
   }
@@ -1327,25 +1216,14 @@ el.cancelLingvaBtn.addEventListener("click", () => {
    Model Switching Logic
 ------------------------------------------------------------ */
 el.translationModel.addEventListener("change", () => {
-  const m = el.translationModel.value;
+  const m = Common ? Common.normalizeEngineId(el.translationModel.value) : el.translationModel.value;
+  const provider = Common ? Common.getEngineProvider(m) : null;
 
-  if (m === "deepseek") {
-    document.getElementById("apiKeyGroup").style.display = "block";
-    document.getElementById("chatgptApiKeyGroup").style.display = "none";
-    return;
-  }
+  document.getElementById("apiKeyGroup").style.display = provider === "deepseek" ? "block" : "none";
+  document.getElementById("chatgptApiKeyGroup").style.display = provider === "openai" ? "block" : "none";
 
-  if (m.startsWith("gpt-")) {
-    document.getElementById("apiKeyGroup").style.display = "none";
-    document.getElementById("chatgptApiKeyGroup").style.display = "block";
-    return;
-  }
-
-  if (m === "lingva") {
-    document.getElementById("apiKeyGroup").style.display = "none";
-    document.getElementById("chatgptApiKeyGroup").style.display = "none";
-    showLingvaWarning();
-  }
+  if (m === "lingva" || m === "google") showLingvaWarning();
+  else hideLingvaWarning();
 });
 
 window.addEventListener("beforeunload", (e) => {
@@ -1378,6 +1256,7 @@ function init() {
 
   document.getElementById("apiKeyGroup").style.display = "block";
   document.getElementById("chatgptApiKeyGroup").style.display = "none";
+  if (el.translationModel) el.translationModel.dispatchEvent(new Event("change"));
 
   el.progressBar.value = 0;
   el.progressText.textContent = "0% (0/0)";

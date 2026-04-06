@@ -107,15 +107,7 @@
             <div class="form-row">
               <div class="field">
                 <label for="translationModel">Translation Model</label>
-                <select id="translationModel">
-                  <option value="deepseek">🔥 DeepSeek API — High Quality (Paid)</option>
-                  <option value="gpt-4o">💎 ChatGPT 4o — Highest Quality (Paid)</option>
-                  <option value="gpt-4o-mini">⚡ ChatGPT 4o mini — Cheaper (Paid)</option>
-                  <option value="gpt-5">🚀 ChatGPT 5 — New (Paid)</option>
-                  <option value="gpt-5-mini">💡 ChatGPT 5 mini — Cheap (Paid)</option>
-                  <option value="gpt-5-nano">📦 ChatGPT 5 nano — Ultra Cheap (Paid)</option>
-                  <option value="lingva">🌐 Lingva — Free (Lower Quality)</option>
-                </select>
+<select id="translationModel"></select>
               </div>
             </div>
 
@@ -295,7 +287,7 @@
   
       <div class="notice-content">
         <ul class="notice-list">
-          <li>Lingva is a free service with limited quality control</li>
+          <li>Lingva and Google Translate are free services with limited quality control</li>
           <li>Translation quality may be inconsistent or inaccurate</li>
           <li>There is a risk of damaging RPG Maker game structure</li>
         </ul>
@@ -310,6 +302,7 @@
     </div>
   </div>
 
+  <script src="../api/translation-common.js"></script>
   <script src="./db.js"></script>
   <script src="./rpgm.js"></script>
 </body>
