@@ -1,6 +1,8 @@
 (() => {
 "use strict";
 
+const Common = globalThis.VNTranslationCommon;
+
 const els = {
   input: document.getElementById("fileInput"),
   start: document.getElementById("startBtn"),
@@ -19,26 +21,26 @@ const els = {
   apiKey: document.getElementById("apiKey"),
   apiKeyGroup: document.getElementById("apiKeyGroup"),
   
-  deeplKey: document.getElementById("deeplApiKey"),
-  deeplKeyGroup: document.getElementById("deeplKeyGroup"),
+  openaiKey: document.getElementById("openaiApiKey"),
+  openaiKeyGroup: document.getElementById("openaiKeyGroup"),
 };
+
+if (Common && els.model) {
+  Common.fillEngineSelect(els.model, els.model.value);
+  els.model.value = Common.normalizeEngineId(els.model.value);
+}
 
 const SEPARATOR_RE = /^---------\d+\s*$/;
 const VIETNAMESE_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 
 function syncModelUI(showWarnings = false) {
-  const m = els.model.value;
+  const m = Common ? Common.normalizeEngineId(els.model.value) : els.model.value;
+  const provider = Common ? Common.getEngineProvider(m) : null;
 
-  if (els.apiKeyGroup) {
-    els.apiKeyGroup.style.display = (m === "deepseek") ? "block" : "none";
-  }
-  if (els.deeplKeyGroup) {
-    els.deeplKeyGroup.style.display = (m === "deepl") ? "block" : "none";
-  }
+  if (els.apiKeyGroup) els.apiKeyGroup.style.display = provider === "deepseek" ? "block" : "none";
+  if (els.openaiKeyGroup) els.openaiKeyGroup.style.display = provider === "openai" ? "block" : "none";
 
-  if (showWarnings && (m === "lingva" || m === "google")) {
-    showLingvaWarning();
-  }
+  if (showWarnings && (m === "lingva" || m === "google")) showLingvaWarning();
 }
 
 els.model.addEventListener("change", () => syncModelUI(true));
@@ -55,7 +57,7 @@ confirmLingvaBtn.onclick = () => lingvaModal.classList.add("hidden");
 cancelLingvaBtn.onclick = () => {
   lingvaModal.classList.add("hidden");
   els.model.value = "deepseek";
-  els.apiKeyGroup.style.display = "block";
+  syncModelUI(false);
 };
 
 const state = {
@@ -352,52 +354,18 @@ ${marked.join("\n")}`;
   return results;
 }
 
-const LINGVA_HOSTS = [
-  "https://lingva.dialectapp.org",
-  "https://lingva.ml",
-  "https://translate.plausibility.cloud",
-  "https://lingva.vercel.app",
-  "https://lingva.garudalinux.org",
-  "https://lingva.lunar.icu",
-];
-
 const lingvaPool = createPool(55);
 
 async function lingvaRequest(text, target, signal) {
-  const hosts = [...LINGVA_HOSTS].sort(() => Math.random() - 0.5);
-
-  for (const host of hosts) {
-    try {
-      const res = await fetch(
-        host + "/api/v1/auto/" + target + "/" + encodeURIComponent(text),
-        { signal }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      return data.translation || data.translatedText || text;
-    } catch (_) {}
-  }
-  throw new Error("Lingva: all endpoints failed");
+  const out = await Common.translateLingvaLines([text], target, { concurrency: 1, delayMs: 0, signal });
+  return String(out[0] || text);
 }
 
 const googlePool = createPool(55);
-const translateCache = new Map();
 
 async function googleTranslate(text, sl, tl, signal) {
-  if (!text.trim()) return text;
-
-  const cacheKey = `${sl}->${tl}::${text}`;
-  if (translateCache.has(cacheKey)) return translateCache.get(cacheKey);
-
-  const url =
-    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
-
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error("Google error " + res.status);
-  const data = await res.json();
-  const out = (data?.[0] || []).map(x => x?.[0] || "").join("");
-  translateCache.set(cacheKey, out);
-  return out;
+  const out = await Common.translateGoogleLines([text], tl, { concurrency: 1, signal, source: sl || "auto" });
+  return String(out[0] || text);
 }
 
 els.input.addEventListener("change", async (e) => {
@@ -466,20 +434,19 @@ els.start.addEventListener("click", async () => {
   resetProgress(0);
   els.pt.textContent = "Preparing…";
   
-  const model = els.model.value;
+  const model = Common ? Common.normalizeEngineId(els.model.value) : els.model.value;
   const targetLang = els.mode.value;
   const apiKey = (els.apiKey && els.apiKey.value) ? els.apiKey.value.trim() : "";
+  const openaiApiKey = (els.openaiKey && els.openaiKey.value) ? els.openaiKey.value.trim() : "";
   const skipVi = !!els.skipVi.checked;
 
   if (model === "deepseek" && !apiKey) {
     alert("DeepSeek API key is required.");
     return;
   }
-  
-  const deeplApiKey = (els.deeplKey && els.deeplKey.value) ? els.deeplKey.value.trim() : "";
 
-  if (model === "deepl" && !deeplApiKey) {
-    alert("DeepL API key is required.");
+  if (Common && Common.isOpenAIEngine(model) && !openaiApiKey) {
+    alert("OpenAI API key is required.");
     return;
   }
 
@@ -570,26 +537,22 @@ els.start.addEventListener("click", async () => {
         updateUI();
       }
     }
-    
-    else if (model === "deepl") {
-      const MAX_BYTES = 120 * 1024;
+
+    else if (Common && Common.isOpenAIEngine(model)) {
+      const MAX_CHARS = 10000;
       const batches = [];
       let cur = [];
-      let curBytes = 0;
-
-      const batchSize = Math.max(1, parseInt(els.batch.value, 10) || 20);
+      let curChars = 0;
 
       for (const t of tasks) {
-        const add = (t.safe?.length || 0) + 64;
-
-        if (cur.length >= batchSize || (curBytes + add) > MAX_BYTES) {
-          if (cur.length) batches.push(cur);
+        const add = t.safe.length + 12;
+        if (cur.length >= batchSize || (curChars + add) > MAX_CHARS) {
+          batches.push(cur);
           cur = [];
-          curBytes = 0;
+          curChars = 0;
         }
-
         cur.push(t);
-        curBytes += add;
+        curChars += add;
       }
       if (cur.length) batches.push(cur);
 
@@ -598,10 +561,10 @@ els.start.addEventListener("click", async () => {
 
         const safeLines = batch.map(x => x.safe);
 
-        const translatedSafe = await deeplPool.run(() =>
+        const translatedSafe = await openaiPool.run(() =>
           withRetry(
-            () => translateDeepLBatch(safeLines, targetLang, deeplApiKey, signal),
-            { retries: 3, baseDelay: 500, signal }
+            () => translateOpenAIBatch(safeLines, targetLang, openaiApiKey, model, signal),
+            { retries: 4, baseDelay: 500, signal }
           )
         );
 
