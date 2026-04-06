@@ -1,26 +1,80 @@
-
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-  } else {
-    root.VNTranslationCommon = factory();
-  }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+(function (global) {
   'use strict';
 
-  const ENGINES = [
-    { value: 'deepseek', label: '🔥 DeepSeek API — High Quality (Paid)', provider: 'deepseek' },
-    { value: 'gpt-4o', label: '💎 ChatGPT 4o — Highest Quality (Paid)', provider: 'openai' },
-    { value: 'gpt-4o-mini', label: '⚡ ChatGPT 4o mini — Cheaper (Paid)', provider: 'openai' },
-    { value: 'gpt-5.4', label: '🚀 ChatGPT 5.4 — New (Paid)', provider: 'openai' },
-    { value: 'gpt-5.4-mini', label: '💡 ChatGPT 5.4 mini — Cheap (Paid)', provider: 'openai' },
-    { value: 'gpt-5.4-nano', label: '📦 ChatGPT 5.4 nano — Ultra Cheap (Paid)', provider: 'openai' },
-    { value: 'gpt-3.5-turbo', label: '🧩 ChatGPT 3.5 Turbo — Legacy (Paid)', provider: 'openai' },
-    { value: 'lingva', label: '🌐 Lingva — Free (Lower Quality)', provider: 'lingva' },
-    { value: 'google', label: '🌍 Google Translate — Free', provider: 'google' },
-  ];
+  const ENGINE_CATALOG = Object.freeze([
+    { id: 'deepseek', provider: 'deepseek', label: 'DeepSeek', uiLabel: '🔥 DeepSeek API — High Quality (Paid)' },
+    { id: 'gpt-4o', provider: 'openai', label: 'ChatGPT 4o', uiLabel: '💎 ChatGPT 4o — Highest Quality (Paid)' },
+    { id: 'gpt-4o-mini', provider: 'openai', label: 'ChatGPT 4o Mini', uiLabel: '⚡ ChatGPT 4o Mini — Fast & Cheap (Paid)' },
+    { id: 'gpt-5.4', provider: 'openai', label: 'ChatGPT 5.4', uiLabel: '🚀 ChatGPT 5.4 — Best Quality (Paid)' },
+    { id: 'gpt-5.4-mini', provider: 'openai', label: 'ChatGPT 5.4 Mini', uiLabel: '💡 ChatGPT 5.4 Mini — Balanced (Paid)' },
+    { id: 'gpt-5.4-nano', provider: 'openai', label: 'ChatGPT 5.4 Nano', uiLabel: '📦 ChatGPT 5.4 Nano — Cheapest (Paid)' },
+    { id: 'gpt-3.5-turbo', provider: 'openai', label: 'ChatGPT 3.5 Turbo', uiLabel: '🧩 ChatGPT 3.5 Turbo — Legacy Budget (Paid)' },
+    { id: 'lingva', provider: 'free', label: 'Lingva', uiLabel: '🌐 Lingva — Free (Lower Quality)' },
+    { id: 'google', provider: 'free', label: 'Google Translate', uiLabel: '💠 Google Translate — Free (Fast)' }
+  ]);
 
-  const LINGVA_HOSTS = [
+  const ENGINE_MAP = new Map(ENGINE_CATALOG.map((item) => [item.id, item]));
+
+  const ENGINE_ALIASES = Object.freeze({
+    libre: 'lingva',
+    'google-translate': 'google',
+    googletranslate: 'google',
+    'gpt-5': 'gpt-5.4',
+    'gpt-5-mini': 'gpt-5.4-mini',
+    'gpt-5-nano': 'gpt-5.4-nano'
+  });
+
+  const LABEL_BY_CODE = Object.freeze({
+    en: 'English',
+    'en-us': 'English',
+    'en-gb': 'English',
+    'zh-cn': 'Chinese (Simplified)',
+    zh: 'Chinese (Simplified)',
+    hi: 'Hindi',
+    es: 'Spanish',
+    fr: 'French',
+    ar: 'Arabic',
+    pt: 'Portuguese',
+    'pt-pt': 'Portuguese',
+    'pt-br': 'Portuguese',
+    ru: 'Russian',
+    de: 'German',
+    ja: 'Japanese',
+    id: 'Indonesian',
+    'bahasa indonesia': 'Indonesian',
+    ms: 'Malay',
+    vi: 'Vietnamese',
+    'vi-vn': 'Vietnamese',
+    tl: 'Filipino',
+    fil: 'Filipino',
+    ko: 'Korean'
+  });
+
+  const CODE_BY_LABEL = Object.freeze({
+    english: 'en',
+    'chinese (simplified)': 'zh-CN',
+    'simplified chinese': 'zh-CN',
+    chinese: 'zh-CN',
+    hindi: 'hi',
+    spanish: 'es',
+    french: 'fr',
+    arabic: 'ar',
+    portuguese: 'pt',
+    russian: 'ru',
+    german: 'de',
+    japanese: 'ja',
+    indonesian: 'id',
+    'bahasa indonesia': 'id',
+    malaysia: 'ms',
+    malay: 'ms',
+    vietnamese: 'vi',
+    filipino: 'tl',
+    filipina: 'tl',
+    tagalog: 'tl',
+    korean: 'ko'
+  });
+
+  const LINGVA_HOSTS = Object.freeze([
     'https://lingva.vercel.app',
     'https://lingva.garudalinux.org',
     'https://lingva.lunar.icu',
@@ -28,195 +82,351 @@
     'https://lingva.dialectapp.org',
     'https://lingva.ml',
     'https://translate.plausibility.cloud',
-  ];
+  ]);
 
-  function sanitizeApiKey(raw) {
-    return String(raw || '')
+  let lingvaBestHost = null;
+  const googleCache = new Map();
+
+  function normalizeEngineId(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 'deepseek';
+    const lowered = raw.toLowerCase();
+    return ENGINE_ALIASES[lowered] || lowered;
+  }
+
+  function getEngineMeta(value) {
+    return ENGINE_MAP.get(normalizeEngineId(value)) || null;
+  }
+
+  function getEngineProvider(value) {
+    return getEngineMeta(value)?.provider || null;
+  }
+
+  function isOpenAIEngine(value) {
+    return getEngineProvider(value) === 'openai';
+  }
+
+  function requiresApiKey(value) {
+    const provider = getEngineProvider(value);
+    return provider === 'deepseek' || provider === 'openai';
+  }
+
+  function getEngineLabel(value) {
+    return getEngineMeta(value)?.label || String(value || 'Unknown');
+  }
+
+  function getEngineUiLabel(value) {
+    return getEngineMeta(value)?.uiLabel || getEngineLabel(value);
+  }
+
+  function getEngineOptions() {
+    return ENGINE_CATALOG.map((item) => ({ ...item }));
+  }
+
+  function fillEngineSelect(select, preferredValue) {
+    if (!select) return;
+    const selected = normalizeEngineId(preferredValue ?? select.value ?? 'deepseek');
+    const frag = document.createDocumentFragment();
+    for (const item of ENGINE_CATALOG) {
+      const option = document.createElement('option');
+      option.value = item.id;
+      option.textContent = item.uiLabel;
+      frag.appendChild(option);
+    }
+    select.replaceChildren(frag);
+    select.value = ENGINE_MAP.has(selected) ? selected : ENGINE_CATALOG[0].id;
+  }
+
+  function sanitizeApiKey(apiKey) {
+    return String(apiKey || '')
       .trim()
-      .replace(/^Authorization\s*:\s*Bearer\s+/i, '')
-      .replace(/^Bearer\s+/i, '')
+      .replace(/^authorization\s*:\s*bearer\s+/i, '')
+      .replace(/^bearer\s+/i, '')
       .replace(/^['"]+|['"]+$/g, '')
       .trim();
   }
 
-  function normalizeEngine(engine) {
-    const value = String(engine || '').trim().toLowerCase();
-    const aliases = {
-      'libre': 'lingva',
-      'googletranslate': 'google',
-      'google-translate': 'google',
-      'gpt-5': 'gpt-5.4',
-      'gpt-5-mini': 'gpt-5.4-mini',
-      'gpt-5-nano': 'gpt-5.4-nano',
-    };
-    return aliases[value] || value || 'deepseek';
+  function normalizeTargetCode(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 'en';
+    const lower = raw.toLowerCase();
+    if (CODE_BY_LABEL[lower]) return CODE_BY_LABEL[lower];
+    if (lower === 'zh' || lower === 'zh-cn' || lower === 'zh_cn') return 'zh-CN';
+    if (lower === 'fil') return 'tl';
+    if (/^[a-z]{2}(?:-[a-z0-9]+)?$/i.test(raw)) return raw;
+    return raw;
   }
 
-  function modelLabel(model) {
-    const resolved = normalizeEngine(model);
-    const found = ENGINES.find(item => item.value === resolved);
-    return found ? found.label : String(model || 'Unknown');
+  function languageLabel(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 'English';
+    const lower = raw.toLowerCase();
+    if (LABEL_BY_CODE[lower]) return LABEL_BY_CODE[lower];
+    if (CODE_BY_LABEL[lower]) return LABEL_BY_CODE[CODE_BY_LABEL[lower].toLowerCase()] || raw;
+    return raw;
   }
 
-  function parseTranslatedArray(raw, expectedCount) {
-    const text = String(raw || '').trim();
-    if (!text) return [];
-
-    const tryParse = (candidate) => {
-      const parsed = JSON.parse(candidate);
-      if (!Array.isArray(parsed)) throw new Error('Expected array');
-      return parsed.map(item => item == null ? '' : String(item));
-    };
-
-    try { return tryParse(text); } catch (_) {}
-    const start = text.indexOf('[');
-    const end = text.lastIndexOf(']');
-    if (start !== -1 && end !== -1 && end > start) {
-      try { return tryParse(text.slice(start, end + 1)); } catch (_) {}
-    }
-
-    const fallback = text
-      .split(/\r?\n/)
-      .map(line => line.replace(/^(?:\d+[\).:\-]\s*|[-*]\s+)/, '').trim())
-      .filter(Boolean);
-
-    if (Number.isFinite(expectedCount) && expectedCount > 0 && fallback.length > expectedCount) {
-      return fallback.slice(0, expectedCount);
-    }
-
-    return fallback;
+  function normalizeLingvaTargetCode(value) {
+    const code = normalizeTargetCode(value);
+    const lower = String(code || '').toLowerCase();
+    if (lower === 'zh' || lower === 'zh-cn' || lower === 'zh_cn') return 'zh-CN';
+    if (lower === 'fil') return 'tl';
+    return code;
   }
 
-  function buildArrayPrompt(lines, targetLang, systemFlavor) {
-    const payload = JSON.stringify(lines, null, 2);
-    return [
-      systemFlavor || 'You are a veteran visual novel translator and localization specialist.',
-      'Translate every string into the target language while preserving placeholders, escape sequences, variables, tags, formatting, and line order.',
-      'Return only a valid JSON array of translated strings with the same length as the input array.',
-      'Do not add commentary, markdown, code fences, numbering, or explanations.',
-      'Target language: ' + targetLang,
-      'Input JSON array:',
-      payload,
-    ].join('\n\n');
-  }
-
-  async function requestDeepSeekChat(apiKey, model, messages) {
-    const key = sanitizeApiKey(apiKey);
-    const res = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + key,
-      },
-      body: JSON.stringify({ model: model || 'deepseek-chat', messages, temperature: 0.2 })
-    });
-    if (!res.ok) throw new Error('DeepSeek HTTP ' + res.status + ': ' + await res.text());
-    return res.json();
-  }
-
-  async function requestOpenAIChat(apiKey, model, messages) {
-    const key = sanitizeApiKey(apiKey);
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + key,
-      },
-      body: JSON.stringify({ model, messages, temperature: 0.2 })
-    });
-    if (!res.ok) throw new Error('OpenAI HTTP ' + res.status + ': ' + await res.text());
-    return res.json();
+  function normalizeGoogleTargetCode(value) {
+    const code = normalizeTargetCode(value);
+    const lower = String(code || '').toLowerCase();
+    if (lower === 'zh' || lower === 'zh-cn' || lower === 'zh_cn') return 'zh-CN';
+    if (lower === 'fil') return 'tl';
+    return code;
   }
 
   function getChatContent(data) {
-    return data?.choices?.[0]?.message?.content || '';
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content.map((part) => {
+        if (typeof part === 'string') return part;
+        if (typeof part?.text === 'string') return part.text;
+        return '';
+      }).join('');
+    }
+    return '';
   }
 
-  async function googleTranslate(text, sourceLang, targetLang) {
-    const sl = sourceLang || 'auto';
-    const tl = targetLang || 'en';
-    const url = 'https://translate.googleapis.com/translate_a/single?client=dict-chrome-ex&sl=' + encodeURIComponent(sl) + '&tl=' + encodeURIComponent(tl) + '&dt=t&q=' + encodeURIComponent(text);
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Google HTTP ' + res.status);
-    const data = await res.json();
-    return Array.isArray(data?.[0]) ? data[0].map(item => item?.[0] || '').join('') : text;
+  function safeParseJsonArray(content) {
+    const raw = String(content || '').trim();
+    if (!raw) return null;
+
+    const tryParse = (value) => {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) throw new Error('Not an array');
+      return parsed;
+    };
+
+    try {
+      return tryParse(raw);
+    } catch (_) {}
+
+    const start = raw.indexOf('[');
+    const end = raw.lastIndexOf(']');
+    if (start !== -1 && end !== -1 && end > start) {
+      try {
+        return tryParse(raw.slice(start, end + 1));
+      } catch (_) {}
+    }
+
+    return null;
   }
 
-  let bestLingvaHost = null;
+  async function sleep(ms, signal) {
+    const timeout = Math.max(0, Number(ms) || 0);
+    if (!timeout) return;
+    await new Promise((resolve, reject) => {
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(signal?.reason || new DOMException('Aborted', 'AbortError'));
+      };
+      const timer = setTimeout(() => {
+        if (signal) signal.removeEventListener('abort', onAbort);
+        resolve();
+      }, timeout);
+      if (signal) {
+        if (signal.aborted) {
+          clearTimeout(timer);
+          reject(signal.reason || new DOMException('Aborted', 'AbortError'));
+          return;
+        }
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+    });
+  }
 
-  async function lingvaTranslate(text, targetLang) {
-    const code = String(targetLang || '').trim() || 'en';
-    const hosts = bestLingvaHost ? [bestLingvaHost, ...LINGVA_HOSTS.filter(h => h !== bestLingvaHost)] : LINGVA_HOSTS.slice();
+  async function pMap(items, concurrency, mapper) {
+    const arr = Array.from(items || []);
+    if (!arr.length) return [];
+
+    const limit = Math.max(1, Number(concurrency) || 1);
+    const results = new Array(arr.length);
+    let nextIndex = 0;
+    let firstError = null;
+
+    async function worker() {
+      while (true) {
+        const index = nextIndex++;
+        if (index >= arr.length || firstError) return;
+        try {
+          results[index] = await mapper(arr[index], index);
+        } catch (error) {
+          firstError = error;
+          return;
+        }
+      }
+    }
+
+    const workers = Array.from({ length: Math.min(limit, arr.length) }, () => worker());
+    await Promise.all(workers);
+    if (firstError) throw firstError;
+    return results;
+  }
+
+  async function requestDeepSeekChat({ apiKey, model = 'deepseek-chat', messages, signal }) {
+    const key = sanitizeApiKey(apiKey);
+    if (!key) throw new Error('Missing DeepSeek API key');
+
+    let response;
+    try {
+      response = await fetch('/api/deepseek-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: key, model, messages, stream: false }),
+        signal
+      });
+    } catch (error) {
+      throw new Error('Network error when calling DeepSeek proxy: ' + (error?.message || error));
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error('DeepSeek error ' + response.status + (text ? ': ' + text : ''));
+    }
+
+    return response.json();
+  }
+
+  async function requestOpenAIChat({ apiKey, model, messages, signal }) {
+    const key = sanitizeApiKey(apiKey);
+    if (!key) throw new Error('Missing OpenAI API key');
+
+    const resolvedModel = normalizeEngineId(model);
+    let response;
+
+    try {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + key
+        },
+        body: JSON.stringify({ model: resolvedModel, messages }),
+        signal,
+        credentials: 'omit'
+      });
+    } catch (error) {
+      throw new Error('Network error when calling OpenAI: ' + (error?.message || error));
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error('OpenAI HTTP ' + response.status + (text ? ': ' + text : ''));
+    }
+
+    return response.json();
+  }
+
+  async function lingvaFetch(path, signal) {
+    const hosts = lingvaBestHost
+      ? [lingvaBestHost, ...LINGVA_HOSTS.filter((host) => host !== lingvaBestHost)]
+      : LINGVA_HOSTS.slice();
+
     let lastError = null;
+
     for (const host of hosts) {
       try {
-        const res = await fetch(host + '/api/v1/auto/' + encodeURIComponent(code) + '/' + encodeURIComponent(text), { cache: 'no-store' });
-        if (!res.ok) throw new Error('Lingva HTTP ' + res.status);
-        const data = await res.json();
-        const translated = data.translation || data.translatedText || data.result || '';
-        if (!translated) throw new Error('Lingva empty result');
-        bestLingvaHost = host;
-        return translated;
+        const response = await fetch(host + path, { cache: 'no-store', signal });
+        if (response.ok) {
+          lingvaBestHost = host;
+          return response;
+        }
+        lastError = new Error('Lingva HTTP ' + response.status + ' from ' + host);
       } catch (error) {
         lastError = error;
       }
     }
-    throw lastError || new Error('Lingva failed');
+
+    throw lastError || new Error('Lingva: all endpoints failed');
   }
 
-  async function translateArray(options) {
-    const lines = Array.isArray(options?.lines) ? options.lines.map(item => String(item ?? '')) : [];
-    const engine = normalizeEngine(options?.engine || 'deepseek');
-    const sourceLang = String(options?.sourceLang || 'auto').trim() || 'auto';
-    const targetLang = String(options?.targetLang || 'en').trim() || 'en';
-    const systemPrompt = String(options?.systemPrompt || '').trim();
-    const expectedCount = lines.length;
+  async function translateLingvaLines(lines, target, options = {}) {
+    const signal = options.signal;
+    const concurrency = options.concurrency ?? 24;
+    const delayMs = options.delayMs ?? 0;
+    const langCode = normalizeLingvaTargetCode(target);
 
-    if (!expectedCount) return [];
-
-    if (engine === 'deepseek') {
-      const data = await requestDeepSeekChat(options?.deepseekKey, 'deepseek-chat', [
-        { role: 'system', content: systemPrompt || 'Veteran visual novel translator. Output only a JSON array.' },
-        { role: 'user', content: buildArrayPrompt(lines, targetLang, systemPrompt) },
-      ]);
-      return parseTranslatedArray(getChatContent(data), expectedCount);
-    }
-
-    if (engine.startsWith('gpt-')) {
-      const data = await requestOpenAIChat(options?.openaiKey, engine, [
-        { role: 'system', content: systemPrompt || 'Veteran visual novel translator. Output only a JSON array.' },
-        { role: 'user', content: buildArrayPrompt(lines, targetLang, systemPrompt) },
-      ]);
-      return parseTranslatedArray(getChatContent(data), expectedCount);
-    }
-
-    if (engine === 'lingva') {
-      const output = [];
-      for (const line of lines) output.push(await lingvaTranslate(line, targetLang));
-      return output;
-    }
-
-    if (engine === 'google') {
-      const output = [];
-      for (const line of lines) output.push(await googleTranslate(line, sourceLang, targetLang));
-      return output;
-    }
-
-    throw new Error('Unknown translation engine: ' + engine);
+    return pMap(lines, concurrency, async (value) => {
+      const text = String(value ?? '');
+      if (!text.trim()) return text;
+      const path = '/api/v1/auto/' + encodeURIComponent(langCode) + '/' + encodeURIComponent(text);
+      const response = await lingvaFetch(path, signal);
+      const data = await response.json().catch(() => ({}));
+      const translated = data.translation || data.translatedText || data.result || '';
+      if (!translated) throw new Error('Lingva response did not contain a translation string.');
+      if (delayMs) await sleep(delayMs, signal);
+      return String(translated);
+    });
   }
 
-  return {
-    ENGINES,
-    normalizeEngine,
+  async function translateGoogleText(text, source, target, signal) {
+    const safeText = String(text ?? '');
+    if (!safeText.trim()) return safeText;
+
+    const sl = String(source || 'auto').trim() || 'auto';
+    const tl = normalizeGoogleTargetCode(target);
+    const cacheKey = sl + '->' + tl + '::' + safeText;
+
+    if (googleCache.has(cacheKey)) return googleCache.get(cacheKey);
+
+    const url =
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' + encodeURIComponent(sl) +
+      '&tl=' + encodeURIComponent(tl) +
+      '&dt=t&q=' + encodeURIComponent(safeText);
+
+    const response = await fetch(url, { signal, cache: 'no-store' });
+    if (!response.ok) throw new Error('Google Translate HTTP ' + response.status);
+
+    const data = await response.json();
+    const translated = (data?.[0] || []).map((entry) => entry?.[0] || '').join('');
+    googleCache.set(cacheKey, translated);
+    return translated;
+  }
+
+  async function translateGoogleLines(lines, target, options = {}) {
+    const signal = options.signal;
+    const concurrency = options.concurrency ?? 24;
+    const delayMs = options.delayMs ?? 0;
+    const source = options.source || 'auto';
+
+    return pMap(lines, concurrency, async (value) => {
+      const translated = await translateGoogleText(value, source, target, signal);
+      if (delayMs) await sleep(delayMs, signal);
+      return translated;
+    });
+  }
+
+  global.VNTranslationCommon = {
+    engines: ENGINE_CATALOG,
+    fillEngineSelect,
+    getEngineOptions,
+    getEngineMeta,
+    getEngineLabel,
+    getEngineUiLabel,
+    getEngineProvider,
+    isOpenAIEngine,
+    requiresApiKey,
+    normalizeEngineId,
     sanitizeApiKey,
-    modelLabel,
-    parseTranslatedArray,
-    buildArrayPrompt,
+    normalizeTargetCode,
+    normalizeLingvaTargetCode,
+    normalizeGoogleTargetCode,
+    languageLabel,
+    safeParseJsonArray,
+    getChatContent,
     requestDeepSeekChat,
     requestOpenAIChat,
-    getChatContent,
-    googleTranslate,
-    lingvaTranslate,
-    translateArray,
+    translateLingvaLines,
+    translateGoogleLines,
+    sleep,
+    pMap
   };
-});
+})(typeof globalThis !== 'undefined' ? globalThis : window);
