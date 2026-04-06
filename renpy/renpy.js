@@ -1,5 +1,7 @@
 (function () {
   'use strict';
+
+  const Common = globalThis.VNTranslationCommon;
   
   const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const particleCount = isMobile ? 60 : 111;
@@ -43,8 +45,8 @@
     libreWarningClose: document.querySelector('#libreWarningModal .close-modal'),
     confirmLibre: document.getElementById('confirmLibre'),
     langTarget: document.getElementById('langTarget'),
-    deeplKeyContainer: document.getElementById('deeplKeyContainer'),
-    deeplApiKey: document.getElementById('deeplApiKey'),
+    openaiKeyContainer: document.getElementById('openaiKeyContainer'),
+    openaiApiKey: document.getElementById('openaiApiKey'),
   };
 
   const state = {
@@ -59,6 +61,11 @@
     logEntries: [],
     translationCache: new Map(),
   };
+
+  if (Common && el.modelSelect) {
+    Common.fillEngineSelect(el.modelSelect, el.modelSelect.value);
+    el.modelSelect.value = Common.normalizeEngineId(el.modelSelect.value);
+  }
 
   const TRANSLATOR_CREDIT =
     '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
@@ -1063,6 +1070,62 @@
     return out;
   }
 
+  async function translateBatchOpenAI(batchDialogs, targetLang, apiKey, model) {
+    const normalizedModel = Common ? Common.normalizeEngineId(model) : model;
+    const src = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+    const payload = JSON.stringify(src);
+    const prompt =
+      `Your Role: Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts.\n` +
+      `Short basic instruction: Translate Ren'Py dialogue strings to ${languageLabel(targetLang)} (language code: ${targetLang}).\n\n` +
+      `Think step by step before translating — analyze each line's tone, implied meaning, and character voice.\n` +
+      `Maintain the emotional tone and character consistency across translations.\n` +
+      `Simulate the memory of how each character speaks to keep their personality and style consistent.\n\n` +
+      `Rules:\n` +
+      `- DO NOT translate or modify placeholders like ⟦RENPH{0}⟧.\n` +
+      `- Preserve ALL Ren'Py tags, syntax, and variables (e.g., {fast}, [player_name]).\n` +
+      `- DO NOT merge, split, or reorder lines.\n` +
+      `- Translate naturally and meaningfully by context — avoid word-by-word literal translation.\n` +
+      `- Use slang sparingly and only if it enhances natural tone and is easy to understand.\n` +
+      `- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.\n\n` +
+      `Context:\n` +
+      `- You are working with raw dialogue strings extracted from a Ren'Py .rpy script.\n` +
+      `- The visual novel includes romantic, emotional,... and adult themes.\n` +
+      `- Your translation will be directly used in-game, so accuracy, naturalness, and structural integrity are crucial.\n\n` +
+      `Your Goal:\n` +
+      `- Produce a fully localized, natural-sounding version of the input dialogues that feels authentic to the target language audience — as if originally written in that language.\n` +
+      `- Ensure accuracy, tone consistency, and contextual appropriateness even for explicit scenes.\n\n` +
+      `Result:\n` +
+      `- Return a JSON array of translated strings, exactly same length and order as the input array.\n\n` +
+      `Input JSON array:\n` +
+      payload;
+
+    const data = await Common.requestOpenAIChat({
+      apiKey,
+      model: normalizedModel,
+      messages: [
+        { role: 'system', content: "Veteran Visual Novel Translator and Localization Specialist with deep experience translating Ren'Py scripts, including adult game, NSFW content." },
+        { role: 'user', content: prompt }
+      ]
+    });
+
+    const content = Common.getChatContent(data);
+    if (!content) throw new Error('*️⃣ OpenAI response did not contain any content.');
+
+    const arr = safeParseJsonArray(content);
+    if (!arr) throw new Error('*️⃣ OpenAI output is not a valid JSON array.');
+
+    const out = arr.map(x => (typeof x === 'string' ? x : String(x ?? '')));
+    if (out.length !== src.length) {
+      log(`*️⃣ Warning: expected ${src.length} items from OpenAI but got ${out.length}.`, 'warn');
+    }
+    return out;
+  }
+
+  async function translateBatchGoogle(batchDialogs, targetLang) {
+    const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+    return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
+  }
+
   async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
     const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
     const targetCode = getDeepLLangCode(targetLang);
@@ -1178,28 +1241,8 @@
   }
 
   async function translateBatchLingva(batchDialogs, targetLang) {
-    const langCode = getLingvaLangCode(targetLang);
-
-    const out = await pMap(batchDialogs, 48, async (dialog) => {
-      const text = dialog.maskedQuote || dialog.quote || '';
-      if (!text.trim()) return text;
-
-      const path =
-        '/api/v1/auto/' +
-        encodeURIComponent(langCode) +
-        '/' +
-        encodeURIComponent(text);
-
-      const response = await lingvaFetch(path);
-      const data = await response.json().catch(() => ({}));
-      const translated = data.translation || data.translatedText || data.result || '';
-
-      if (!translated) throw new Error('*️⃣ Lingva response did not contain a translation string.');
-      await delay(60);
-      return translated;
-    });
-
-    return out;
+    const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+    return Common.translateLingvaLines(lines, targetLang, { concurrency: 48, delayMs: 60 });
   }
 
   async function waitWhilePaused() {
@@ -1207,10 +1250,10 @@
   }
 
   async function runTranslationLoop() {
-    const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
+    const model = Common ? Common.normalizeEngineId(el.modelSelect ? el.modelSelect.value : 'deepseek') : (el.modelSelect ? el.modelSelect.value : 'deepseek');
     const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
     const targetLang = el.langTarget ? el.langTarget.value : 'id';
-    const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
+    const openaiApiKey = (el.openaiApiKey && el.openaiApiKey.value.trim()) || '';
 
     updateControlButtons();
 
@@ -1253,8 +1296,12 @@
         try {
           if (model === 'deepseek') {
             translatedLines = await translateBatchDeepSeek(toTranslate, targetLang, apiKey);
+          } else if (Common && Common.isOpenAIEngine(model)) {
+            translatedLines = await translateBatchOpenAI(toTranslate, targetLang, openaiApiKey, model);
+          } else if (model === 'google') {
+            translatedLines = await translateBatchGoogle(toTranslate, targetLang);
           } else if (model === 'deepl') {
-            translatedLines = await translateBatchDeepL(toTranslate, targetLang, deeplApiKey);
+            translatedLines = await translateBatchDeepL(toTranslate, targetLang, openaiApiKey);
           } else {
             translatedLines = await translateBatchLingva(toTranslate, targetLang);
           }
@@ -1306,18 +1353,18 @@
       return;
     }
 
-    const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
+    const model = Common ? Common.normalizeEngineId(el.modelSelect ? el.modelSelect.value : 'deepseek') : (el.modelSelect ? el.modelSelect.value : 'deepseek');
     const apiKey = (el.apiKey && el.apiKey.value.trim()) || '';
     const targetLang = el.langTarget ? el.langTarget.value : 'id';
+    const openaiApiKey = (el.openaiApiKey && el.openaiApiKey.value.trim()) || '';
 
     if (model === 'deepseek' && !apiKey) {
       log('*️⃣ Please provide your DeepSeek API key.', 'error');
       return;
     }
 
-    const deeplApiKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
-    if (model === 'deepl' && !deeplApiKey) {
-      log('*️⃣ Please provide your DeepL API key.', 'error');
+    if (Common && Common.isOpenAIEngine(model) && !openaiApiKey) {
+      log('*️⃣ Please provide your OpenAI API key.', 'error');
       return;
     }
 
@@ -1417,13 +1464,13 @@
         btn.textContent = 'Opening Preview...';
       }
   
-      const model = el.modelSelect ? el.modelSelect.value : 'deepseek';
+      const model = Common ? Common.normalizeEngineId(el.modelSelect ? el.modelSelect.value : 'deepseek') : (el.modelSelect ? el.modelSelect.value : 'deepseek');
       const targetLang = el.langTarget ? el.langTarget.value : 'English';
       const deepseekKey = (el.apiKey && el.apiKey.value.trim()) || '';
-      const deeplKey = (el.deeplApiKey && el.deeplApiKey.value.trim()) || '';
+      const openaiKey = (el.openaiApiKey && el.openaiApiKey.value.trim()) || '';
   
       if (deepseekKey) sessionStorage.setItem('deepseekApiKey', deepseekKey);
-      if (deeplKey) sessionStorage.setItem('deeplApiKey', deeplKey);
+      if (openaiKey) sessionStorage.setItem('openaiApiKey', openaiKey);
   
       const sessionId = await VNDB.createSession({
         fileName: state.fileName || 'script.rpy',
@@ -1499,19 +1546,14 @@
     if (!el.modelSelect) return;
 
     const apply = () => {
-      const value = el.modelSelect.value;
+      const value = Common ? Common.normalizeEngineId(el.modelSelect.value) : el.modelSelect.value;
+      const provider = Common ? Common.getEngineProvider(value) : null;
 
-      if (value === 'deepseek') {
-        if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'block';
-        if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
-      } else if (value === 'deepl') {
-        if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
-        if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'block';
-      } else {
-        if (el.apiKeyContainer) el.apiKeyContainer.style.display = 'none';
-        if (el.deeplKeyContainer) el.deeplKeyContainer.style.display = 'none';
-        showLibreModal();
-      }
+      if (el.apiKeyContainer) el.apiKeyContainer.style.display = provider === 'deepseek' ? 'block' : 'none';
+      if (el.openaiKeyContainer) el.openaiKeyContainer.style.display = provider === 'openai' ? 'block' : 'none';
+
+      if (value === 'lingva' || value === 'google') showLibreModal();
+      else hideLibreModal();
     };
 
     el.modelSelect.addEventListener('change', apply);

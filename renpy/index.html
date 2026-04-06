@@ -33,7 +33,7 @@
 
       <div class="notice-content">
         <ul class="notice-list">
-          <li>Lingva is a free service that may not perfectly preserve Ren’Py code structure.</li>
+          <li>Lingva and Google Translate are free services that may not perfectly preserve Ren’Py code structure.</li>
           <li>Use it for testing or when you can manually review results.</li>
           <li>For production-quality formatting preservation, use DeepSeek.</li>
         </ul>
@@ -123,12 +123,8 @@
             <div class="form-row">
               <div class="field">
                 <label for="modelSelect">Translation Model</label>
-                <select id="modelSelect">
-                  <option value="deepseek">🔥 DeepSeek API (Paid - Best)</option>
-                  <option value="deepl">🔰 DeepL API (Free/Paid - Good)</option>
-                  <option value="libre">🌐 Lingva (Free - Stable)</option>
-                </select>
-                <div class="help">DeepSeek recommended for preserving Ren’Py formatting.</div>
+                <select id="modelSelect"></select>
+                <div class="help">DeepSeek and OpenAI models are recommended for preserving Ren’Py formatting.</div>
               </div>
             </div>
 
@@ -138,9 +134,9 @@
                 <input id="apiKey" type="password" placeholder="Enter your DeepSeek API Key" autocomplete="off">
               </div>
 
-              <div class="field" id="deeplKeyContainer" style="display:none;">
-                <label for="deeplApiKey">DeepL API Key</label>
-                <input id="deeplApiKey" type="password" placeholder="Enter your DeepL API Key" autocomplete="off">
+              <div class="field" id="openaiKeyContainer" style="display:none;">
+                <label for="openaiApiKey">OpenAI API Key</label>
+                <input id="openaiApiKey" type="password" placeholder="Enter your OpenAI API Key" autocomplete="off">
               </div>
             </div>
 
@@ -234,7 +230,7 @@
               <div class="noticeBox__t">Important</div>
               <ul class="notice-list">
                 <li>DeepSeek requires an API key but preserves Ren’Py formatting better.</li>
-                <li>Lingva is free but may require manual adjustments.</li>
+                <li>Lingva and Google Translate are free but may require manual adjustments.</li>
               </ul>
             </div>
 
@@ -297,6 +293,7 @@
     </section>
   </main>
 
+  <script src="../api/translation-common.js"></script>
   <script src="./db.js"></script>
   <script src="./renpy.js"></script>
 </body>
