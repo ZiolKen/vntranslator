@@ -75,12 +75,13 @@
   });
 
   const LINGVA_HOSTS = Object.freeze([
+    'https://lingva.vercel.app',
+    'https://lingva.garudalinux.org',
     'https://lingva.lunar.icu',
+    'https://translate.projectsegfau.lt',
     'https://lingva.dialectapp.org',
     'https://lingva.ml',
     'https://translate.plausibility.cloud',
-    'https://lingva.vercel.app',
-    'https://lingva.garudalinux.org'
   ]);
 
   let lingvaBestHost = null;
