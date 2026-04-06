@@ -1094,7 +1094,7 @@
   }
 
   return { extractDialogs, applyTranslations, setMode, getMode };
-})()();
+})();
 
   function safeParseJsonArray(content) {
     const text = String(content || '').trim();
