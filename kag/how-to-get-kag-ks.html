@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KiriKiri-KAG Scripts (.ks) — Where to Find Them</title>
+    <meta name="description" content="Locate KiriKiri-KAG .ks scenario files safely for translation. Covers common folder layouts, tags, encodings, and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "KiriKiri-KAG",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get .ks files", href: "./how-to-get-kag-ks.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get OpenAI API key", href: "./how-to-get-chatgpt-api-key.html" },
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+        <a class="gb-brand" href="./" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">KiriKiri-KAG • Docs</div>
+          </div>
+        </a>
+        <div class="gb-topLinks">
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>How to get the <span class="gb-inlineCode">.ks</span> files</h1>
+          <p class="lead">
+            The safest way to translate a KiriKiri-KAG game is to work from the real scenario scripts.
+            In most projects, dialogue and scene flow live in <span class="gb-inlineCode">.ks</span> files.
+          </p>
+
+          <div class="gb-callout" data-variant="info">
+            <div class="gb-calloutIcon" aria-hidden="true">✓</div>
+            <div>
+              <div class="gb-calloutTitle">Source-first workflow</div>
+              <p>
+                Use the original scenario files whenever possible. Working from unpacked source scripts makes it much easier
+                to preserve tags, labels, and engine-specific formatting.
+              </p>
+            </div>
+          </div>
+
+          <h2>What you should have</h2>
+          <ul>
+            <li>The original game script files or a clean, legally obtained extraction of the scenario folder.</li>
+            <li>Permission to translate and redistribute changes if the project is not yours.</li>
+            <li>A backup of the full script folder before editing.</li>
+          </ul>
+
+          <h2>Where KAG scripts usually live</h2>
+          <p>
+            The exact layout varies by game, but scenario files often live in folders such as
+            <span class="gb-inlineCode">scenario/</span>, <span class="gb-inlineCode">data/scenario/</span>,
+            <span class="gb-inlineCode">script/</span>, or another unpacked archive directory.
+          </p>
+
+          <pre><code>MyKAGGame/
+  scenario/
+    start.ks
+    common.ks
+    route_a.ks
+    route_b.ks
+  data/
+  bgimage/
+  sound/
+  system/</code></pre>
+
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>Path / file</th>
+                <th>What it usually contains</th>
+                <th>Translate?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="gb-inlineCode">scenario/*.ks</span></td>
+                <td>Main story flow, dialogue, scene labels</td>
+                <td>Usually yes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">common.ks</span> / <span class="gb-inlineCode">system.ks</span></td>
+                <td>Shared menus, reusable message blocks, helper macros</td>
+                <td>Sometimes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">macro-only scripts</span></td>
+                <td>Pure command logic with little or no visible text</td>
+                <td>Usually no</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">archives / binaries</span></td>
+                <td>Packed resources or engine data</td>
+                <td><strong>No</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>What KAG formatting must stay intact</h2>
+          <ul>
+            <li><strong>Tag lines</strong> such as <span class="gb-inlineCode">@jump</span>, <span class="gb-inlineCode">@eval</span>, <span class="gb-inlineCode">@if</span> must remain valid.</li>
+            <li><strong>Inline tags</strong> like <span class="gb-inlineCode">[l]</span>, <span class="gb-inlineCode">[r]</span>, <span class="gb-inlineCode">[p]</span>, <span class="gb-inlineCode">[np]</span>, and <span class="gb-inlineCode">[emb exp="..."]</span> should not be removed.</li>
+            <li><strong>Names and labels</strong> inside macros or jumps should never be translated unless you also update every reference.</li>
+            <li><strong>Escapes / spacing</strong> may matter for some projects. Avoid aggressive cleanup tools.</li>
+          </ul>
+
+          <h3>Good vs risky edits</h3>
+          <pre><code>; Good: visible text translated, tag preserved
+[cm]
+「I will wait here.[l][r]」
+
+; Risky: formatting tags removed
+「I will wait here.」</code></pre>
+
+          <h2>Encoding notes</h2>
+          <p>
+            Older KiriKiri-KAG games may still rely on legacy encodings such as Shift-JIS, while others use UTF-8 or UTF-16.
+            If you are not sure, start by keeping the original encoding and test one file first.
+          </p>
+
+          <div class="gb-callout" data-variant="warn">
+            <div class="gb-calloutIcon" aria-hidden="true">⚠</div>
+            <div>
+              <div class="gb-calloutTitle">Do not convert everything blindly</div>
+              <p>
+                A working script with the wrong encoding can still become unreadable in-engine. Translate one small scenario file,
+                export it, and test before touching the whole project.
+              </p>
+            </div>
+          </div>
+
+          <h2>If you only have a packed game</h2>
+          <p>
+            Some KAG titles store scripts inside archives instead of loose files. If you cannot find readable
+            <span class="gb-inlineCode">.ks</span> files, you may need a translation-friendly source package from the developer or publisher.
+          </p>
+
+          <div class="gb-callout" data-variant="danger">
+            <div class="gb-calloutIcon" aria-hidden="true">!</div>
+            <div>
+              <div class="gb-calloutTitle">Legal / safety note</div>
+              <p>
+                This guide does not cover bypassing protections or extracting content you do not own.
+                Always respect the game license and the developer&apos;s terms.
+              </p>
+            </div>
+          </div>
+
+          <h2>Quick checklist</h2>
+          <ul>
+            <li>You are working from real <span class="gb-inlineCode">.ks</span> scenario files.</li>
+            <li>The files open as readable text in an editor.</li>
+            <li>KAG tags and commands are preserved.</li>
+            <li>You test the output in-engine after export.</li>
+          </ul>
+
+          <script type="text/markdown" data-docs="md">
+# How to get the `.ks` files
+
+The safest way to translate a KiriKiri-KAG game is to work from the real scenario scripts. In most projects, dialogue and scene flow live in `.ks` files.
+
+## Source-first workflow
+
+> ✅ Use the original scenario files whenever possible. Working from unpacked source scripts makes it much easier to preserve tags, labels, and engine-specific formatting.
+
+## What you should have
+
+- The original game script files or a clean, legally obtained extraction of the scenario folder.
+- Permission to translate and redistribute changes if the project is not yours.
+- A backup of the full script folder before editing.
+
+## Where KAG scripts usually live
+
+Common locations include `scenario/`, `data/scenario/`, `script/`, or another unpacked archive directory.
+
+## What KAG formatting must stay intact
+
+- Tag lines like `@jump`, `@eval`, and `@if`
+- Inline tags like `[l]`, `[r]`, `[p]`, `[np]`, and `[emb ...]`
+- Names and labels used by jumps/macros
+- Original escapes and meaningful spacing
+
+## Encoding notes
+
+Older KAG games may rely on Shift-JIS, while others use UTF-8 or UTF-16. If you are unsure, keep the original encoding first and test one file.
+
+## If you only have a packed game
+
+Some titles store scripts inside archives instead of loose files. If you cannot find readable `.ks` files, ask for a translation-friendly source package instead of modifying unknown packed data.
+
+## Quick checklist
+
+- You are working from real `.ks` scenario files.
+- The files open as readable text.
+- KAG tags and commands are preserved.
+- You test the output after export.
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="./docs.js"></script>
+  </body>
+</html>

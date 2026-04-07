@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenAI API Key — Create & Use Safely</title>
+    <meta name="description" content="Step-by-step guide to create an OpenAI API key from the Developer Platform and configure it in VNTranslator. Includes billing separation, security and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "KiriKiri-KAG",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get .ks files", href: "./how-to-get-kag-ks.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get OpenAI API key", href: "./how-to-get-chatgpt-api-key.html" },
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
+  <body>
+    <header class="gb-topbar"><div class="gb-topbarInner"><button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button><a class="gb-brand" href="./" aria-label="VN Translator"><div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div><div class="gb-brandText"><div class="gb-brandTitle">VN Translator</div><div class="gb-brandSub">KiriKiri-KAG • Docs</div></div></a><div class="gb-topLinks"><a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a><a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a></div><button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search"><span class="gb-searchIcon" aria-hidden="true"></span><span>Search</span><kbd>Ctrl</kbd><kbd>K</kbd></button></div></header>
+    <div class="gb-shell"><aside class="gb-sidebar" aria-label="Sidebar navigation"><div class="gb-sidebarInner"><div class="gb-sidebarHeader"><button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button></div><nav data-docs="nav"></nav><div class="gb-powered">VN Translator • Web Documentation</div></div></aside><main class="gb-main"><article class="gb-article" data-docs="article"><div class="gb-articleTop"><div class="gb-breadcrumb" data-docs="crumb"></div><div class="gb-actions"><button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button></div></div>
+          <h1>How to get an OpenAI API key</h1>
+          <p class="lead">
+            VNTranslator can use OpenAI models for translation. To connect, you need a <strong>Secret API key</strong> from the OpenAI Developer Platform
+            (not from the ChatGPT website).
+          </p>
+          <div class="gb-callout" data-variant="info"><div class="gb-calloutIcon" aria-hidden="true">✓</div><div><div class="gb-calloutTitle">Important: ChatGPT billing is separate</div><p>ChatGPT subscriptions and API usage are billed separately. Manage API billing on <a class="gb-link" href="https://platform.openai.com/" target="_blank" rel="noopener">platform.openai.com</a>.</p></div></div></div>
+          <h2>Step 1: Sign in to the OpenAI Developer Platform</h2>
+          <p>Open <a class="gb-link" href="https://platform.openai.com/" target="_blank" rel="noopener">platform.openai.com</a> and sign in.</p>
+          <h2>Step 2: Create a new secret key</h2>
+          <ol>
+            <li>Go to the API keys page: <a class="gb-link" href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener">platform.openai.com/account/api-keys</a></li>
+            <li>Click <strong>Create new secret key</strong>.</li>
+            <li>Optionally set permissions for the key.</li>
+            <li>Copy the key and store it in a password manager. You may only be shown the full key once.</li>
+          </ol>
+          <div class="gb-callout" data-variant="danger"><div class="gb-calloutIcon" aria-hidden="true">!</div><div><div class="gb-calloutTitle">Do not share your key</div><p>Anyone with your key can use your quota. Never post it publicly. If leaked, revoke it immediately and create a new one.</p></div></div></div>
+          <h2>Step 3: Set spending controls (recommended)</h2>
+          <ul><li>Enable billing / add a payment method if required.</li><li>Set usage alerts or budgets per project.</li><li>Start with a small test before large translations.</li></ul>
+          <h2>Use the key in VNTranslator</h2>
+          <ol><li>Open the translator page.</li><li>Select an OpenAI model.</li><li>Paste the key into the <strong>OpenAI API Key</strong> field.</li><li>Run a short translation test.</li></ol>
+          <h2>Troubleshooting</h2>
+          <table class="gb-table"><thead><tr><th>Problem</th><th>What to do</th></tr></thead><tbody><tr><td>Authentication error</td><td>Verify the full key was copied. Revoke and create a new one if needed.</td></tr><tr><td>Quota / billing errors</td><td>Check billing settings on the API platform and confirm payment method / credits.</td></tr><tr><td>Unexpected cost</td><td>Use smaller batches, pick a cheaper model, and set budgets/alerts.</td></tr></tbody></table>
+          <script type="text/markdown" data-docs="md">
+# How to get an OpenAI API key
+
+VNTranslator can use OpenAI models for translation. To connect, you need a **Secret API key** from the OpenAI Developer Platform.
+
+## Important: ChatGPT billing is separate
+
+> ✅ ChatGPT subscriptions and API usage are billed separately. Manage API billing at https://platform.openai.com/
+
+## Step 1: Sign in to the OpenAI Developer Platform
+
+Open https://platform.openai.com/ and sign in.
+
+## Step 2: Create a new secret key
+
+1. Go to https://platform.openai.com/account/api-keys
+2. Click **Create new secret key**.
+3. Optionally set permissions.
+4. Copy the key and store it safely. You may only see it once.
+
+## Step 3: Set spending controls
+
+- Enable billing if required.
+- Set usage alerts or budgets.
+- Test with a small translation first.
+
+## Use the key in VNTranslator
+
+1. Open the translator page.
+2. Select an OpenAI model.
+3. Paste the key into the **OpenAI API Key** field.
+4. Run a short test.
+          </script>
+          <hr />
+        </article></main><aside class="gb-toc" data-docs="tocWrap" aria-label="On this page"><div class="gb-tocInner"><div class="gb-tocTitle"><span>On this page</span></div><nav class="gb-tocList" data-docs="toc"></nav></div></aside></div>
+    <div class="gb-overlay" data-docs="overlay"></div><div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true"><div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search"><div class="gb-searchHeader"><input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" /><button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button></div><div class="gb-searchResults" data-docs="searchResults"></div></div></div>
+    <script src="./docs.js"></script>
+  </body>
+</html>

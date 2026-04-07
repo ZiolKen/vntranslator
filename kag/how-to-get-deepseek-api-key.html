@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DeepSeek API Key — Create & Use Safely</title>
+    <meta name="description" content="Step-by-step guide to create a DeepSeek API key and configure it in VNTranslator. Includes security best practices, billing notes, and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "KiriKiri-KAG",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get .ks files", href: "./how-to-get-kag-ks.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get OpenAI API key", href: "./how-to-get-chatgpt-api-key.html" },
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
+
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+
+        <a class="gb-brand" href="./" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">KiriKiri-KAG • Docs</div>
+          </div>
+        </a>
+
+        <div class="gb-topLinks">
+          <a class="gb-link" href="https://patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>How to get a DeepSeek API key</h1>
+          <p class="lead">
+            To use DeepSeek translation inside VNTranslator, you need a DeepSeek API key from the DeepSeek Platform.
+            Treat it like a password: anyone with your key can spend your credits.
+          </p>
+
+          <div class="gb-callout" data-variant="danger">
+            <div class="gb-calloutIcon" aria-hidden="true">!</div>
+            <div>
+              <div class="gb-calloutTitle">Security reminder</div>
+              <p>
+                Never share your API key in screenshots, Discord messages, or public repos.
+                If you suspect a leak, revoke the key immediately and create a new one.
+              </p>
+            </div>
+          </div>
+
+          <h2>Step 1: Create a DeepSeek account</h2>
+          <p>
+            Go to the DeepSeek Platform and sign in (or create an account).
+            After login, open the API Keys page:
+            <a class="gb-link" href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">platform.deepseek.com/api_keys</a>.
+          </p>
+
+          <h2>Step 2: Create an API key</h2>
+          <ol>
+            <li>Click <strong>Create</strong> / <strong>New key</strong> (wording may vary).</li>
+            <li>Give the key a recognizable name (example: <span class="gb-inlineCode">VNTranslator</span>).</li>
+            <li>Copy the secret key when it is shown. Save it in a password manager.</li>
+          </ol>
+
+          <div class="gb-callout" data-variant="warn">
+            <div class="gb-calloutIcon" aria-hidden="true">⚠</div>
+            <div>
+              <div class="gb-calloutTitle">You may only see it once</div>
+              <p>
+                Many platforms only reveal secret keys one time. If you lose it, create a new key instead of trying to recover the old one.
+              </p>
+            </div>
+          </div>
+
+          <h2>Step 3: Add credits / understand billing</h2>
+          <p>
+            DeepSeek bills by tokens (input + output). Check the official pricing page before large batch translations:
+            <a class="gb-link" href="https://api-docs.deepseek.com/quick_start/pricing/" target="_blank" rel="noopener">Models &amp; Pricing</a>.
+          </p>
+
+          <h2>Use the key in VNTranslator</h2>
+          <ol>
+            <li>Open the Translator page.</li>
+            <li>Select <strong>DeepSeek</strong> as your translation service/model.</li>
+            <li>Paste the API key into the <strong>DeepSeek API Key</strong> field.</li>
+            <li>Run a short test translation before doing a full file.</li>
+          </ol>
+
+          <h2>Troubleshooting</h2>
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>Problem</th>
+                <th>What to try</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Authentication error (invalid/expired key)</td>
+                <td>Verify you copied the full key, then revoke and create a new one if needed.</td>
+              </tr>
+              <tr>
+                <td>Requests are slow</td>
+                <td>
+                  DeepSeek rate limiting can be dynamic during high traffic. Retry later or reduce batch size.
+                  See: <a class="gb-link" href="https://api-docs.deepseek.com/quick_start/rate_limit/" target="_blank" rel="noopener">Rate Limit</a>.
+                </td>
+              </tr>
+              <tr>
+                <td>Insufficient balance / quota</td>
+                <td>Check your DeepSeek account billing/credits and confirm your pricing tier.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>Best practices</h2>
+          <ul>
+            <li>Create a dedicated key for this tool (do not reuse keys across random apps).</li>
+            <li>Revoke keys you no longer use.</li>
+          </ul>
+
+
+          <script type="text/markdown" data-docs="md">
+# How to get a DeepSeek API key
+
+To use DeepSeek translation inside VNTranslator, you need a DeepSeek API key from the DeepSeek Platform. Treat it like a password: anyone with your key can spend your credits.
+
+## Security reminder
+
+> ❗ Never share your API key in screenshots, Discord messages, or public repos. If you suspect a leak, revoke the key immediately and create a new one.
+
+## Step 1: Create a DeepSeek account
+
+Sign in (or create an account) on the DeepSeek Platform, then open the API Keys page:
+
+- https://platform.deepseek.com/api_keys
+
+## Step 2: Create an API key
+
+1. Click **Create** / **New key** (wording may vary).
+2. Give the key a recognizable name (example: `VNTranslator`).
+3. Copy the secret key when it is shown. Save it in a password manager.
+
+> ⚠️ Many platforms only reveal secret keys one time. If you lose it, create a new key instead of trying to recover the old one.
+
+## Step 3: Add credits / understand billing
+
+DeepSeek bills by tokens (input + output). Check pricing before large batch translations:
+
+- https://api-docs.deepseek.com/quick_start/pricing/
+
+## Use the key in VNTranslator
+
+1. Open the Translator page.
+2. Select **DeepSeek** as your translation service/model.
+3. Paste the key into the **DeepSeek API Key** field.
+4. Run a short test translation before doing a full file.
+
+## Troubleshooting
+
+| Problem | What to try |
+| --- | --- |
+| Authentication error (invalid/expired key) | Verify you copied the full key, then revoke and create a new one if needed. |
+| Requests are slow | Rate limiting can be dynamic during high traffic. Retry later or reduce batch size. Docs: https://api-docs.deepseek.com/quick_start/rate_limit/ |
+| Insufficient balance / quota | Check your DeepSeek account billing/credits and confirm pricing. |
+
+## Best practices
+
+- Create a dedicated key for this tool (do not reuse keys across random apps).
+- Revoke keys you no longer use.
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="./docs.js"></script>
+  </body>
+</html>

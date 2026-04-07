@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <meta name="theme-color" content="#0b0b10" />
+  <title>KiriKiri-KAG Translator | VN Translator</title>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/2.0.0/encoding.min.js"></script>
+  <link rel="stylesheet" href="../rpgm/rpgm.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="../favicon.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/logo.jpeg" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><div id="particles-js"></div><div class="grid"></div><div class="glow"></div></div>
+  <header class="topbar">
+    <a class="brand" href="../"><span aria-hidden="true"><img class="brand__img" src="../assets/logo.jpeg" alt="VN Translator" /></span><span class="brand__text"><span class="brand__name">VN Translator</span><span class="brand__tag">Ren’Py • RPG Maker • KAG • Artemis</span></span></a>
+    <nav class="nav"><a class="nav__link" href="../renpy/">Ren’Py</a><a class="nav__link" href="../rpgm/">RPG Maker</a><a class="nav__link nav__link--active" href="./">KiriKiri-KAG</a><a class="nav__link" href="../artemis/">Artemis</a><a class="nav__link" href="../game-text-editor/">Game Text Editor</a></nav>
+    <div class="topbar__actions"><a class="pill pill--primary" href="../">Back</a></div>
+  </header>
+  <main class="wrap">
+    <section class="pageHead">
+      <div class="pageHead__left">
+        <div class="badge"><span class="dot" aria-hidden="true"></span>KiriKiri / KAG Script Translator</div>
+        <h1 class="title">Translate <span class="accent">.ks</span> scripts and overwrite dialog directly.</h1>
+        <p class="subtitle">Use the upgraded GTE-style parser to extract only translatable KAG dialog, preserve tags and labels, then write the translated text straight back into the original script.</p>
+        <div class="quickActions">
+          <a class="btn btn--ghost" href="how-to-get-kag-ks.html" target="_blank" rel="noopener">📂 How to get .ks files</a>
+          <a class="btn btn--ghost" href="ks-dialog-extractor.html" target="_blank" rel="noopener">🔁 KAG Dialog Extractor</a>
+          <a class="btn btn--ghost" href="how-to-get-deepseek-api-key.html" target="_blank" rel="noopener">🔑 DeepSeek API Key</a>
+          <a class="btn btn--ghost" href="how-to-get-chatgpt-api-key.html" target="_blank" rel="noopener">🔑 OpenAI API Key</a>
+        </div>
+      </div>
+      <div class="pageHead__right">
+        <div class="miniPanel">
+          <div class="miniPanel__row"><div class="miniPanel__k">Workflow</div><div class="miniPanel__v"><span class="chip chip--ok">Parse → Translate → Reinsert</span></div></div>
+          <div class="miniPanel__row"><div class="miniPanel__k">Dialog parser</div><div class="miniPanel__v">KAG tags, quotes, names, and plain lines</div></div>
+          <div class="miniPanel__row"><div class="miniPanel__k">Output</div><div class="miniPanel__v">Keep original / UTF-8 / UTF-16LE / Shift-JIS</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="layout">
+      <div class="col">
+        <section class="panel">
+          <div class="panel__header"><div><div class="panel__title">Translation Settings</div><div class="panel__hint">Model, key, target language, encoding, batch size, and files</div></div></div>
+          <div class="panel__body form">
+            <div class="form-row"><div class="field"><label for="translationModel">Translation Model</label><select id="translationModel"></select></div></div>
+            <div class="form-row two"><div class="field" id="apiKeyGroup"><label for="apiKey">DeepSeek API Key</label><input type="password" id="apiKey" placeholder="Enter your DeepSeek API key" autocomplete="off"></div><div class="field" id="chatgptApiKeyGroup" style="display:none;"><label for="chatgptApiKey">OpenAI API Key</label><input type="password" id="chatgptApiKey" placeholder="Enter your OpenAI API key" autocomplete="off"></div></div>
+            <div class="form-row two"><div class="field"><label for="targetLanguage">Target Language</label><select id="targetLanguage"></select></div><div class="field"><label for="outputEncoding">Output Encoding</label><select id="outputEncoding"><option value="keep" selected>Keep original encoding</option><option value="UTF-8">UTF-8</option><option value="UTF-16LE">UTF-16LE</option><option value="SJIS">Shift-JIS</option></select></div></div>
+            <div class="form-row two"><div class="field"><label for="batchSize">Batch Size</label><input type="number" id="batchSize" min="1" max="50" value="18"><div class="help">Smaller batches are safer for heavily tagged scripts.</div></div><div class="field"><label for="cacheInput">Translation Cache JSON</label><input type="file" id="cacheInput" accept=".json"><div class="help">Optional. Reuse previous translations.</div></div></div>
+            <div class="form-row"><div class="field"><label for="fileInput">Upload Script Files</label><input type="file" id="fileInput" accept=".ks,.txt" multiple><div class="help">Select one or many KAG scenario files.</div></div></div>
+          </div>
+        </section>
+        <section class="panel"><div class="panel__header"><div><div class="panel__title">Translation Control</div><div class="panel__hint">Start / Pause / Stop / Progress</div></div></div><div class="panel__body"><div class="controls__grid"><button id="startBtn" class="btn btn--primary">▶️ Start</button><button id="pauseBtn" class="btn btn--warn" disabled>⏸️ Pause</button><button id="stopBtn" class="btn btn--ghost" disabled>🛑 Stop</button></div><div class="progress"><label>Progress</label><progress id="progressBar" value="0" max="100"></progress><div id="progressText" class="progress__text">0% (0/0)</div></div></div></section>
+        <section class="panel"><div class="panel__header"><div><div class="panel__title">Usage Notes</div><div class="panel__hint">KAG-safe workflow</div></div></div><div class="panel__body notice"><ul class="notice-list"><li>Tags and commands like <code>[l]</code>, <code>[np]</code>, <code>@jump</code>, <code>@eval</code>, and <code>[emb]</code> are preserved.</li><li>This tool overwrites only the extracted dialog inside the original file. No source-language selector and no slot overwrite step.</li><li>Always test one small scenario file first before translating the whole project.</li></ul></div></section>
+      </div>
+      <div class="col"><section class="panel"><div class="panel__header"><div><div class="panel__title">Log</div><div class="panel__hint">Parse, translate, and export status</div></div></div><div class="panel__body"><div id="log" class="log">[SYSTEM] Ready.</div></div></section>
+        <section class="panel">
+          <div class="panel__header">
+            <div>
+              <div class="panel__title">Support & Resources</div>
+              <div class="panel__hint">Help links + sponsor</div>
+            </div>
+          </div>
+          <div class="panel__body">
+            <div class="support">
+              <div class="support__block">
+                <div class="support__label">Support this project</div>
+                <div class="support__buttons">
+                  <a class="supportBtn" href="https://www.buymeacoffee.com/_zkn" target="_blank" rel="noopener noreferrer">☕ Buy me a coffee</a>
+                  <a class="supportBtn supportBtn--patreon" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener noreferrer">❤️ Patreon</a>
+                </div>
+              </div>
+              <div class="support__block">
+                <div class="support__label">Get help</div>
+                <div class="support__links">
+                  <a href="ks-dialog-extractor.html" class="helpBtn" target="_blank" rel="noopener noreferrer">🔁 KAG Dialog Extractor</a>
+                  <a href="how-to-get-chatgpt-api-key.html" class="helpBtn" target="_blank" rel="noopener noreferrer">🔑 Get OpenAI API Key</a>
+                  <a href="how-to-get-deepseek-api-key.html" class="helpBtn" target="_blank" rel="noopener noreferrer">🔑 Get DeepSeek API Key</a>
+                  <a href="how-to-get-kag-ks.html" class="helpBtn" target="_blank" rel="noopener noreferrer">📂 How to get .ks files</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="footer-note">⚠️ Keep backups and test the translated scenario in-engine after export.</div></div>
+    </section>
+  </main>
+  <script src="./kag-parser.js"></script>
+  <script src="../api/translation-common.js"></script>
+  <script src="./kag.js"></script>
+  <script>particlesJS('particles-js', {particles:{number:{value:72,density:{enable:true,value_area:950}},color:{value:'#a855f7'},shape:{type:'circle'},opacity:{value:.36,random:true},size:{value:2.1,random:true},line_linked:{enable:true,distance:150,color:'#a855f7',opacity:.12,width:1},move:{enable:true,speed:.72,out_mode:'out'}},interactivity:{detect_on:'canvas',events:{onhover:{enable:true,mode:'repulse'},resize:true},modes:{repulse:{distance:90,duration:.35}}},retina_detect:true});</script>
+</body>
+</html>
