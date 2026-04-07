@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Artemis Scripts (.ast / .asb) — Where to Find Them</title>
+    <meta name="description" content="Locate Artemis .ast and .asb script files safely for translation. Covers common layouts, structural text fields, encodings, and troubleshooting." />
+    <link rel="stylesheet" href="./docs.css" />
+    <script>
+      window.VNDOCS_CONFIG = {
+        categoryLabel: "Artemis",
+        back: { href: "./", label: "Back to Translator" },
+        nav: [
+          {
+            label: "Files",
+            icon: "file",
+            items: [
+              { title: "How to get .ast / .asb files", href: "./how-to-get-artemis-ast.html" }
+            ]
+          },
+          {
+            label: "API Keys",
+            icon: "key",
+            items: [
+              { title: "How to get OpenAI API key", href: "./how-to-get-chatgpt-api-key.html" },
+              { title: "How to get DeepSeek API key", href: "./how-to-get-deepseek-api-key.html" }
+            ]
+          }
+        ]
+      };
+    </script>
+  </head>
+  <body>
+    <header class="gb-topbar">
+      <div class="gb-topbarInner">
+        <button class="gb-iconBtn" type="button" data-docs="menu" aria-label="Open navigation"></button>
+        <a class="gb-brand" href="./" aria-label="VN Translator">
+          <div class="gb-logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="Logo" /></div>
+          <div class="gb-brandText">
+            <div class="gb-brandTitle">VN Translator</div>
+            <div class="gb-brandSub">Artemis • Docs</div>
+          </div>
+        </a>
+        <div class="gb-topLinks">
+          <a class="gb-link" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener">Become a Patron</a>
+          <a class="gb-link" href="https://buymeacoffee.com/_zkn" target="_blank" rel="noopener">Buy Me a Coffee</a>
+        </div>
+        <button class="gb-searchBtn" type="button" data-docs="searchBtn" aria-label="Search">
+          <span class="gb-searchIcon" aria-hidden="true"></span>
+          <span>Search</span>
+          <kbd>Ctrl</kbd>
+          <kbd>K</kbd>
+        </button>
+      </div>
+    </header>
+    <div class="gb-shell">
+      <aside class="gb-sidebar" aria-label="Sidebar navigation">
+        <div class="gb-sidebarInner">
+          <div class="gb-sidebarHeader">
+            <button class="gb-iconBtn gb-sidebarClose" type="button" data-docs="closeNav" aria-label="Close navigation"></button>
+          </div>
+          <nav data-docs="nav"></nav>
+          <div class="gb-powered">VN Translator • Web Documentation</div>
+        </div>
+      </aside>
+      <main class="gb-main">
+        <article class="gb-article" data-docs="article">
+          <div class="gb-articleTop">
+            <div class="gb-breadcrumb" data-docs="crumb"></div>
+            <div class="gb-actions">
+              <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
+            </div>
+          </div>
+
+          <h1>How to get the <span class="gb-inlineCode">.ast</span> / <span class="gb-inlineCode">.asb</span> files</h1>
+          <p class="lead">
+            The most stable way to translate an Artemis game is to work from the real script files.
+            In many projects, story text is stored inside <span class="gb-inlineCode">.ast</span> or <span class="gb-inlineCode">.asb</span> files.
+          </p>
+
+          <div class="gb-callout" data-variant="info">
+            <div class="gb-calloutIcon" aria-hidden="true">✓</div>
+            <div>
+              <div class="gb-calloutTitle">Direct-overwrite workflow</div>
+              <p>
+                The Artemis translator rewrites only the extracted dialog strings inside the original file.
+                Starting from clean source scripts makes it much easier to preserve structure safely.
+              </p>
+            </div>
+          </div>
+
+          <h2>What you should have</h2>
+          <ul>
+            <li>The original script files or a clean, legally obtained extraction of the game script folder.</li>
+            <li>Permission to translate and modify the project if you are not the developer.</li>
+            <li>A backup of the full script folder before you export translations.</li>
+          </ul>
+
+          <h2>Where Artemis scripts usually live</h2>
+          <p>
+            Folder names vary by title, but script files often live in directories such as
+            <span class="gb-inlineCode">script/</span>, <span class="gb-inlineCode">scenario/</span>,
+            <span class="gb-inlineCode">data/script/</span>, or another unpacked resource directory.
+          </p>
+
+          <pre><code>MyArtemisGame/
+  script/
+    prologue.ast
+    route_a.ast
+    route_b.asb
+    common.ast
+  image/
+  sound/
+  system/
+  data/</code></pre>
+
+          <table class="gb-table">
+            <thead>
+              <tr>
+                <th>Path / file</th>
+                <th>What it usually contains</th>
+                <th>Translate?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="gb-inlineCode">script/*.ast</span></td>
+                <td>Scenario structure, dialogue-bearing attributes, route flow</td>
+                <td>Usually yes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">script/*.asb</span></td>
+                <td>Related script blocks or compiled-like text resources depending on the project</td>
+                <td>Sometimes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">common / system scripts</span></td>
+                <td>Menus, labels, utility blocks, reusable text</td>
+                <td>Sometimes</td>
+              </tr>
+              <tr>
+                <td><span class="gb-inlineCode">binaries / archives</span></td>
+                <td>Packed resources or non-text data</td>
+                <td><strong>No</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>What Artemis formatting must stay intact</h2>
+          <ul>
+            <li><strong>Field names</strong> such as <span class="gb-inlineCode">text=</span>, <span class="gb-inlineCode">name=</span>, <span class="gb-inlineCode">title=</span>, and selection arrays should stay structurally valid.</li>
+            <li><strong>Braces, commas, brackets, and quotes</strong> must remain balanced.</li>
+            <li><strong>Control keys</strong>, command values, and non-dialog data should not be translated.</li>
+            <li><strong>Escapes</strong> like <span class="gb-inlineCode">
+</span> or engine-specific placeholders should remain valid.</li>
+          </ul>
+
+          <h3>Good vs risky edits</h3>
+          <pre><code>// Good: visible text translated, structure preserved
+text="I will stay here."
+name="Airi"
+
+// Risky: field names or syntax changed
+translated_text="I will stay here."
+name="Airi"</code></pre>
+
+          <h2>Encoding notes</h2>
+          <p>
+            Some projects are UTF-8, while others may expect UTF-16 or a legacy encoding. If you are unsure,
+            keep the original encoding first and test a single file before batch translation.
+          </p>
+
+          <div class="gb-callout" data-variant="warn">
+            <div class="gb-calloutIcon" aria-hidden="true">⚠</div>
+            <div>
+              <div class="gb-calloutTitle">Test direct overwrite early</div>
+              <p>
+                Because Artemis scripts can be structurally sensitive, always translate one small file first,
+                export it, and launch the game before processing the rest.
+              </p>
+            </div>
+          </div>
+
+          <h2>If you only have packed resources</h2>
+          <p>
+            Some builds store scripts inside archives or bundle formats instead of loose files. If you cannot find readable
+            <span class="gb-inlineCode">.ast</span> or <span class="gb-inlineCode">.asb</span> files, ask for a translation-friendly source package.
+          </p>
+
+          <div class="gb-callout" data-variant="danger">
+            <div class="gb-calloutIcon" aria-hidden="true">!</div>
+            <div>
+              <div class="gb-calloutTitle">Legal / safety note</div>
+              <p>
+                This guide does not cover bypassing protections or extracting content you do not own.
+                Always respect the game license and the developer&apos;s terms.
+              </p>
+            </div>
+          </div>
+
+          <h2>Quick checklist</h2>
+          <ul>
+            <li>You are working from real <span class="gb-inlineCode">.ast</span> / <span class="gb-inlineCode">.asb</span> files.</li>
+            <li>The files open as readable text in an editor.</li>
+            <li>Field names, braces, and syntax are preserved.</li>
+            <li>You test the output in-engine after export.</li>
+          </ul>
+
+          <script type="text/markdown" data-docs="md">
+# How to get the `.ast` / `.asb` files
+
+The most stable way to translate an Artemis game is to work from the real script files. In many projects, story text is stored inside `.ast` or `.asb` files.
+
+## Direct-overwrite workflow
+
+> ✅ The Artemis translator rewrites only the extracted dialog strings inside the original file. Starting from clean source scripts makes it much easier to preserve structure safely.
+
+## What you should have
+
+- The original script files or a clean, legally obtained extraction of the game script folder.
+- Permission to translate and modify the project if you are not the developer.
+- A backup of the full script folder before export.
+
+## Where Artemis scripts usually live
+
+Common locations include `script/`, `scenario/`, `data/script/`, or another unpacked resource directory.
+
+## What Artemis formatting must stay intact
+
+- Field names such as `text=`, `name=`, `title=`, and selection arrays
+- Balanced braces, commas, brackets, and quotes
+- Control keys and non-dialog values
+- Valid escapes such as `
+`
+
+## Encoding notes
+
+Some projects are UTF-8, others expect UTF-16 or a legacy encoding. If you are unsure, keep the original encoding first and test one file.
+
+## If you only have packed resources
+
+Some builds store scripts inside archives instead of loose files. If you cannot find readable `.ast` or `.asb` files, ask for a translation-friendly source package.
+
+## Quick checklist
+
+- You are working from real `.ast` / `.asb` files.
+- The files open as readable text.
+- Field names, braces, and syntax are preserved.
+- You test the output after export.
+          </script>
+
+          <hr />
+          <div data-docs="prevNext"></div>
+        </article>
+      </main>
+
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
+    </div>
+
+    <div class="gb-overlay" data-docs="overlay"></div>
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="gb-searchHeader">
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
+        </div>
+        <div class="gb-searchResults" data-docs="searchResults"></div>
+      </div>
+    </div>
+
+    <script src="./docs.js"></script>
+  </body>
+</html>
