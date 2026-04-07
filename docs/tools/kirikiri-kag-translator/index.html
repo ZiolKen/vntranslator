@@ -6,7 +6,10 @@
     <meta name="theme-color" content="#0b0b10" />
     <meta name="color-scheme" content="dark" />
     <title>KiriKiri-KAG Translator | VN Translator</title>
-    <meta name="description" content="How the KiriKiri-KAG Translator works in VN Translator." />
+    <meta name="description" content="Translate KiriKiri-KAG .ks scenario files safely while preserving commands, tags, and visible text fields." />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
     <link rel="stylesheet" href="/docs/docs.css" />
     <script>
       window.VNDOCS_CONFIG = {"categoryLabel": "Tools", "nav": [{"label": "Introduction", "icon": "home", "items": [{"title": "Overview", "href": "/docs"}, {"title": "How it works", "href": "/docs/how-it-works/"}, {"title": "System requirements", "href": "/docs/system-requirements/"}, {"title": "Privacy & security", "href": "/docs/privacy-security/"}]}, {"label": "Getting started", "icon": "book", "items": [{"title": "Quick start", "href": "/docs/getting-started/"}, {"title": "Translation services", "href": "/docs/translation-services/"}, {"title": "API keys", "href": "/docs/api-keys/"}]}, {"label": "Tools", "icon": "file", "items": [{"title": "Ren’Py Translator", "href": "/docs/tools/renpy-translator/"}, {"title": "Pro Ren’Py Translator", "href": "/docs/tools/pro-renpy-translator/"}, {"title": "RPG Maker Translator", "href": "/docs/tools/rpg-maker-translator/"}, {"title": "RPGM Ultimate", "href": "/docs/tools/rpgm-ultimate/"}, {"title": "KiriKiri-KAG Translator", "href": "/docs/tools/kirikiri-kag-translator/"}, {"title": "Artemis AST Translator", "href": "/docs/tools/artemis-ast-translator/"}, {"title": "Game Text Editor", "href": "/docs/tools/game-text-editor/"}, {"title": "Ren’Py Compiler", "href": "/docs/tools/renpy-compiler/"}]}, {"label": "Workflows", "icon": "book", "items": [{"title": "Translate a Ren’Py project", "href": "/docs/workflows/renpy-project/"}, {"title": "Translate an RPG Maker project", "href": "/docs/workflows/rpgm-project/"}, {"title": "Translate a KiriKiri-KAG project", "href": "/docs/workflows/kag-project/"}, {"title": "Translate an Artemis project", "href": "/docs/workflows/artemis-project/"}, {"title": "Formatting & placeholders", "href": "/docs/workflows/formatting-placeholders/"}, {"title": "QA checklist", "href": "/docs/workflows/qa-checklist/"}]}, {"label": "Troubleshooting", "icon": "key", "items": [{"title": "Common issues", "href": "/docs/troubleshooting/common-issues/"}, {"title": "FAQ", "href": "/docs/troubleshooting/faq/"}]}]};
@@ -56,36 +59,123 @@
               <button type="button" class="gb-actionBtn" data-docs="copyLink">Copy</button>
             </div>
           </div>
-          <h1>KiriKiri-KAG Translator</h1>
-<p>The KAG translator is a dedicated workflow for <code>.ks</code> scenario files. It is built to preserve KAG tags and write translated dialog directly back into the original file.</p>
-<h2>What it handles</h2>
+          
+<h1>KiriKiri-KAG Translator</h1>
+<p>Use this tool to translate <strong>KiriKiri-KAG <code>.ks</code> scenario files</strong> while preserving commands, labels, inline tags, and visible text fields.</p>
+<p>Open the tool: <a href="/kag/">KiriKiri-KAG Translator</a></p>
+<h2>When to use it</h2>
 <ul>
-<li>Quoted dialog like <code>「...」</code></li>
-<li>Tag attributes such as <code>text=</code>, <code>name=</code>, <code>caption=</code>, and <code>title=</code></li>
-<li>Speaker-name eval patterns and KAG dialog lines with inline tags</li>
-<li>Direct overwrite back into the original script file after translation</li>
+<li>You have one or more readable <code>.ks</code> files to translate now</li>
+<li>You want a browser-based upload → translate → export workflow</li>
+<li>You want direct overwrite back into the original file without source-language or overwrite-slot settings</li>
 </ul>
-<h2>What it does not ask for</h2>
+<h2>Inputs</h2>
 <ul>
-<li>No source-language selector</li>
-<li>No separate overwrite mode</li>
+<li><code>.ks</code> files from the original project or a clean unpacked script folder</li>
+<li>Common locations include <code>scenario/</code>, <code>data/scenario/</code>, and <code>script/</code></li>
 </ul>
-<h2>Related pages</h2>
+<p>Guide: <a href="/kag/how-to-get-kag-ks.html">How to get .ks files</a></p>
+<h2>Step-by-step</h2>
+<ol>
+<li>Open <a href="/kag/">KiriKiri-KAG Translator</a></li>
+<li>Select engine/model and paste your API key if required</li>
+<li>Choose the target language</li>
+<li>Upload one or more <code>.ks</code> files</li>
+<li>Translate a small file first</li>
+<li>Export and put the translated file back into the project</li>
+<li>Launch the game and test the scenes you changed</li>
+</ol>
+<h2>KAG formatting rules you must preserve</h2>
+<h3>Commands and tags</h3>
 <ul>
-<li><a href="/kag/">Open KAG Translator</a></li>
-<li><a href="/kag/ks-dialog-extractor.html">KAG Dialog Extractor</a></li>
-<li><a href="/kag/how-to-get-kag-ks.html">How to get .ks files</a></li>
-<li><a href="/docs/workflows/kag-project/">KAG project workflow</a></li>
+<li><code>@jump</code>, <code>@if</code>, <code>@call</code>, <code>@label</code></li>
+<li>inline tags such as <code>[r]</code>, <code>[l]</code>, <code>[p]</code>, <code>[cm]</code></li>
+<li>tag attributes, IDs, filenames, and other non-visible values</li>
 </ul>
+<h3>Visible text</h3>
+<p>Translate only dialogue, narration, names, and choice text that the parser extracts.</p>
+<h3>Escapes and punctuation</h3>
+<p>Preserve quotes, line breaks, spacing, and backslashes that affect parsing or message flow.</p>
+<h2>Dialog Extractor &amp; QA</h2>
+<p>Use <a href="/kag/ks-dialog-extractor.html">KAG Dialog Extractor</a> when you want to inspect only extracted strings before translation or review a merge more carefully.</p>
+<ul>
+<li>Check that commands still execute</li>
+<li>Check names, menu choices, and message windows</li>
+<li>Compare a few lines with the original if a scene looks wrong</li>
+</ul>
+
+          <script type="text/plain" data-docs="md">
+# KiriKiri-KAG Translator
+
+Use this tool to translate **KiriKiri-KAG `.ks` scenario files** while preserving commands, labels, inline tags, and visible text fields.
+
+Open the tool: [KiriKiri-KAG Translator](/kag/)
+
+## When to use it
+
+- You have one or more readable `.ks` files to translate now
+- You want a browser-based upload → translate → export workflow
+- You want direct overwrite back into the original file without source-language or overwrite-slot settings
+
+## Inputs
+
+- `.ks` files from the original project or a clean unpacked script folder
+- Common locations include `scenario/`, `data/scenario/`, and `script/`
+
+Guide: [How to get .ks files](/kag/how-to-get-kag-ks.html)
+
+## Step-by-step
+
+1. Open [KiriKiri-KAG Translator](/kag/)
+2. Select engine/model and paste your API key if required
+3. Choose the target language
+4. Upload one or more `.ks` files
+5. Translate a small file first
+6. Export and put the translated file back into the project
+7. Launch the game and test the scenes you changed
+
+## KAG formatting rules you must preserve
+
+### Commands and tags
+
+- `@jump`, `@if`, `@call`, `@label`
+- inline tags such as `[r]`, `[l]`, `[p]`, `[cm]`
+- tag attributes, IDs, filenames, and other non-visible values
+
+### Visible text
+
+Translate only dialogue, narration, names, and choice text that the parser extracts.
+
+### Escapes and punctuation
+
+Preserve quotes, line breaks, spacing, and backslashes that affect parsing or message flow.
+
+## Dialog Extractor & QA
+
+Use [KAG Dialog Extractor](/kag/ks-dialog-extractor.html) when you want to inspect only extracted strings before translation or review a merge more carefully.
+
+- Check that commands still execute
+- Check names, menu choices, and message windows
+- Compare a few lines with the original if a scene looks wrong
+
+          </script>
+          <hr />
+          <div data-docs="prevNext"></div>
         </article>
       </main>
+      <aside class="gb-toc" data-docs="tocWrap" aria-label="On this page">
+        <div class="gb-tocInner">
+          <div class="gb-tocTitle"><span>On this page</span></div>
+          <nav class="gb-tocList" data-docs="toc"></nav>
+        </div>
+      </aside>
     </div>
     <div class="gb-overlay" data-docs="overlay"></div>
-    <div class="gb-searchModal" data-docs="searchModal" aria-hidden="true">
-      <div class="gb-searchDialog" role="dialog" aria-modal="true" aria-label="Search documentation">
+    <div class="gb-searchOverlay" data-docs="searchOverlay" aria-hidden="true">
+      <div class="gb-searchPanel" data-docs="searchPanel" role="dialog" aria-modal="true" aria-label="Search">
         <div class="gb-searchHeader">
-          <input type="search" placeholder="Search docs..." data-docs="searchInput" />
-          <button type="button" class="gb-iconBtn" data-docs="closeSearch" aria-label="Close search"></button>
+          <input class="gb-searchInput" data-docs="searchInput" type="text" placeholder="Search docs…" autocomplete="off" />
+          <button class="gb-iconBtn" type="button" data-docs="searchClose" aria-label="Close search"></button>
         </div>
         <div class="gb-searchResults" data-docs="searchResults"></div>
       </div>
