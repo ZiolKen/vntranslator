@@ -404,7 +404,9 @@ body{
   align-items:flex-start;
   justify-content:space-between;
   gap: 14px;
-  color: rgba(255,255,255,.78);
+  color: rgba(255,255,255,.88);
+  background: rgba(10,10,14,.72);
+  backdrop-filter: blur(14px);
 }
 .footer__brand{
   font-family: Orbitron, Inter, sans-serif;
