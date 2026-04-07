@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
             case "tyrano-ks": return "TYRANOBUILD";
             case "renpy-script": return "RENPY";
             case "rpgmv-json": return "RPGM";
+            case "artemis-ast": return "ARTEMIS";
             default: return "UNKNOWN";
         }
     }
