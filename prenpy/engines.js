@@ -1,5 +1,5 @@
 import { safeParseJsonArray } from './utils.js';
-import { LANG_TO_CODE, DEEPL_TARGET, languageLabel } from './languages.js';
+import { LANG_TO_CODE, languageLabel } from './languages.js';
 
 const Common = globalThis.VNTranslationCommon;
 
@@ -72,6 +72,7 @@ export async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
 export async function translateBatchOpenAI(batchDialogs, targetLang, apiKey, model) {
   const normalizedModel = Common.normalizeEngineId(model);
   const { source, prompt } = getPrompt(batchDialogs, targetLang);
+  const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
   const data = await Common.requestOpenAIChat({
     apiKey,
     model: normalizedModel,
@@ -81,51 +82,22 @@ export async function translateBatchOpenAI(batchDialogs, targetLang, apiKey, mod
     ]
   });
   const content = Common.getChatContent(data);
-  if (!content) throw makeError('OpenAI response did not contain content.');
-  return parseArrayContent(content, source.length, 'OpenAI');
-}
-
-export function getDeepLLangCode(targetLang) {
-  return DEEPL_TARGET[targetLang] || null;
-}
-
-export function needsDeepLQualityModel(targetCode) {
-  return targetCode === 'EN' || targetCode === 'DE' || targetCode === 'FR' || targetCode === 'ES' || targetCode === 'PT-PT';
+  if (!content) throw makeError(providerLabel + ' response did not contain content.');
+  return parseArrayContent(content, source.length, providerLabel);
 }
 
 export async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
   const lines = batchDialogs.map((dialog) => dialog.maskedQuote || dialog.quote || '');
-  const targetCode = getDeepLLangCode(targetLang);
-  if (!targetCode) throw makeError(`DeepL does not support target: ${targetLang}`);
 
-  let response;
   try {
-    response = await fetch('/api/deepl-trans', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apiKey,
-        text: lines,
-        target_lang: targetCode,
-        preserve_formatting: 1,
-        split_sentences: 0,
-        ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {})
-      })
+    return await Common.translateDeepLLines(lines, targetLang, {
+      apiKey,
+      chunkSize: 40,
+      concurrency: 3,
     });
   } catch (error) {
-    throw makeError('Network error when calling DeepL proxy.', error?.message || error);
+    throw makeError('DeepL translation failed.', error?.message || error);
   }
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw makeError(`DeepL/proxy error ${response.status}.`, text);
-  }
-
-  const data = await response.json();
-  const translations = Array.isArray(data?.translations) ? data.translations : [];
-  const out = translations.map((item) => (item && typeof item.text === 'string' ? item.text : ''));
-  if (out.length !== lines.length) throw makeError(`DeepL returned ${out.length} items, expected ${lines.length}.`);
-  return out;
 }
 
 export async function translateBatchLingva(batchDialogs, targetLang) {
