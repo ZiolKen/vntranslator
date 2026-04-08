@@ -156,7 +156,21 @@ body{
 .file-item:hover{border-color: rgba(124,92,255,.6)}
 .file-item.active{border-color: rgba(124,92,255,.95); box-shadow: 0 0 0 3px rgba(124,92,255,.12)}
 .file-path{font-family:var(--mono); font-size:11px; color:#cfe2ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.file-meta{font-size:11px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap}
+.file-meta{font-size:11px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.file-actions{margin-left:auto; display:flex; align-items:center; gap:6px}
+.file-delete{
+  appearance:none;
+  border:1px solid rgba(255,107,107,.32);
+  background: rgba(255,107,107,.1);
+  color:#ffd3d3;
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:11px;
+  line-height:1;
+  cursor:pointer;
+}
+.file-delete:hover{border-color: rgba(255,107,107,.65); background: rgba(255,107,107,.18)}
+.file-delete:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(255,107,107,.18)}
 .pill{
   border:1px solid rgba(31,42,57,.95);
   padding:2px 8px; border-radius:999px;
