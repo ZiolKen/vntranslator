@@ -7,23 +7,6 @@
     throw new Error('Missing VNArtemisParserCore or VNTranslationCommon');
   }
 
-  const TARGET_LANGUAGES = [
-    ['en', 'English'],
-    ['zh-CN', 'Chinese (Simplified)'],
-    ['hi', 'Hindi'],
-    ['es', 'Spanish'],
-    ['fr', 'French'],
-    ['ar', 'Arabic'],
-    ['pt', 'Portuguese'],
-    ['ru', 'Russian'],
-    ['de', 'German'],
-    ['ja', 'Japanese'],
-    ['id', 'Indonesian'],
-    ['ms', 'Malay'],
-    ['vi', 'Vietnamese'],
-    ['tl', 'Filipino'],
-    ['ko', 'Korean']
-  ];
 
   const el = {
     model: document.getElementById('translationModel'),
@@ -68,21 +51,25 @@
   }
 
   function populateTargets() {
-    el.target.innerHTML = '';
-    TARGET_LANGUAGES.forEach(([value, label]) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      if (value === 'vi') option.selected = true;
-      el.target.appendChild(option);
-    });
+    Common.fillTargetSelect(el.target, 'vi', 'code');
   }
 
   function updateEngineUi() {
     const engine = Common.normalizeEngineId(el.model.value);
     const provider = Common.getEngineProvider(engine);
-    el.apiKeyGroup.style.display = provider === 'deepseek' ? '' : 'none';
-    el.openaiKeyGroup.style.display = provider === 'openai' ? '' : 'none';
+    const keyConfig = Common.getProviderKeyConfig(engine);
+    el.apiKeyGroup.style.display = (provider === 'deepseek' || provider === 'deepl') ? '' : 'none';
+    el.openaiKeyGroup.style.display = (provider === 'openai' || provider === 'gemini') ? '' : 'none';
+    if ((provider === 'deepseek' || provider === 'deepl') && el.apiKeyGroup) {
+      const label = el.apiKeyGroup.querySelector('label[for="apiKey"]');
+      if (label) label.textContent = keyConfig.label;
+      if (el.apiKey) el.apiKey.placeholder = keyConfig.placeholder;
+    }
+    if ((provider === 'openai' || provider === 'gemini') && el.openaiKeyGroup) {
+      const label = el.openaiKeyGroup.querySelector('label[for="chatgptApiKey"]');
+      if (label) label.textContent = keyConfig.label;
+      if (el.openaiKey) el.openaiKey.placeholder = keyConfig.placeholder;
+    }
   }
 
   async function waitIfPaused() {
@@ -277,6 +264,15 @@
       return lines.map((line, index) => sanitizeTranslation(line, output[index], role));
     }
 
+    if (engine === 'deepl') {
+      const output = await Common.translateDeepLLines(lines, el.target.value, {
+        apiKey: el.apiKey.value,
+        chunkSize: 40,
+        concurrency: 3,
+      });
+      return lines.map((line, index) => sanitizeTranslation(line, output[index], role));
+    }
+
     const messages = buildMessages(lines, role);
     let data;
     if (engine === 'deepseek') {
@@ -321,8 +317,12 @@
       log('Missing DeepSeek API key.', 'error');
       return;
     }
-    if (provider === 'openai' && !Common.sanitizeApiKey(el.openaiKey.value)) {
-      log('Missing OpenAI API key.', 'error');
+    if (provider === 'deepl' && !Common.sanitizeApiKey(el.apiKey.value)) {
+      log('Missing DeepL API key.', 'error');
+      return;
+    }
+    if ((provider === 'openai' || provider === 'gemini') && !Common.sanitizeApiKey(el.openaiKey.value)) {
+      log('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key.', 'error');
       return;
     }
 
