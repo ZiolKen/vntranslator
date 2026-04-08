@@ -1046,6 +1046,7 @@
       'Input JSON array:\n' +
       payload;
 
+    const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
     const data = await Common.requestOpenAIChat({
       apiKey,
       model: normalizedModel,
@@ -1056,9 +1057,9 @@
     });
 
     const content = Common.getChatContent(data);
-    if (!content) throw new Error('OpenAI response did not contain content.');
+    if (!content) throw new Error(providerLabel + ' response did not contain content.');
     const arr = safeParseJsonArray(content);
-    if (!arr) throw new Error('OpenAI output is not a valid JSON array.');
+    if (!arr) throw new Error(providerLabel + ' output is not a valid JSON array.');
     return arr.map(x => (typeof x === 'string' ? x : String(x ?? '')));
   }
 
@@ -1067,28 +1068,11 @@
   }
 
   async function translateDeepL(lines, targetLang, apiKey) {
-    const targetCode = getDeepLLangCode(targetLang);
-    const bodyForProxy = {
+    return Common.translateDeepLLines(lines, targetLang, {
       apiKey,
-      text: lines,
-      target_lang: targetCode,
-      preserve_formatting: 1,
-      split_sentences: 0,
-      ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {}),
-    };
-
-    const res = await fetch('/api/deepl-trans', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bodyForProxy),
+      chunkSize: 40,
+      concurrency: 3,
     });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error('DeepL/proxy error ' + res.status + ': ' + text);
-    }
-    const data = await res.json();
-    const translations = Array.isArray(data?.translations) ? data.translations : [];
-    return translations.map(t => (t && typeof t.text === 'string') ? t.text : '');
   }
 
   const LINGVA_LANG_MAP = {
@@ -1159,8 +1143,9 @@
   function getKeys() {
     const deepseekApiKey = String(sessionStorage.getItem('deepseekApiKey') || '').trim();
     const openaiApiKey = String(sessionStorage.getItem('openaiApiKey') || '').trim();
+    const geminiApiKey = String(sessionStorage.getItem('geminiApiKey') || '').trim();
     const deeplApiKey = String(sessionStorage.getItem('deeplApiKey') || '').trim();
-    return { deepseekApiKey, openaiApiKey, deeplApiKey };
+    return { deepseekApiKey, openaiApiKey, geminiApiKey, deeplApiKey };
   }
 
   async function retranslateDialogs(dialogs) {
@@ -1175,8 +1160,10 @@
       if (!keys.deepseekApiKey) throw new Error('Missing DeepSeek API key in this tab session.');
       translatedMasked = await translateDeepSeek(maskedLines, targetLang, keys.deepseekApiKey);
     } else if (Common && Common.isOpenAIEngine(model)) {
-      if (!keys.openaiApiKey) throw new Error('Missing OpenAI API key in this tab session.');
-      translatedMasked = await translateOpenAI(maskedLines, targetLang, keys.openaiApiKey, model);
+      const provider = Common.getEngineProvider(model);
+      const apiKey = provider === 'gemini' ? (keys.geminiApiKey || keys.openaiApiKey) : keys.openaiApiKey;
+      if (!apiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key in this tab session.');
+      translatedMasked = await translateOpenAI(maskedLines, targetLang, apiKey, model);
     } else if (model === 'google') {
       translatedMasked = await translateGoogle(maskedLines, targetLang);
     } else if (model === 'deepl') {
