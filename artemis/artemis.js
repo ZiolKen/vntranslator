@@ -152,36 +152,97 @@
     return new TextEncoder().encode(text);
   }
 
+  function mergePendingRole(currentRole, nextRole) {
+    const existing = String(currentRole || 'text');
+    const incoming = String(nextRole || 'text');
+    if (existing === incoming) return existing;
+    if (existing === 'text' || incoming === 'text') return 'text';
+    if (existing === 'choice' || incoming === 'choice') return 'choice';
+    if (existing === 'ui' || incoming === 'ui') return 'ui';
+    return 'text';
+  }
+
   function collectPendingTexts(files) {
-    const seen = new Set();
-    const out = [];
+    const roles = new Map();
     files.forEach((file) => {
-      file.lines.forEach((line) => {
+      file.lines.forEach((line, index) => {
         const key = String(line || '');
         if (!key) return;
         if (Object.prototype.hasOwnProperty.call(state.cache, key)) return;
-        if (seen.has(key)) return;
-        seen.add(key);
-        out.push(key);
+        const role = file.mapping[index] && file.mapping[index].role ? file.mapping[index].role : 'text';
+        roles.set(key, roles.has(key) ? mergePendingRole(roles.get(key), role) : role);
       });
     });
-    return out;
+
+    const names = [];
+    const texts = [];
+    roles.forEach((role, key) => {
+      if (role === 'name') names.push(key);
+      else texts.push(key);
+    });
+
+    return { names, texts, total: names.length + texts.length };
   }
 
-  function buildMessages(lines) {
+  function preserveJapaneseQuotes(source, translated) {
+    const original = String(source ?? '');
+    const raw = String(translated ?? '');
+    const leading = raw.match(/^\s*/)?.[0] || '';
+    const trailing = raw.match(/\s*$/)?.[0] || '';
+    let core = raw.trim();
+
+    if ((original.trim().startsWith('「') && original.trim().endsWith('」')) || (original.trim().startsWith('『') && original.trim().endsWith('』'))) {
+      core = core.replace(/^["“”'`\\]+|["“”'`\\]+$/g, '');
+    }
+
+    if (original.trim().startsWith('「') && original.trim().endsWith('」')) {
+      if (!core.startsWith('「')) core = '「' + core;
+      if (!core.endsWith('」')) core = core + '」';
+    } else if (original.trim().startsWith('『') && original.trim().endsWith('』')) {
+      if (!core.startsWith('『')) core = '『' + core;
+      if (!core.endsWith('』')) core = core + '』';
+    }
+
+    return leading + core + trailing;
+  }
+
+  function sanitizeTranslation(source, translated, role) {
+    const original = String(source ?? '');
+    const text = String(translated ?? '');
+    if (!text.trim()) return original;
+
+    let next = preserveJapaneseQuotes(original, text);
+    next = restoreOuterWhitespace(original, next);
+
+    if (role === 'name') {
+      const core = next.trim().replace(/^["“”'`]+|["“”'`]+$/g, '');
+      next = core ? (original.match(/^\s*/)?.[0] || '') + core + (original.match(/\s*$/)?.[0] || '') : original;
+    }
+
+    return next || original;
+  }
+
+  function buildMessages(lines, role) {
+    const batchRole = String(role || 'text');
     const targetLabel = Common.languageLabel(el.target.value);
     const targetCode = Common.normalizeTargetCode(el.target.value);
     const payload = JSON.stringify(lines, null, 2);
     return [
-      { role: 'system', content: ['You are a veteran Artemis visual novel translator and localization specialist.',
+      { role: 'system', content: [
+      'You are a veteran Artemis visual novel translator and localization specialist.',
+      batchRole === 'name'
+        ? 'Translate speaker names and character labels only. Keep them concise and natural. Do not turn a short name into a sentence.'
+        : 'Translate visible dialogue, UI text, and choice text only.',
       'Preserve all Artemis tags, placeholders, variables, escape sequences, quotes, and structural formatting exactly.',
-      'Do not translate command names, locale keys, field names, script syntax, arrays, or braces. Only translate visible dialogue and UI text strings.',
-      'Return only a valid JSON array of translated strings.',
+      'Do not translate command names, locale keys, field names, script syntax, arrays, or braces.',
+      'If the source uses Japanese quotes 「」 or 『』, keep those quote marks in the output.',
+      'Return only a valid JSON array of translated strings.'
       ].join(' ') },
       {
         role: 'user',
         content: [
           'Target language: ' + targetLabel + ' (' + targetCode + ')',
+          'Batch type: ' + batchRole,
           'Translate every string in the JSON array.',
           'Keep the same order and the same array length.',
           'Preserve placeholders, tags, escape sequences, variables, and inline formatting exactly.',
@@ -202,21 +263,21 @@
     return core ? leading + core + trailing : original;
   }
 
-  async function translateBatch(lines) {
+  async function translateBatch(lines, role) {
     const engine = Common.normalizeEngineId(el.model.value);
     const concurrency = Math.max(1, Math.min(12, Math.min(lines.length || 1, Number(el.batchSize.value) || 1)));
 
     if (engine === 'lingva') {
       const output = await Common.translateLingvaLines(lines, el.target.value, { concurrency });
-      return lines.map((line, index) => restoreOuterWhitespace(line, output[index]));
+      return lines.map((line, index) => sanitizeTranslation(line, output[index], role));
     }
 
     if (engine === 'google') {
       const output = await Common.translateGoogleLines(lines, el.target.value, { source: 'auto', concurrency });
-      return lines.map((line, index) => restoreOuterWhitespace(line, output[index]));
+      return lines.map((line, index) => sanitizeTranslation(line, output[index], role));
     }
 
-    const messages = buildMessages(lines);
+    const messages = buildMessages(lines, role);
     let data;
     if (engine === 'deepseek') {
       data = await Common.requestDeepSeekChat({
@@ -243,7 +304,7 @@
       log('Model returned ' + parsed.length + ' items for a batch of ' + lines.length + '. Missing entries were kept as source text.', 'warn');
     }
 
-    return lines.map((line, index) => restoreOuterWhitespace(line, parsed[index]));
+    return lines.map((line, index) => sanitizeTranslation(line, parsed[index], role));
   }
 
   async function start() {
@@ -290,23 +351,28 @@
       const pending = collectPendingTexts(parsedFiles);
       const batchSize = Math.max(1, Math.min(32, Number(el.batchSize.value) || 1));
       log('Engine: ' + Common.getEngineLabel(engine) + ' • Target: ' + Common.languageLabel(el.target.value), 'ai');
-      log('Unique strings to translate: ' + pending.length, 'ai');
-      updateProgress(0, pending.length || 1);
+      log('Unique strings to translate: ' + pending.total + ' (' + pending.names.length + ' names • ' + pending.texts.length + ' text/choices).', 'ai');
+      updateProgress(0, pending.total || 1);
 
       let done = 0;
-      for (let i = 0; i < pending.length; i += batchSize) {
-        if (state.stopRequested) throw new Error('Translation stopped by user.');
-        await waitIfPaused();
-        const batch = pending.slice(i, i + batchSize);
-        log('Translating batch ' + (Math.floor(i / batchSize) + 1) + ' (' + batch.length + ' strings)...', 'ai');
-        const translated = await translateBatch(batch);
-        batch.forEach((source, index) => {
-          const next = typeof translated[index] === 'string' ? translated[index] : '';
-          state.cache[source] = next || source;
-        });
-        done += batch.length;
-        updateProgress(done, pending.length || 1);
+      async function translateQueue(queue, role, label) {
+        for (let i = 0; i < queue.length; i += batchSize) {
+          if (state.stopRequested) throw new Error('Translation stopped by user.');
+          await waitIfPaused();
+          const batch = queue.slice(i, i + batchSize);
+          log('Translating ' + label + ' batch ' + (Math.floor(i / batchSize) + 1) + ' (' + batch.length + ' strings)...', 'ai');
+          const translated = await translateBatch(batch, role);
+          batch.forEach((source, index) => {
+            const next = typeof translated[index] === 'string' ? translated[index] : '';
+            state.cache[source] = next || source;
+          });
+          done += batch.length;
+          updateProgress(done, pending.total || 1);
+        }
       }
+
+      await translateQueue(pending.names, 'name', 'name');
+      await translateQueue(pending.texts, 'text', 'dialog');
 
       log('Packaging translated files...', 'ai');
       const zip = new JSZip();
