@@ -66,6 +66,9 @@
     Common.fillEngineSelect(el.modelSelect, el.modelSelect.value);
     el.modelSelect.value = Common.normalizeEngineId(el.modelSelect.value);
   }
+  if (Common && el.langTarget) {
+    Common.fillTargetSelect(el.langTarget, el.langTarget.value || 'Vietnamese', 'label');
+  }
 
   const TRANSLATOR_CREDIT =
     '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
@@ -99,31 +102,6 @@
     return codeOrName || '';
   }
 
-  function getDeepLLangCode(lang) {
-    if (!lang) return 'EN-US';
-    const low = String(lang).toLowerCase().trim();
-    if (low === 'bahasa indonesia' || low === 'indonesian' || low === 'id') return 'ID';
-    if (low === 'english' || low === 'en') return 'EN-US';
-    if (low === 'malay' || low === 'ms') return 'MS';
-    if (low === 'vietnamese' || low === 'vi') return 'VI';
-    if (low === 'filipino' || low === 'tl' || low === 'tagalog') return 'TL';
-    if (low === 'chinese (simplified)' || low === 'simplified chinese' || low === 'zh' || low === 'zh-cn')
-      return 'ZH';
-    if (low === 'hindi' || low === 'hi') return 'HI';
-    if (low === 'spanish' || low === 'es') return 'ES';
-    if (low === 'french' || low === 'fr') return 'FR';
-    if (low === 'arabic' || low === 'ar') return 'AR';
-    if (low === 'portuguese' || low === 'pt') return 'PT';
-    if (low === 'russian' || low === 'ru') return 'RU';
-    if (low === 'german' || low === 'de') return 'DE';
-    if (low === 'japanese' || low === 'ja') return 'JA';
-    if (low === 'korean' || low === 'ko') return 'KO';
-    return 'EN-US';
-  }
-
-  function needsDeepLQualityModel(targetCode) {
-    return ['MS', 'TL', 'HI'].includes(String(targetCode || '').toUpperCase());
-  }
 
   function estimateTokens(text) {
     if (typeof TextEncoder === 'undefined') return Math.ceil((text || '').length / 4);
@@ -1231,6 +1209,7 @@
       `Input JSON array:\n` +
       payload;
 
+    const providerLabel = Common && Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
     const data = await Common.requestOpenAIChat({
       apiKey,
       model: normalizedModel,
@@ -1241,14 +1220,14 @@
     });
 
     const content = Common.getChatContent(data);
-    if (!content) throw new Error('*️⃣ OpenAI response did not contain any content.');
+    if (!content) throw new Error('*️⃣ ' + providerLabel + ' response did not contain any content.');
 
     const arr = safeParseJsonArray(content);
-    if (!arr) throw new Error('*️⃣ OpenAI output is not a valid JSON array.');
+    if (!arr) throw new Error('*️⃣ ' + providerLabel + ' output is not a valid JSON array.');
 
     const out = arr.map(x => (typeof x === 'string' ? x : String(x ?? '')));
     if (out.length !== src.length) {
-      log(`*️⃣ Warning: expected ${src.length} items from OpenAI but got ${out.length}.`, 'warn');
+      log(`*️⃣ Warning: expected ${src.length} items from ${providerLabel} but got ${out.length}.`, 'warn');
     }
     return out;
   }
@@ -1260,36 +1239,11 @@
 
   async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
     const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
-    const targetCode = getDeepLLangCode(targetLang);
-
-    const bodyForProxy = {
+    const out = await Common.translateDeepLLines(lines, targetLang, {
       apiKey,
-      text: lines,
-      target_lang: targetCode,
-      preserve_formatting: 1,
-      split_sentences: 0,
-      ...(needsDeepLQualityModel(targetCode) ? { model_type: 'quality_optimized' } : {}),
-    };
-
-    let response;
-    try {
-      response = await fetch('/api/deepl-trans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyForProxy),
-      });
-    } catch (err) {
-      throw new Error('*️⃣ Network error when calling DeepL proxy: ' + (err?.message || err));
-    }
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`*️⃣ DeepL/proxy error ${response.status}: ${text}`);
-    }
-
-    const data = await response.json();
-    const translations = Array.isArray(data?.translations) ? data.translations : [];
-    const out = translations.map(t => (t && typeof t.text === 'string') ? t.text : '');
+      chunkSize: 40,
+      concurrency: 3,
+    });
 
     if (out.length !== lines.length) {
       log(`*️⃣ Warning: expected ${lines.length} items from DeepL but got ${out.length}.`, 'warn');
@@ -1433,7 +1387,7 @@
           } else if (model === 'google') {
             translatedLines = await translateBatchGoogle(toTranslate, targetLang);
           } else if (model === 'deepl') {
-            translatedLines = await translateBatchDeepL(toTranslate, targetLang, openaiApiKey);
+            translatedLines = await translateBatchDeepL(toTranslate, targetLang, apiKey);
           } else {
             translatedLines = await translateBatchLingva(toTranslate, targetLang);
           }
@@ -1495,8 +1449,14 @@
       return;
     }
 
+    if (model === 'deepl' && !apiKey) {
+      log('*️⃣ Please provide your DeepL API key.', 'error');
+      return;
+    }
+
     if (Common && Common.isOpenAIEngine(model) && !openaiApiKey) {
-      log('*️⃣ Please provide your OpenAI API key.', 'error');
+      const provider = Common.getEngineProvider(model);
+      log('*️⃣ Please provide your ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key.', 'error');
       return;
     }
 
@@ -1601,8 +1561,13 @@
       const deepseekKey = (el.apiKey && el.apiKey.value.trim()) || '';
       const openaiKey = (el.openaiApiKey && el.openaiApiKey.value.trim()) || '';
   
-      if (deepseekKey) sessionStorage.setItem('deepseekApiKey', deepseekKey);
-      if (openaiKey) sessionStorage.setItem('openaiApiKey', openaiKey);
+      if (deepseekKey && model === 'deepseek') sessionStorage.setItem('deepseekApiKey', deepseekKey);
+      if (deepseekKey && model === 'deepl') sessionStorage.setItem('deeplApiKey', deepseekKey);
+      if (openaiKey) {
+        const openAiLikeStorageKey = Common ? (Common.getProviderKeyConfig(model)?.storageKey || 'openaiApiKey') : 'openaiApiKey';
+        sessionStorage.setItem(openAiLikeStorageKey, openaiKey);
+        if (openAiLikeStorageKey !== 'openaiApiKey') sessionStorage.setItem('openaiApiKey', openaiKey);
+      }
   
       const sessionId = await VNDB.createSession({
         fileName: state.fileName || 'script.rpy',
@@ -1680,9 +1645,22 @@
     const apply = () => {
       const value = Common ? Common.normalizeEngineId(el.modelSelect.value) : el.modelSelect.value;
       const provider = Common ? Common.getEngineProvider(value) : null;
+      const keyConfig = Common ? Common.getProviderKeyConfig(value) : null;
 
-      if (el.apiKeyContainer) el.apiKeyContainer.style.display = provider === 'deepseek' ? 'block' : 'none';
-      if (el.openaiKeyContainer) el.openaiKeyContainer.style.display = provider === 'openai' ? 'block' : 'none';
+      if (el.apiKeyContainer) el.apiKeyContainer.style.display = (provider === 'deepseek' || provider === 'deepl') ? 'block' : 'none';
+      if (el.openaiKeyContainer) el.openaiKeyContainer.style.display = (provider === 'openai' || provider === 'gemini') ? 'block' : 'none';
+
+      if (el.apiKey && keyConfig && (provider === 'deepseek' || provider === 'deepl')) {
+        el.apiKey.placeholder = keyConfig.placeholder;
+        const label = el.apiKeyContainer ? el.apiKeyContainer.querySelector('label[for="apiKey"]') : null;
+        if (label) label.textContent = keyConfig.label;
+      }
+
+      if (el.openaiApiKey && keyConfig && (provider === 'openai' || provider === 'gemini')) {
+        el.openaiApiKey.placeholder = keyConfig.placeholder;
+        const label = el.openaiKeyContainer ? el.openaiKeyContainer.querySelector('label[for="openaiApiKey"]') : null;
+        if (label) label.textContent = keyConfig.label;
+      }
 
       if (value === 'lingva' || value === 'google') showLibreModal();
       else hideLibreModal();
