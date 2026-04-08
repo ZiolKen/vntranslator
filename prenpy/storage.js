@@ -108,6 +108,15 @@ export const Store = {
     db.close();
   },
 
+  async deleteFile(projectId, path) {
+    const db = await openDb();
+    const tx = db.transaction(['files'], 'readwrite');
+    const key = `${projectId}::${path}`;
+    tx.objectStore('files').delete(key);
+    await txDone(tx);
+    db.close();
+  },
+
   async tmGetMany(target, sourceMaskedList) {
     const keys = Array.from(new Set((sourceMaskedList || []).map(v => String(v ?? ''))));
     if (!keys.length) return new Map();
