@@ -59,6 +59,9 @@ if (Common && el.translationModel) {
   Common.fillEngineSelect(el.translationModel, el.translationModel.value);
   el.translationModel.value = Common.normalizeEngineId(el.translationModel.value);
 }
+if (Common && el.targetLanguage) {
+  Common.fillTargetSelect(el.targetLanguage, el.targetLanguage.value || 'vi', 'code');
+}
 
 /* ------------------------------------------------------------
    State
@@ -804,6 +807,7 @@ async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
   const lines = batch.map(d => d.protectedText);
   const prompt = buildTranslatePrompt(lines, targetLang);
 
+  const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'ChatGPT';
   const data = await Common.requestOpenAIChat({
     apiKey,
     model: normalizedModel,
@@ -817,7 +821,7 @@ async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
   const out = parseTranslatedArray(content, lines.length);
 
   if (out.length !== lines.length) {
-    log(`⚠️ ChatGPT returned ${out.length} entries, expected ${lines.length}.`, "warn");
+    log(`⚠️ ${providerLabel} returned ${out.length} entries, expected ${lines.length}.`, "warn");
   }
 
   return out;
@@ -836,6 +840,15 @@ async function translateBatchGoogle(batchDialogs, targetLang) {
   return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
 }
 
+async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
+  const lines = batchDialogs.map(dialog => dialog.protectedText ?? dialog.text ?? "");
+  return Common.translateDeepLLines(lines, targetLang, {
+    apiKey,
+    chunkSize: 40,
+    concurrency: 3,
+  });
+}
+
 /* ------------------------------------------------------------
    Batch Translation Dispatcher
 ------------------------------------------------------------ */
@@ -851,7 +864,8 @@ async function translateBatch(batch, model, targetLang) {
   }
 
   if (Common && Common.isOpenAIEngine(model)) {
-    if (!ck) throw new Error("Missing OpenAI API key");
+    const provider = Common.getEngineProvider(model);
+    if (!ck) throw new Error("Missing " + (provider === "gemini" ? "Gemini" : "OpenAI") + " API key");
     return await translateBatchChatGPT(batch, targetLang, ck, model);
   }
 
@@ -861,6 +875,11 @@ async function translateBatch(batch, model, targetLang) {
 
   if (model === "google") {
     return await translateBatchGoogle(batch, targetLang);
+  }
+
+  if (model === "deepl") {
+    if (!dk) throw new Error("Missing DeepL API key");
+    return await translateBatchDeepL(batch, targetLang, dk);
   }
 
   throw new Error("Unknown translation model: " + model);
@@ -1017,8 +1036,13 @@ async function startTranslationInternal() {
     log("⚠️ DeepSeek requires API key!", "error");
     return;
   }
+  if (model === "deepl" && !el.apiKey.value.trim()) {
+    log("⚠️ DeepL requires API key!", "error");
+    return;
+  }
   if (Common && Common.isOpenAIEngine(model) && !el.chatgptKey.value.trim()) {
-    log("⚠️ ChatGPT requires API key!", "error");
+    const provider = Common.getEngineProvider(model);
+    log("⚠️ " + (provider === "gemini" ? "Gemini" : "OpenAI") + " requires API key!", "error");
     return;
   }
 
@@ -1132,8 +1156,11 @@ el.previewResultBtn.addEventListener("click", async () => {
   const fileName = state.fileName || "file.json";
   const originalJsonText = state.rawJsonText || JSON.stringify(state.json, null, 2);
 
-  sessionStorage.setItem("deepseekApiKey", String(el.apiKey.value || "").trim());
-  sessionStorage.setItem("openaiApiKey", String(el.chatgptKey.value || "").trim());
+  if (model === "deepseek") sessionStorage.setItem("deepseekApiKey", String(el.apiKey.value || "").trim());
+  if (model === "deepl") sessionStorage.setItem("deeplApiKey", String(el.apiKey.value || "").trim());
+  const openAiLikeKey = String(el.chatgptKey.value || "").trim();
+  sessionStorage.setItem("openaiApiKey", openAiLikeKey);
+  sessionStorage.setItem("geminiApiKey", openAiLikeKey);
 
   const dialogs = state.dialogs.map(d => ({
     original: d.text ?? "",
@@ -1218,9 +1245,22 @@ el.cancelLingvaBtn.addEventListener("click", () => {
 el.translationModel.addEventListener("change", () => {
   const m = Common ? Common.normalizeEngineId(el.translationModel.value) : el.translationModel.value;
   const provider = Common ? Common.getEngineProvider(m) : null;
+  const keyConfig = Common ? Common.getProviderKeyConfig(m) : null;
 
-  document.getElementById("apiKeyGroup").style.display = provider === "deepseek" ? "block" : "none";
-  document.getElementById("chatgptApiKeyGroup").style.display = provider === "openai" ? "block" : "none";
+  document.getElementById("apiKeyGroup").style.display = (provider === "deepseek" || provider === "deepl") ? "block" : "none";
+  document.getElementById("chatgptApiKeyGroup").style.display = (provider === "openai" || provider === "gemini") ? "block" : "none";
+
+  if (provider === "deepseek" || provider === "deepl") {
+    const label = document.querySelector('label[for="apiKey"]');
+    if (label && keyConfig) label.textContent = keyConfig.label;
+    if (el.apiKey && keyConfig) el.apiKey.placeholder = keyConfig.placeholder;
+  }
+
+  if (el.chatgptKey && keyConfig && (provider === "openai" || provider === "gemini")) {
+    const label = document.querySelector('label[for="chatgptApiKey"]');
+    if (label) label.textContent = keyConfig.label;
+    el.chatgptKey.placeholder = keyConfig.placeholder;
+  }
 
   if (m === "lingva" || m === "google") showLingvaWarning();
   else hideLingvaWarning();
