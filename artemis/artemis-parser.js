@@ -7,7 +7,8 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const LUA_CMD_BLACKLIST = new Set(['name', 'ruby', 'rt2', 'savetitle', 'bg', 'bgm', 'se', 'fg', 'msgoff', 'extrans', 'select', 'cinema']);
+  const LUA_CMD_BLACKLIST = new Set(['name', 'ruby', 'rt2', 'txruby', 'savetitle', 'bg', 'bgm', 'se', 'fg', 'msgoff', 'extrans', 'select', 'cinema']);
+  const ARTEMIS_SYSTEM_TOKENS = new Set(['name', 'ch', 'text', 'mw', 'ja', 'en', 'cn', 'tw', 'ruby', 'rt2', 'txruby', 'file', 'cg', 'bg', 'bgm', 'se', 'fg', 'msgoff', 'extrans', 'select', 'cinema']);
   const RGX_ASSET_FILE = /\.(png|jpe?g|gif|bmp|webp|ogg|mp3|wav|m4a|mp4|webm|m4v|avi|mov|ttf|otf|woff2?|eot|ks|ast|asb|txt|json)$/i;
   const RGX_ASSET_PATH = /(?:^|['"])\s*(?:images?|audio|music|voice|bg|bgm|se|sfx|movie|video|sounds?|scenario)\//i;
   const ARTEMIS_LOCALE_SUFFIXES = ['ja', 'en', 'cn', 'tw'];
@@ -41,13 +42,47 @@
     return false;
   }
 
+  function hasJapaneseVisibleText(text) {
+    return /[\u3040-\u30ff\u3400-\u9fff]/.test(String(text || ''));
+  }
+
+  function hasVisibleLetters(text) {
+    return /[\p{L}]/u.test(String(text || ''));
+  }
+
+  function looksLikePlaceholderOnly(text) {
+    const t = String(text || '').trim();
+    if (!t) return true;
+    return /^(?:\{[^{}]*}|\[[^\]]*]|<[^>]*>|\([^)]*\)|%\d*\$?[sdfox])+$/i.test(t);
+  }
+
   function isTranslatableText(text) {
     const t = String(text || '').trim();
     if (!t) return false;
     if (looksLikeCodeOrAsset(t)) return false;
+    if (looksLikePlaceholderOnly(t)) return false;
     if (LUA_CMD_BLACKLIST.has(t.toLowerCase())) return false;
+    if (ARTEMIS_SYSTEM_TOKENS.has(t.toLowerCase())) return false;
     if (/^(?:return|break|continue|if|else|elsif|while|for|function|var|const|let|switch|case|default)$/i.test(t)) return false;
-    return /[\p{L}]/u.test(t);
+    if (/^(?=.*[_-])[a-z0-9_-]+$/i.test(t) && !hasJapaneseVisibleText(t)) return false;
+    return hasVisibleLetters(t);
+  }
+
+  function classifyArtemisAttribute(attrName) {
+    const key = String(attrName || '').toLowerCase();
+    if (key === 'name' || key === 'ch') return 'name';
+    if (key === 'title') return 'ui';
+    if (key === 'ruby') return 'annotation';
+    return 'text';
+  }
+
+  function shouldTranslateArtemisValue(value, options) {
+    const text = String(value || '');
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+    if (!isTranslatableText(trimmed)) return false;
+    if (options && options.role === 'annotation') return false;
+    return true;
   }
 
   function detectScriptType(filename, bufferOrText) {
@@ -61,7 +96,7 @@
     if (name.endsWith('.ast') || name.endsWith('.asb')) return 'artemis-ast';
     if (name.endsWith('.ks')) return 'kag-ks';
     if (name.endsWith('.txt')) {
-      if (/\b(?:text|mw|ruby|title|name)(?:_(?:ja|en|cn|tw))?\s*=\s*["']/.test(text) || /\b(?:ja|en|cn|tw)\s*=\s*\{/.test(text)) return 'artemis-ast';
+      if (/\b(?:text|mw|ruby|title|name|ch)(?:_(?:ja|en|cn|tw))?\s*=\s*["']/.test(text) || /\b(?:ja|en|cn|tw)\s*=\s*\{/.test(text)) return 'artemis-ast';
       if (/^@(?:if|endif|jump|call|return|wait|wt|eval|emb|set)\b/im.test(text)) return 'kag-ks';
       if (/^\*[A-Za-z0-9_\-|]+$/m.test(text)) return 'kag-ks';
       if (/「[^」]+」/.test(text)) return 'kag-ks';
@@ -311,7 +346,7 @@
   }
 
   function getArtemisAttrRegex() {
-    return /\b(text|mw|ruby|title|name)(?:_(ja|en|cn|tw))?\s*=\s*(["'])((?:(?!\3).|\\.)*)\3/gi;
+    return /\b(text|mw|ruby|title|name|ch)(?:_(ja|en|cn|tw))?\s*=\s*(["'])((?:(?!\3).|\\.)*)\3/gi;
   }
 
   function getArtemisSelectRegex() {
@@ -387,12 +422,15 @@
 
     const attrRx = getArtemisAttrRegex();
     while ((match = attrRx.exec(text)) !== null) {
+      const attrName = String(match[1] || '').toLowerCase();
+      const locale = match[2] ? String(match[2]).toLowerCase() : null;
       const quote = match[3];
       const value = match[4];
-      if (!isTranslatableText(value)) continue;
+      const role = classifyArtemisAttribute(attrName);
+      if (!shouldTranslateArtemisValue(value, { role, attrName, locale })) continue;
       const valueStart = match.index + match[0].lastIndexOf(value);
       const valueEnd = valueStart + value.length;
-      occurrences.push({ start: valueStart, end: valueEnd, value, quote, type: 'attr' });
+      occurrences.push({ start: valueStart, end: valueEnd, value, quote, type: 'attr', role, attrName, locale });
       occupied.push({ start: valueStart, end: valueEnd });
     }
 
@@ -402,11 +440,12 @@
       let m;
       while ((m = strRx.exec(blockText)) !== null) {
         const value = m[2];
-        if (!isTranslatableText(value)) continue;
+        const role = 'choice';
+        if (!shouldTranslateArtemisValue(value, { role, blockType: 'select' })) continue;
         const start = block.bodyStart + m.index + 1;
         const end = start + value.length;
         if (overlaps(occupied, start, end)) continue;
-        occurrences.push({ start, end, value, quote: m[1], type: 'select' });
+        occurrences.push({ start, end, value, quote: m[1], type: 'select', role });
         occupied.push({ start, end });
       }
     });
@@ -417,13 +456,14 @@
       let m;
       while ((m = strRx.exec(blockText)) !== null) {
         const value = m[2];
-        if (!isTranslatableText(value)) continue;
         const before = blockText.slice(0, m.index).trimEnd();
         if (/\b[A-Za-z_][\w.]*\s*=\s*$/.test(before)) continue;
+        const role = 'text';
+        if (!shouldTranslateArtemisValue(value, { role, blockType: 'locale' })) continue;
         const start = block.bodyStart + m.index + 1;
         const end = start + value.length;
         if (overlaps(occupied, start, end)) continue;
-        occurrences.push({ start, end, value, quote: m[1], type: 'block' });
+        occurrences.push({ start, end, value, quote: m[1], type: 'block', role });
         occupied.push({ start, end });
       }
     });
@@ -437,7 +477,7 @@
     return {
       lines: occurrences.map(function (item) { return item.value; }),
       mapping: occurrences.map(function (item) {
-        return { start: item.start, end: item.end, quote: item.quote, type: item.type };
+        return { start: item.start, end: item.end, quote: item.quote, type: item.type, role: item.role || 'text', attrName: item.attrName || null, locale: item.locale || null };
       })
     };
   }
