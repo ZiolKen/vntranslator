@@ -72,8 +72,10 @@ It focuses on **accuracy**, **format preservation**, and **ease of use**, withou
 
 ## 🤖 Translation Engines
 
-- **DeepSeek API** (recommended – high quality)
+- **DeepSeek API** (recommended)
 - **OpenAI (ChatGPT models)**
+- **Gemini API**
+- **DeepL API**
 - **Lingva / Google Translate** (free, lower quality)
 
 ---
