@@ -780,7 +780,11 @@
   function getApiKeyForModel(model) {
     const m = Common ? Common.normalizeEngineId(model) : String(model || '').toLowerCase().trim();
     if (m === 'deepseek') return String(sessionStorage.getItem('deepseekApiKey') || '').trim();
-    if (Common && Common.isOpenAIEngine(m)) return String(sessionStorage.getItem('openaiApiKey') || '').trim();
+    if (m === 'deepl') return String(sessionStorage.getItem('deeplApiKey') || '').trim();
+    if (Common && Common.isOpenAIEngine(m)) {
+      const storageKey = Common.getProviderKeyConfig(m)?.storageKey || 'openaiApiKey';
+      return String(sessionStorage.getItem(storageKey) || sessionStorage.getItem('openaiApiKey') || '').trim();
+    }
     return '';
   }
 
@@ -941,6 +945,7 @@ ${JSON.stringify(lines)}`;
     const normalizedModel = Common ? Common.normalizeEngineId(model) : model;
     const prompt = buildTranslatePrompt(lines, targetLang);
 
+    const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
     const data = await Common.requestOpenAIChat({
       apiKey,
       model: normalizedModel,
@@ -956,6 +961,14 @@ ${JSON.stringify(lines)}`;
 
   async function translateGoogle(lines, targetLang) {
     return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
+  }
+
+  async function translateDeepL(lines, targetLang, apiKey) {
+    return Common.translateDeepLLines(lines, targetLang, {
+      apiKey,
+      chunkSize: 40,
+      concurrency: 3,
+    });
   }
   async function lingvaRequest(text, target) {
     const out = await Common.translateLingvaLines([text], target, { concurrency: 1, delayMs: 0 });
@@ -974,11 +987,16 @@ ${JSON.stringify(lines)}`;
     const apiKey = getApiKeyForModel(m);
     if (!apiKey) {
       if (m === 'deepseek') throw new Error('Missing DeepSeek API key');
-      if (Common && Common.isOpenAIEngine(m)) throw new Error('Missing OpenAI API key');
+      if (m === 'deepl') throw new Error('Missing DeepL API key');
+      if (Common && Common.isOpenAIEngine(m)) {
+        const provider = Common.getEngineProvider(m);
+        throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key');
+      }
       throw new Error('Missing API key');
     }
 
     if (m === 'deepseek') return await translateDeepSeek([text], targetLang, apiKey);
+    if (m === 'deepl') return await translateDeepL([text], targetLang, apiKey);
     if (Common && Common.isOpenAIEngine(m)) return await translateOpenAI([text], targetLang, apiKey, m);
 
     throw new Error('Unknown model: ' + model);
