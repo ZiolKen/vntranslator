@@ -7,9 +7,7 @@ let ACTIVE_FILE_ID = null;
 let MONACO_EDITOR = null;  
 const MONACO_MODELS = {};  
 let MONACO_READY = false; 
-const HIDE_TAGS = {};
-const HIDE_TAG_STATE = {};
-const RPGM_TAG_STATE = {};
+const PROTECT_TAG_STATE = {};
 
 // ================================
 // TEXT HELPERS
@@ -170,8 +168,8 @@ function closeTab(id) {
         delete MONACO_MODELS[id];
     }
     delete OPEN_FILES[id];
-    if (HIDE_TAG_STATE[id]) {
-        delete HIDE_TAG_STATE[id];
+    if (PROTECT_TAG_STATE[id]) {
+        delete PROTECT_TAG_STATE[id];
     }
     if (ACTIVE_FILE_ID === id) {
         const remaining = document.querySelectorAll(".tab");
@@ -330,24 +328,24 @@ function renderButtons(fileData) {
         }
     };
     bar.appendChild(wrapBtn);
-    if (fileData.type === "rpgmv-json") {
-        const hideBtn = document.createElement("button");
-        hideBtn.className = "save-btn";
-        hideBtn.style.marginLeft = "8px";
-        const st = RPGM_TAG_STATE[fileData.id];
-        const isHidden = st && st.hidden;
-        hideBtn.textContent = isHidden ? "🏷️ Hide Tags: ON" : "🏷️ Hide Tags: OFF";
-        hideBtn.title = "For machine translation";
-        hideBtn.onclick = () => {
-            const currentState = RPGM_TAG_STATE[fileData.id] && RPGM_TAG_STATE[fileData.id].hidden;
+    if (supportsProtectTags(fileData.type)) {
+        const protectBtn = document.createElement("button");
+        protectBtn.className = "save-btn";
+        protectBtn.style.marginLeft = "8px";
+        const st = PROTECT_TAG_STATE[fileData.id];
+        const enabled = st && st.enabled;
+        protectBtn.textContent = enabled ? "🏷️ Protect Tags: ON" : "🏷️ Protect Tags: OFF";
+        protectBtn.title = "Replace engine tags and escape codes with placeholders like ⟦PH0⟧";
+        protectBtn.onclick = () => {
+            const currentState = PROTECT_TAG_STATE[fileData.id] && PROTECT_TAG_STATE[fileData.id].enabled;
             if (currentState) {
-                disableHideTagsRpgm(fileData.id);
+                disableProtectTags(fileData.id);
             } else {
-                enableHideTagsRpgm(fileData.id);
-            } 
+                enableProtectTags(fileData.id);
+            }
             renderButtons(fileData);
         };
-        bar.appendChild(hideBtn);
+        bar.appendChild(protectBtn);
     }
 }
 
@@ -358,7 +356,7 @@ function renderButtons(fileData) {
 async function reloadFile(id) {
     const file = OPEN_FILES[id];
     if (!file) return;
-    delete RPGM_TAG_STATE[id];
+    delete PROTECT_TAG_STATE[id];
     const fileData = OPEN_FILES[id];
     if (!fileData.lines) return;
     let txt = buildEditorTextFromLines(fileData.lines || []);
@@ -402,6 +400,143 @@ function parseEditorBlocks(raw, expectedCount) {
     return result;
 }
 
+const GTE_PLACEHOLDER_RE = /⟦\s*PH\s*(\d+)\s*⟧/g;
+const RPGM_PROTECT_REGEX = /\\(?:\\|[A-Za-z]+(?:\[[^\]]*\]|<[^>]*>)?|[.!^|])|<[^>\n]*>|\[[^\]\n]*]|\{[^}\n]*}/g;
+const RENPY_PROTECT_REGEX = /\[[^\[\]\n]*]|\{[^{}\n]*}/g;
+const KAG_PROTECT_REGEX = /\[[^\[\]\n]*]/g;
+const ARTEMIS_PROTECT_REGEX = /\$\{[^{}\n]*}|\[[^\[\]\n]*]|<[^>\n]*>|\{[^{}\n]*}/g;
+
+function supportsProtectTags(fileType) {
+    return ["renpy-script", "rpgmv-json", "kag-ks", "tyrano-ks", "artemis-ast"].includes(String(fileType || ""));
+}
+
+function getProtectPatterns(fileType) {
+    switch (String(fileType || "")) {
+        case "renpy-script": return [RENPY_PROTECT_REGEX];
+        case "rpgmv-json": return [RPGM_PROTECT_REGEX];
+        case "kag-ks":
+        case "tyrano-ks": return [KAG_PROTECT_REGEX];
+        case "artemis-ast": return [ARTEMIS_PROTECT_REGEX];
+        default: return [];
+    }
+}
+
+function collectPlaceholderIds(text) {
+    const used = new Set();
+    String(text || "").replace(GTE_PLACEHOLDER_RE, (_, rawId) => {
+        const id = Number(rawId);
+        if (Number.isFinite(id)) used.add(id);
+        return _;
+    });
+    return used;
+}
+
+function createPlaceholderToken(id) {
+    return `⟦PH${id}⟧`;
+}
+
+function protectTextWithPatterns(text, patterns) {
+    const source = String(text ?? "");
+    if (!source || !patterns.length) {
+        return { protectedText: source, map: Object.create(null), count: 0 };
+    }
+
+    const used = collectPlaceholderIds(source);
+    const matches = [];
+
+    for (const pattern of patterns) {
+        const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+        let match;
+        while ((match = re.exec(source)) !== null) {
+            if (!match[0]) break;
+            matches.push({
+                start: match.index,
+                end: match.index + match[0].length,
+                value: match[0]
+            });
+        }
+    }
+
+    if (!matches.length) {
+        return { protectedText: source, map: Object.create(null), count: 0 };
+    }
+
+    matches.sort((a, b) => a.start - b.start || b.end - a.end);
+
+    let nextId = 0;
+    const allocId = () => {
+        while (used.has(nextId)) nextId++;
+        used.add(nextId);
+        return nextId++;
+    };
+
+    const map = Object.create(null);
+    let out = "";
+    let cursor = 0;
+
+    for (const match of matches) {
+        if (match.start < cursor) continue;
+        out += source.slice(cursor, match.start);
+        const token = createPlaceholderToken(allocId());
+        map[token] = match.value;
+        out += token;
+        cursor = match.end;
+    }
+
+    out += source.slice(cursor);
+
+    return {
+        protectedText: out,
+        map,
+        count: Object.keys(map).length
+    };
+}
+
+function restoreProtectedPlaceholders(text, map) {
+    const source = String(text ?? "");
+    if (!source || !map) return source;
+    return source.replace(GTE_PLACEHOLDER_RE, (full, rawId) => {
+        const token = createPlaceholderToken(Number(rawId));
+        return Object.prototype.hasOwnProperty.call(map, token) ? map[token] : full;
+    });
+}
+
+function protectLineWithPlaceholders(fileType, line) {
+    return protectTextWithPatterns(line, getProtectPatterns(fileType));
+}
+
+function enableProtectTags(fileId) {
+    const file = OPEN_FILES[fileId];
+    if (!file || !supportsProtectTags(file.type)) return;
+    const state = PROTECT_TAG_STATE[fileId] || { enabled: false, lines: {} };
+    const currentLines = getEditorLinesForFile(fileId);
+    const nextLines = [];
+    const lineState = {};
+    currentLines.forEach((line, idx) => {
+        const info = protectLineWithPlaceholders(file.type, line);
+        lineState[idx] = info;
+        nextLines.push(info.protectedText);
+    });
+    state.enabled = true;
+    state.lines = lineState;
+    PROTECT_TAG_STATE[fileId] = state;
+    setEditorLinesForFile(fileId, nextLines);
+    file.lines = nextLines.slice();
+}
+
+function disableProtectTags(fileId) {
+    const file = OPEN_FILES[fileId];
+    const state = PROTECT_TAG_STATE[fileId];
+    if (!file || !state || !state.enabled) return;
+    const currentLines = getEditorLinesForFile(fileId);
+    const restored = currentLines.map((line, idx) => restoreProtectedPlaceholders(line, state.lines[idx]?.map));
+    state.enabled = false;
+    state.lines = restored.map((line) => protectLineWithPlaceholders(file.type, line));
+    PROTECT_TAG_STATE[fileId] = state;
+    setEditorLinesForFile(fileId, restored);
+    file.lines = restored.slice();
+}
+
 // ===================================
 // SAVE & DOWNLOAD
 // ===================================
@@ -420,21 +555,12 @@ async function saveTextList(id) {
         ? parseEditorBlocks(raw, expectedCount)
         : [];
     let linesToSend = editedLines;
-    const tagState = RPGM_TAG_STATE[id];
-    if (file.type === "rpgmv-json" && tagState) {
-        if (tagState.hidden) { 
-            linesToSend = editedLines.map((plain, idx) => {
-                const info = tagState.lines[idx];
-                if (!info) return plain; 
-                const full = reapplyTagsToLine(info, plain);
-                tagState.lines[idx] = parseRpgmLineForTags(full);
-                return full;
-            });
-        } else { 
-            tagState.lines = editedLines.map(parseRpgmLineForTags);
-        }
+    const protectState = PROTECT_TAG_STATE[id];
+    if (protectState && protectState.enabled) {
+        linesToSend = editedLines.map((line, idx) => restoreProtectedPlaceholders(line, protectState.lines[idx]?.map));
+        protectState.lines = linesToSend.map((line) => protectLineWithPlaceholders(file.type, line));
         file.lines = linesToSend.slice();
-    } else { 
+    } else {
         file.lines = editedLines.slice();
     }
     PreLoadOn();
@@ -639,47 +765,3 @@ function reapplyTagsToLine(info, newPlain) {
     return out;
 }
 
-// ===================================
-// HIDE TAGS (RPGM only)
-// ===================================
-
-function enableHideTagsRpgm(fileId) {
-    const state = RPGM_TAG_STATE[fileId] || { hidden: false, lines: {} };
-    const linesNow = getEditorLinesForFile(fileId);
-    const newLines = [];
-    const lineState = {};
-    linesNow.forEach((line, idx) => {
-        const info = parseRpgmLineForTags(line);
-        lineState[idx] = info;
-        newLines.push(info.plain);
-    });
-    state.hidden = true;
-    state.lines = lineState;
-    RPGM_TAG_STATE[fileId] = state;
-    setEditorLinesForFile(fileId, newLines);
-    if (OPEN_FILES[fileId]) {
-        OPEN_FILES[fileId].lines = newLines;
-    }
-}
-function disableHideTagsRpgm(fileId) {
-    const state = RPGM_TAG_STATE[fileId];
-    if (!state || !state.hidden) return;
-    const plainLinesNow = getEditorLinesForFile(fileId);
-    const restored = [];
-    plainLinesNow.forEach((plain, idx) => {
-        const info = state.lines[idx];
-        if (!info) {
-            restored.push(plain);
-            return;
-        }
-        const newFull = reapplyTagsToLine(info, plain);
-        restored.push(newFull);
-        state.lines[idx] = parseRpgmLineForTags(newFull);
-    });
-    state.hidden = false;
-    RPGM_TAG_STATE[fileId] = state;
-    setEditorLinesForFile(fileId, restored);
-    if (OPEN_FILES[fileId]) {
-        OPEN_FILES[fileId].lines = restored;
-    }
-}
