@@ -37,8 +37,27 @@ function syncModelUI(showWarnings = false) {
   const m = Common ? Common.normalizeEngineId(els.model.value) : els.model.value;
   const provider = Common ? Common.getEngineProvider(m) : null;
 
-  if (els.apiKeyGroup) els.apiKeyGroup.style.display = provider === "deepseek" ? "block" : "none";
-  if (els.openaiKeyGroup) els.openaiKeyGroup.style.display = provider === "openai" ? "block" : "none";
+  if (els.apiKeyGroup) {
+    els.apiKeyGroup.style.display = (provider === "deepseek" || provider === "deepl") ? "block" : "none";
+    const label = els.apiKeyGroup.querySelector("label");
+    if (label) label.textContent = provider === "deepl" ? "DeepL API Key" : "DeepSeek API Key";
+    if (els.apiKey) {
+      els.apiKey.placeholder = provider === "deepl"
+        ? "Enter your DeepL API key"
+        : "Enter your DeepSeek API key";
+    }
+  }
+
+  if (els.openaiKeyGroup) {
+    els.openaiKeyGroup.style.display = (provider === "openai" || provider === "gemini") ? "block" : "none";
+    const label = els.openaiKeyGroup.querySelector("label");
+    if (label) label.textContent = provider === "gemini" ? "Gemini API Key" : "OpenAI API Key";
+    if (els.openaiKey) {
+      els.openaiKey.placeholder = provider === "gemini"
+        ? "Enter your Gemini API key"
+        : "Enter your OpenAI API key";
+    }
+  }
 
   if (showWarnings && (m === "lingva" || m === "google")) showLingvaWarning();
 }
@@ -514,14 +533,15 @@ els.start.addEventListener("click", async () => {
   const apiKey = (els.apiKey && els.apiKey.value) ? els.apiKey.value.trim() : "";
   const openaiApiKey = (els.openaiKey && els.openaiKey.value) ? els.openaiKey.value.trim() : "";
   const skipVi = !!els.skipVi.checked;
+  const provider = Common ? Common.getEngineProvider(model) : null;
 
-  if (model === "deepseek" && !apiKey) {
-    alert("DeepSeek API key is required.");
+  if ((provider === "deepseek" || provider === "deepl") && !apiKey) {
+    alert(provider === "deepl" ? "DeepL API key is required." : "DeepSeek API key is required.");
     return;
   }
 
-  if (Common && Common.isOpenAIEngine(model) && !openaiApiKey) {
-    alert("OpenAI API key is required.");
+  if ((provider === "openai" || provider === "gemini") && !openaiApiKey) {
+    alert(provider === "gemini" ? "Gemini API key is required." : "OpenAI API key is required.");
     return;
   }
 
@@ -598,6 +618,56 @@ els.start.addEventListener("click", async () => {
           let outSafe = translatedSafe[i] || "";
 
           if (!isPlaceholderSafe(t.safe, `⟦PH0⟧`.includes("PH") ? outSafe : outSafe)) {
+            state.blocks[t.bi].translated[t.li] = t.raw;
+            addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
+          } else {
+            const restored = restoreText(outSafe, t.placeholders);
+            state.blocks[t.bi].translated[t.li] = restored;
+            addLog(`tag-${targetLang}`, t.raw, restored);
+          }
+
+          state.doneLines++;
+        }
+
+        updateUI();
+      }
+    }
+
+    else if (model === "deepl") {
+      const MAX_CHARS = 10000;
+      const batches = [];
+      let cur = [];
+      let curChars = 0;
+
+      for (const t of tasks) {
+        const add = t.safe.length + 12;
+        if (cur.length >= batchSize || (curChars + add) > MAX_CHARS) {
+          batches.push(cur);
+          cur = [];
+          curChars = 0;
+        }
+        cur.push(t);
+        curChars += add;
+      }
+      if (cur.length) batches.push(cur);
+
+      for (const batch of batches) {
+        if (!state.isRunning) break;
+
+        const safeLines = batch.map(x => x.safe);
+
+        const translatedSafe = await deeplPool.run(() =>
+          withRetry(
+            () => translateDeepLBatch(safeLines, targetLang, apiKey, signal),
+            { retries: 4, baseDelay: 500, signal }
+          )
+        );
+
+        for (let i = 0; i < batch.length; i++) {
+          const t = batch[i];
+          const outSafe = translatedSafe[i] || "";
+
+          if (!isPlaceholderSafe(t.safe, outSafe)) {
             state.blocks[t.bi].translated[t.li] = t.raw;
             addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
           } else {
