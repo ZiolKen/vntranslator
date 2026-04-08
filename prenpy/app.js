@@ -443,14 +443,35 @@ function renderFileList() {
     pill2.className = 'pill';
     pill2.textContent = `${translated} translated`;
 
-    meta.append(pill1, pill2);
+    const actions = document.createElement('div');
+    actions.className = 'file-actions';
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'file-delete';
+    btnDelete.textContent = 'Delete';
+    btnDelete.setAttribute('aria-label', `Delete ${p}`);
+    btnDelete.title = `Delete ${p}`;
+    btnDelete.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await deleteFile(p);
+    });
+
+    actions.appendChild(btnDelete);
+    meta.append(pill1, pill2, actions);
     item.append(pathEl, meta);
 
     item.addEventListener('click', () => openFile(p));
-    item.addEventListener('keydown', (e) => {
+    item.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         openFile(p);
+        return;
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        await deleteFile(p);
       }
     });
 
@@ -920,6 +941,47 @@ async function importFiles(fileList) {
 
   setStatus(`Imported ${imported} file(s).`, '');
   setBusy(false);
+}
+
+async function deleteFile(path, { askConfirm = true } = {}) {
+  const normalizedPath = String(path || '');
+  if (!normalizedPath || !state.files.has(normalizedPath)) return;
+  if (askConfirm && !confirm(`Delete ${normalizedPath}?`)) return;
+
+  const wasActive = normalizedPath === state.activePath;
+  const remainingPaths = Array.from(state.files.keys())
+    .filter((p) => p !== normalizedPath)
+    .sort((a, b) => a.localeCompare(b));
+
+  setBusy(true);
+  try {
+    state.activeSelected.clear();
+    state.files.delete(normalizedPath);
+    try {
+      await Store.deleteFile(PROJECT_ID, normalizedPath);
+      await Store.saveProject(state.project);
+    } catch {}
+
+    if (wasActive) {
+      state.activePath = remainingPaths[0] || null;
+    }
+
+    updateProjectStats();
+    renderFileList();
+
+    if (state.activePath) {
+      renderTable();
+    } else {
+      ui.gridBody.innerHTML = '';
+      setStatus('No file open.', '');
+    }
+
+    enableActions();
+    updateUndoRedoButtons();
+    setStatus(`Deleted ${normalizedPath}.`, '');
+  } finally {
+    setBusy(false);
+  }
 }
 
 function openFile(path) {
