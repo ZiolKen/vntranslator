@@ -2,7 +2,7 @@ import { RENPY, unmaskTagsInText, RENPH_TEST_RE, OLD_RENPH_TEST_RE, TRANSLATOR_C
 import { normalizeLineEndings, restoreLineEndings, debounce, escapeHtml, clamp, yieldToMain } from './utils.js';
 import { Store } from './storage.js';
 import { LANG_TO_CODE } from './languages.js';
-import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchLingva, translateBatchGoogle } from './engines.js';
+import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchDeepL, translateBatchLingva, translateBatchGoogle } from './engines.js';
 import { downloadZip } from './zip.js';
 import { buildMatcher, findAllInText, replaceAll, nextIndex, sortMatches } from './findreplace.js';
 
@@ -978,8 +978,19 @@ function syncEngineUI() {
   if (!Common || !ui.engineSelect) return;
   const engine = Common.normalizeEngineId(ui.engineSelect.value);
   const provider = Common.getEngineProvider(engine);
-  if (ui.deepseekKeyRow) ui.deepseekKeyRow.style.display = provider === 'deepseek' ? '' : 'none';
-  if (ui.openaiKeyRow) ui.openaiKeyRow.style.display = provider === 'openai' ? '' : 'none';
+  const keyConfig = Common.getProviderKeyConfig(engine);
+  if (ui.deepseekKeyRow) ui.deepseekKeyRow.style.display = (provider === 'deepseek' || provider === 'deepl') ? '' : 'none';
+  if (ui.openaiKeyRow) ui.openaiKeyRow.style.display = (provider === 'openai' || provider === 'gemini') ? '' : 'none';
+  if ((provider === 'deepseek' || provider === 'deepl') && ui.apiKey) {
+    ui.apiKey.placeholder = keyConfig.placeholder;
+    const label = ui.deepseekKeyRow ? ui.deepseekKeyRow.querySelector('label') : null;
+    if (label) label.textContent = keyConfig.label;
+  }
+  if ((provider === 'openai' || provider === 'gemini') && ui.openaiApiKey) {
+    ui.openaiApiKey.placeholder = keyConfig.placeholder;
+    const label = ui.openaiKeyRow ? ui.openaiKeyRow.querySelector('label') : null;
+    if (label) label.textContent = keyConfig.label;
+  }
 }
 
 if (Common && ui.engineSelect) {
@@ -987,6 +998,9 @@ if (Common && ui.engineSelect) {
   ui.engineSelect.value = Common.normalizeEngineId(ui.engineSelect.value);
   ui.engineSelect.addEventListener('change', syncEngineUI);
   syncEngineUI();
+}
+if (Common && ui.targetLangSelect) {
+  Common.fillTargetSelect(ui.targetLangSelect, ui.targetLangSelect.value || 'Vietnamese', 'label');
 }
 
 async function fillMissingFromTM(path) {
@@ -1026,10 +1040,12 @@ async function translateDialogs(path, indices) {
   const engine = Common ? Common.normalizeEngineId(ui.engineSelect.value) : ui.engineSelect.value;
   const apiKey = String(ui.apiKey.value || '').trim();
   const openaiApiKey = String(ui.openaiApiKey?.value || '').trim();
+  const provider = Common ? Common.getEngineProvider(engine) : null;
   const batch = clamp(Number(ui.batchSize.value || 20), 1, 80);
 
   if (engine === 'deepseek' && !apiKey) throw new Error('Missing DeepSeek API key.');
-  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) throw new Error('Missing OpenAI API key.');
+  if (engine === 'deepl' && !apiKey) throw new Error('Missing DeepL API key.');
+  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key.');
 
   const list = indices.map(i => ({ idx: i, d: f.dialogs[i] })).filter(x => x.d);
   if (!list.length) return;
@@ -1048,6 +1064,7 @@ async function translateDialogs(path, indices) {
     const dialogsOnly = slice.map(x => x.d);
     
     if (engine === 'deepseek') translated = await translateBatchDeepSeek(dialogsOnly, targetLang, apiKey);
+    else if (engine === 'deepl') translated = await translateBatchDeepL(dialogsOnly, targetLang, apiKey);
     else if (Common && Common.isOpenAIEngine(engine)) translated = await translateBatchOpenAI(dialogsOnly, targetLang, openaiApiKey, engine);
     else if (engine === 'google') translated = await translateBatchGoogle(dialogsOnly, targetLang);
     else translated = await translateBatchLingva(dialogsOnly, targetLang);
