@@ -5,6 +5,7 @@
   const ENGINE_CATALOG = Object.freeze([
     { id: 'deepseek', provider: 'deepseek', label: 'DeepSeek', uiLabel: '🔥 DeepSeek API — High Quality (Paid)' },
     { id: 'deepl', provider: 'deepl', label: 'DeepL', uiLabel: '🧠 DeepL API — Strong MT Quality (Paid)' },
+    { id: 'gemini-3.1-pro-preview', provider: 'gemini', label: 'Gemini 3.1 Pro', uiLabel: '🧠 Gemini 3.1 Pro — Best Gemini Quality (Paid)' },
     { id: 'gemini-3.1-flash-lite-preview', provider: 'gemini', label: 'Gemini 3.1 Flash-Lite', uiLabel: '✨ Gemini 3.1 Flash-Lite — Ultra Fast & Cheap (Paid)' },
     { id: 'gemini-3-flash-preview', provider: 'gemini', label: 'Gemini 3 Flash', uiLabel: '🌟 Gemini 3 Flash — Strong Quality (Paid)' },
     { id: 'gpt-4o', provider: 'openai', label: 'ChatGPT 4o', uiLabel: '💎 ChatGPT 4o — Highest Quality (Paid)' },
@@ -27,6 +28,8 @@
     'gpt-5-mini': 'gpt-5.4-mini',
     'gpt-5-nano': 'gpt-5.4-nano',
     'deepl-translate': 'deepl',
+    'gemini-3.1-pro': 'gemini-3.1-pro-preview',
+    'gemini 3.1 pro': 'gemini-3.1-pro-preview',
     'gemini-3.1-flash-lite': 'gemini-3.1-flash-lite-preview',
     'gemini 3.1 flash-lite': 'gemini-3.1-flash-lite-preview',
     'gemini 3.1 flash lite': 'gemini-3.1-flash-lite-preview',
