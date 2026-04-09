@@ -263,41 +263,50 @@ function redo() {
   updateUndoRedoButtons();
 }
 
-async function copyToClipboard(text) {
+async function copyToClipboard(text, count = null) {
   try {
     await navigator.clipboard.writeText(String(text ?? ''));
-    setStatus('Copied to clipboard.', '');
+    const copiedCount = Number.isFinite(count) ? Math.max(0, count) : 1;
+    setStatus(`Copied ${copiedCount} string${copiedCount === 1 ? '' : 's'} to clipboard.`, '');
   } catch {
     log('Clipboard copy failed (browser blocked).', 'warn');
   }
 }
 
-function pickRowForActions() {
+function getRowsForCopyActions() {
   const f = getActiveFile();
-  if (!f) return -1;
+  if (!f) return [];
 
-  if (state.editor.focusRow >= 0) return state.editor.focusRow;
+  const selected = Array.from(state.activeSelected.values())
+    .filter((row) => Number.isInteger(row) && row >= 0 && row < f.dialogs.length)
+    .sort((a, b) => a - b);
+  if (selected.length) return selected;
 
-  const selected = Array.from(state.activeSelected.values()).sort((a,b)=>a-b);
-  if (selected.length) return selected[0];
+  if (Number.isInteger(state.editor.focusRow) && state.editor.focusRow >= 0 && state.editor.focusRow < f.dialogs.length) {
+    return [state.editor.focusRow];
+  }
 
-  return -1;
+  return [];
+}
+
+function buildClipboardText(rows, picker) {
+  return rows.map((row) => String(picker(row) ?? '')).join('\n');
 }
 
 async function copyOriginal() {
   const f = getActiveFile();
   if (!f) return;
-  const row = pickRowForActions();
-  if (row < 0) return;
-  await copyToClipboard(f.dialogs[row]?.quote ?? '');
+  const rows = getRowsForCopyActions();
+  if (!rows.length) return;
+  await copyToClipboard(buildClipboardText(rows, (row) => f.dialogs[row]?.quote), rows.length);
 }
 
 async function copyTranslate() {
   const f = getActiveFile();
   if (!f) return;
-  const row = pickRowForActions();
-  if (row < 0) return;
-  await copyToClipboard(f.dialogs[row]?.translated ?? '');
+  const rows = getRowsForCopyActions();
+  if (!rows.length) return;
+  await copyToClipboard(buildClipboardText(rows, (row) => f.dialogs[row]?.translated), rows.length);
 }
 
 function getMetaKind(d) {
