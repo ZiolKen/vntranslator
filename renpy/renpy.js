@@ -541,7 +541,6 @@
   
       if (!inSingle && !inDouble) {
         if (c === '{' || c === '}') return true;
-        if (c === '[' || c === ']') return true;
       }
     }
   
