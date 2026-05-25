@@ -408,9 +408,21 @@ body{
     font-size: 0.9rem;
     line-height: 1.6;
 }
-.footer-twotier__brand .logo {
-    width: 370px;
-    fill: var(--footer-heading-color);
+.footer-twotier__brand a {
+    color: white;
+}
+.footer-twotier__logo {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-bottom: 0.85rem;
+    color: #fff;
+    font-family: Orbitron, Inter, sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-decoration: none;
 }
 .footer-classic__heading {
     font-size: 1rem;
