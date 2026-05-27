@@ -20,6 +20,7 @@
   --footer-link-color: #adb5bd;
   --footer-link-hover-color: #ffffff;
   --footer-border-color: #3b3f44;
+  --line: rgba(255,255,255,.10);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -497,3 +498,33 @@ body{
 .hero .glitch::after {
   display: none !important;
 }
+.statusbar2{
+  max-width:1140px;
+  width:100%;
+  margin:0 auto;
+  margin-top:25px;
+  border-top:1px solid var(--line);
+}
+.statusInner2{
+  margin-top:25px;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 12px 45px rgba(0,0,0,.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.pill2{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:rgba(255,255,255,.85);
+}
+.muted2{color:rgba(255,255,255,.62)}
+.rightMini2{display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end}
