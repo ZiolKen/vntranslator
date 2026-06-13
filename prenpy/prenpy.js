@@ -66,7 +66,7 @@ export const RENPY = (() => {
   const PREFIX_CHARS = new Set(['r','R','u','U','b','B','f','F']);
   const SCRIPT_SKIP_HEADS = new Set([
     'label','init','python','transform','style','screen','key','base_bar','left_bar','style_prefix',
-    'define','default','translate','old','properties','thumb','right_bar','use','allow','auto',
+    'define','default','translate','old','properties','thumb','right_bar','use','allow','auto','image',
     'return','jump','call','if','elif','else','for','while','try','except','finally','idle','on','hover_color',
     'pass','break','continue','import','from','$','renpy','action','top_bar','bottom_bar','action',
     'outlines','outline_scaling','text_font','font','text_color','text_size','color','keysym','side',
@@ -132,48 +132,68 @@ export const RENPY = (() => {
 
   function computeBlockMasks(lines) {
     const n = lines.length;
-    const inPython = new Array(n).fill(false);
-    const inScreen = new Array(n).fill(false);
-    const inMenu = new Array(n).fill(false);
-    const inStyle = new Array(n).fill(false);
+    const inPython    = new Array(n).fill(false);
+    const inScreen    = new Array(n).fill(false);
+    const inMenu      = new Array(n).fill(false);
+    const inStyle     = new Array(n).fill(false);
     const inTransform = new Array(n).fill(false);
-
+    const inImageATL  = new Array(n).fill(false);
+    const inImageExpr = new Array(n).fill(false);
+  
     const stack = [];
-
+  
+    const IMAGE_ASSIGN_RE = /^\s*image\s+[A-Za-z_]\w[\w\s]*\s*=/;
+    let imageExprDepth = 0;
+  
     function popTo(indent) {
       while (stack.length && indent <= stack[stack.length - 1].indent) stack.pop();
     }
-
-    const PY_BLOCK_RE = /^\s*(?:init(?:\s+[-+]?\d+)?\s+python(?:\s+hide)?|python(?:\s+hide)?)\s*:\s*$/;
-    const SCREEN_RE = /^\s*screen\s+[A-Za-z_]\w*\s*(\([^)]*\))?\s*:\s*$/;
-    const MENU_RE = /^\s*menu\s*:\s*$/;
-    const STYLE_RE = /^\s*style\s+[A-Za-z_]\w*\s*:\s*$/;
-    const TRANSFORM_RE = /^\s*transform\s+[A-Za-z_]\w*\s*:\s*$/;
-
+  
+    const PY_BLOCK_RE   = /^\s*(?:init(?:\s+[-+]?\d+)?\s+python(?:\s+hide)?|python(?:\s+hide)?)\s*:\s*$/;
+    const SCREEN_RE     = /^\s*screen\s+[A-Za-z_]\w*\s*(\([^)]*\))?\s*:\s*$/;
+    const MENU_RE       = /^\s*menu\s*:\s*$/;
+    const STYLE_RE      = /^\s*style\s+[A-Za-z_]\w*\s*:\s*$/;
+    const TRANSFORM_RE  = /^\s*transform\s+[A-Za-z_]\w*\s*:\s*$/;
+    const IMAGE_ATL_RE  = /^\s*image\s+[A-Za-z_][\w ]*:\s*$/;
+  
     for (let i = 0; i < n; i++) {
-      const raw = lines[i];
+      const raw     = lines[i];
       const stripped = raw.trim();
-      const indent = (raw.match(/^\s*/)?.[0]?.length) || 0;
-
+      const indent  = (raw.match(/^\s*/)?.[0]?.length) || 0;
+  
+      if (imageExprDepth > 0) {
+        inImageExpr[i] = true;
+        for (const c of raw) {
+          if (c === '(') imageExprDepth++;
+          else if (c === ')') { imageExprDepth--; if (imageExprDepth <= 0) { imageExprDepth = 0; break; } }
+        }
+      } else if (IMAGE_ASSIGN_RE.test(raw)) {
+        for (const c of raw) {
+          if (c === '(') imageExprDepth++;
+          else if (c === ')') imageExprDepth = Math.max(0, imageExprDepth - 1);
+        }
+      }
+  
       if (stripped && !raw.trimStart().startsWith('#')) {
         popTo(indent);
-
-        if (PY_BLOCK_RE.test(raw)) stack.push({ type: 'python', indent });
-        else if (SCREEN_RE.test(raw)) stack.push({ type: 'screen', indent });
-        else if (MENU_RE.test(raw)) stack.push({ type: 'menu', indent });
-        else if (STYLE_RE.test(raw)) stack.push({ type: 'style', indent });
+        if      (PY_BLOCK_RE.test(raw))  stack.push({ type: 'python',    indent });
+        else if (SCREEN_RE.test(raw))    stack.push({ type: 'screen',    indent });
+        else if (MENU_RE.test(raw))      stack.push({ type: 'menu',      indent });
+        else if (STYLE_RE.test(raw))     stack.push({ type: 'style',     indent });
         else if (TRANSFORM_RE.test(raw)) stack.push({ type: 'transform', indent });
+        else if (IMAGE_ATL_RE.test(raw)) stack.push({ type: 'image_atl', indent });
       }
-
-      const types = new Set(stack.map(x => x.type));
-      inPython[i] = types.has('python');
-      inScreen[i] = types.has('screen');
-      inMenu[i] = types.has('menu');
-      inStyle[i] = types.has('style');
-      inTransform[i] = types.has('transform');
+  
+      const types   = new Set(stack.map(x => x.type));
+      inPython[i]   = types.has('python');
+      inScreen[i]   = types.has('screen');
+      inMenu[i]     = types.has('menu');
+      inStyle[i]    = types.has('style');
+      inTransform[i]= types.has('transform');
+      inImageATL[i] = types.has('image_atl');
     }
-
-    return { inPython, inScreen, inMenu, inStyle, inTransform };
+  
+    return { inPython, inScreen, inMenu, inStyle, inTransform, inImageATL, inImageExpr };
   }
 
   function scanStringLiterals(source, lineStarts) {
@@ -720,7 +740,7 @@ export const RENPY = (() => {
     const dialogs = [];
 
     for (const [lineIdx, list] of byLine.entries()) {
-      if (masks.inPython[lineIdx] || masks.inStyle[lineIdx] || masks.inTransform[lineIdx]) continue;
+      if (masks.inPython[lineIdx] || masks.inStyle[lineIdx] || masks.inTransform[lineIdx] || masks.inImageATL[lineIdx] || masks.inImageExpr[lineIdx]) continue;
       if (MODE === 'safe' && masks.inScreen[lineIdx]) continue;
 
       list.sort((a, b) => a.openStart - b.openStart);
