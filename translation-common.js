@@ -6,7 +6,10 @@
     { id: 'deepseek', provider: 'deepseek', label: 'DeepSeek', uiLabel: '🔥 DeepSeek API — High Quality (Paid)' },
     { id: 'deepl', provider: 'deepl', label: 'DeepL', uiLabel: '🧠 DeepL API — Strong MT Quality (Paid)' },
     { id: 'gemini-3.1-pro-preview', provider: 'gemini', label: 'Gemini 3.1 Pro', uiLabel: '💫 Gemini 3.1 Pro — Best Gemini Quality (Paid)' },
+    { id: 'gemini-3.7-flash', provider: 'gemini', label: 'Gemini 3.7 Flash', uiLabel: '🌈 Gemini 3.7 Flash — Latest Flash Quality (Paid)' },
+    { id: 'gemini-3.6-flash', provider: 'gemini', label: 'Gemini 3.6 Flash', uiLabel: '🌤️ Gemini 3.6 Flash — Strong Quality (Paid)' },
     { id: 'gemini-3.5-flash', provider: 'gemini', label: 'Gemini 3.5 Flash', uiLabel: '🔰 Gemini 3.5 Flash — Very Strong Quality (Paid)' },
+    { id: 'gemini-3.5-flash-lite', provider: 'gemini', label: 'Gemini 3.5 Flash-Lite', uiLabel: '⚡ Gemini 3.5 Flash-Lite — Ultra Fast & Cheap (Paid)' },
     { id: 'gemini-3.1-flash-lite', provider: 'gemini', label: 'Gemini 3.1 Flash-Lite', uiLabel: '✨ Gemini 3.1 Flash-Lite — Ultra Fast & Cheap (Paid)' },
     { id: 'gemini-3-flash-preview', provider: 'gemini', label: 'Gemini 3 Flash', uiLabel: '🌟 Gemini 3 Flash — Strong Quality (Paid)' },
     { id: 'gpt-4o', provider: 'openai', label: 'ChatGPT 4o', uiLabel: '💎 ChatGPT 4o — Highest Quality (Paid)' },
@@ -37,6 +40,10 @@
     'gemini-3.5-flash-lite': 'gemini-3.5-flash-lite',
     'gemini 3.5 flash-lite': 'gemini-3.5-flash-lite',
     'gemini 3.5 flash lite': 'gemini-3.5-flash-lite',
+    'gemini-3.6-flash': 'gemini-3.6-flash',
+    'gemini 3.6 flash': 'gemini-3.6-flash',
+    'gemini-3.7-flash': 'gemini-3.7-flash',
+    'gemini 3.7 flash': 'gemini-3.7-flash',
     'gemini-3-flash': 'gemini-3-flash-preview',
     'gemini 3 flash': 'gemini-3-flash-preview'
   });
