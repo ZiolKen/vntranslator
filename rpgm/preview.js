@@ -218,6 +218,7 @@
 
       let j = i;
       let block = '';
+      let matched = true;
 
       if (ch === '\\') {
         block = '\\';
@@ -225,27 +226,43 @@
         while (j < s.length && /[A-Za-z\$\._!\|<>\^{}\[\]\(\)\d]/.test(s[j])) {
           block += s[j++];
           if (s[j - 1] === '[') {
-            while (j < s.length && s[j] !== ']') block += s[j++];
-            if (s[j] === ']') block += s[j++];
+            // Only fold a trailing [...] into the escape code if it
+            // actually closes on the same line - otherwise stop here
+            // instead of consuming the rest of the string.
+            const closeIdx = s.indexOf(']', j);
+            const newlineIdx = s.indexOf('\n', j);
+            if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+              block += s.slice(j, closeIdx + 1);
+              j = closeIdx + 1;
+            }
+            break;
           }
         }
       } else if (ch === '<') {
-        block = '<';
-        j++;
-        while (j < s.length && s[j] !== '>') block += s[j++];
-        if (s[j] === '>') block += '>';
-        j++;
+        // A bare '<' without a closing '>' on the same line is normal
+        // dialogue text (e.g. "HP < 50", "<3"), not an RPG Maker tag.
+        const closeIdx = s.indexOf('>', i + 1);
+        const newlineIdx = s.indexOf('\n', i + 1);
+        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+          block = s.slice(i, closeIdx + 1);
+          j = closeIdx + 1;
+        } else {
+          matched = false;
+        }
       } else if (ch === '[' || ch === '{') {
         const close = ch === '[' ? ']' : '}';
-        block = ch;
-        j++;
-        while (j < s.length && s[j] !== close) block += s[j++];
-        if (s[j] === close) block += close;
-        j++;
+        const closeIdx = s.indexOf(close, i + 1);
+        const newlineIdx = s.indexOf('\n', i + 1);
+        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+          block = s.slice(i, closeIdx + 1);
+          j = closeIdx + 1;
+        } else {
+          matched = false;
+        }
       }
 
-      if (block.length) tokens.push(block);
-      i = Math.max(j, i + 1);
+      if (matched && block.length) tokens.push(block);
+      i = matched ? Math.max(j, i + 1) : i + 1;
     }
     return tokens;
   }
@@ -809,6 +826,7 @@
 
       let j = i;
       let block = '';
+      let matched = true;
 
       if (ch === '\\') {
         block = '\\';
@@ -816,29 +834,49 @@
         while (j < str.length && /[A-Za-z\$\._!\|<>\^{}\[\]\(\)\d]/.test(str[j])) {
           block += str[j++];
           if (str[j - 1] === '[') {
-            while (j < str.length && str[j] !== ']') block += str[j++];
-            if (str[j] === ']') block += str[j++];
+            const closeIdx = str.indexOf(']', j);
+            const newlineIdx = str.indexOf('\n', j);
+            if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+              block += str.slice(j, closeIdx + 1);
+              j = closeIdx + 1;
+            }
+            break;
           }
         }
       } else if (ch === '<') {
-        block = '<';
-        j++;
-        while (j < str.length && str[j] !== '>') block += str[j++];
-        if (str[j] === '>') block += '>';
-        j++;
+        // A bare '<' without a closing '>' on the same line is normal
+        // dialogue text (e.g. "HP < 50", "<3"), not an RPG Maker tag -
+        // don't swallow the rest of the string into a placeholder.
+        const closeIdx = str.indexOf('>', i + 1);
+        const newlineIdx = str.indexOf('\n', i + 1);
+        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+          block = str.slice(i, closeIdx + 1);
+          j = closeIdx + 1;
+        } else {
+          matched = false;
+        }
       } else if (ch === '[' || ch === '{') {
         const close = ch === '[' ? ']' : '}';
-        block = ch;
-        j++;
-        while (j < str.length && str[j] !== close) block += str[j++];
-        if (str[j] === close) block += close;
-        j++;
+        const closeIdx = str.indexOf(close, i + 1);
+        const newlineIdx = str.indexOf('\n', i + 1);
+        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+          block = str.slice(i, closeIdx + 1);
+          j = closeIdx + 1;
+        } else {
+          matched = false;
+        }
       }
 
-      const ph = createPlaceholder(counter++);
-      map[ph] = block;
-      out += ph;
-      i = j;
+      if (matched) {
+        const ph = createPlaceholder(counter++);
+        map[ph] = block;
+        out += ph;
+        i = j;
+        continue;
+      }
+
+      out += ch;
+      i++;
     }
 
     return { text: out, map };

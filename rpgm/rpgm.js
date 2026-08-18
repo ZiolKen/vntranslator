@@ -156,6 +156,7 @@ function protectRPGMCodes(str) {
     if (ch === '\\' || ch === '<' || ch === '[' || ch === '{') {
       let j = i;
       let block = '';
+      let matched = true;
 
       if (ch === '\\') {
         block = '\\';
@@ -174,34 +175,54 @@ function protectRPGMCodes(str) {
           }
       
           if (str[j] === '[') {
-            block += '[';
-            j++;
-            while (j < str.length && str[j] !== ']') block += str[j++];
-            if (str[j] === ']') block += ']';
-            j++;
+            // Only fold the trailing [...] into the escape code if it
+            // actually closes; otherwise leave '[' alone so a bare
+            // "\N[" style typo (or unrelated text) doesn't swallow the
+            // rest of the string into an opaque, untranslatable block.
+            const closeIdx = str.indexOf(']', j);
+            const newlineIdx = str.indexOf('\n', j);
+            if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+              block += str.slice(j, closeIdx + 1);
+              j = closeIdx + 1;
+            }
           }
         }
       } else if (ch === '<') {
-        block = '<';
-        j++;
-        while (j < str.length && str[j] !== '>') block += str[j++];
-        if (str[j] === '>') block += '>';
-        j++;
+        // Bare '<' (e.g. "HP < 50", emoticons like "<3") is common in
+        // ordinary dialogue and is NOT an RPG Maker escape code on its
+        // own. Only treat it as a protected tag when a matching '>'
+        // closes it on the same line - otherwise leave it as literal
+        // text so we don't accidentally consume the rest of the string.
+        const closeIdx = str.indexOf('>', i + 1);
+        const newlineIdx = str.indexOf('\n', i + 1);
+        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+          block = str.slice(i, closeIdx + 1);
+          j = closeIdx + 1;
+        } else {
+          matched = false;
+        }
       } else if (ch === '[' || ch === '{') {
         const open = ch;
         const close = ch === '[' ? ']' : '}';
-        block = open;
-        j++;
-        while (j < str.length && str[j] !== close) block += str[j++];
-        if (str[j] === close) block += close;
-        j++;
+        const closeIdx = str.indexOf(close, i + 1);
+        const newlineIdx = str.indexOf('\n', i + 1);
+        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
+          block = str.slice(i, closeIdx + 1);
+          j = closeIdx + 1;
+        } else {
+          matched = false;
+        }
       }
 
-      const ph = createPlaceholder(counter++);
-      map[ph] = block;
-      out += ph;
-      i = j;
-      continue;
+      if (matched) {
+        const ph = createPlaceholder(counter++);
+        map[ph] = block;
+        out += ph;
+        i = j;
+        continue;
+      }
+      // Unclosed/unmatched bracket: fall through and emit the
+      // character itself as normal translatable text.
     }
 
     out += ch;
