@@ -126,146 +126,58 @@ function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 /* ------------------------------------------------------------
    RPGM Placeholder
+   Backed by RpgmCodec (rpgm/shared/rpgm-codec.js) - falls back to an
+   inline copy if the shared script tag isn't present, so this file
+   still works standalone.
 ------------------------------------------------------------ */
-const ESCAPE_START = "\\";
 
 function createPlaceholder(counter) {
+  if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+    return RpgmCodec.createPlaceholder(counter);
+  }
   const random = Math.floor(Math.random() * 100);
   return `__RPGPLH_${counter}${random}__`;
 }
 
 function protectRPGMCodes(str) {
-  if (!str) return { text: str, map: {} };
-
-  const map = {};
-  let out = '';
-  let i = 0;
-  let counter = 0;
-
-  while (i < str.length) {
-    const phMatch = /^(__RPGPLH_\d{1,5}__)/.exec(str.slice(i));
-    if (phMatch) {
-      const fullPh = phMatch[1];
-      out += fullPh;
-      i += fullPh.length;
-      continue;
-    }
-
-    const ch = str[i];
-
-    if (ch === '\\' || ch === '<' || ch === '[' || ch === '{') {
-      let j = i;
-      let block = '';
-      let matched = true;
-
-      if (ch === '\\') {
-        block = '\\';
-        j++;
-      
-        if (str[j] === '\\') {
-          block += '\\';
-          j++;
-        } else {
-          while (j < str.length && /[A-Za-z]/.test(str[j])) {
-            block += str[j++];
-          }
-      
-          if (block === '\\' && j < str.length && /[.!^|]/.test(str[j])) {
-            block += str[j++];
-          }
-      
-          if (str[j] === '[') {
-            // Only fold the trailing [...] into the escape code if it
-            // actually closes; otherwise leave '[' alone so a bare
-            // "\N[" style typo (or unrelated text) doesn't swallow the
-            // rest of the string into an opaque, untranslatable block.
-            const closeIdx = str.indexOf(']', j);
-            const newlineIdx = str.indexOf('\n', j);
-            if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-              block += str.slice(j, closeIdx + 1);
-              j = closeIdx + 1;
-            }
-          }
-        }
-      } else if (ch === '<') {
-        // Bare '<' (e.g. "HP < 50", emoticons like "<3") is common in
-        // ordinary dialogue and is NOT an RPG Maker escape code on its
-        // own. Only treat it as a protected tag when a matching '>'
-        // closes it on the same line - otherwise leave it as literal
-        // text so we don't accidentally consume the rest of the string.
-        const closeIdx = str.indexOf('>', i + 1);
-        const newlineIdx = str.indexOf('\n', i + 1);
-        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-          block = str.slice(i, closeIdx + 1);
-          j = closeIdx + 1;
-        } else {
-          matched = false;
-        }
-      } else if (ch === '[' || ch === '{') {
-        const open = ch;
-        const close = ch === '[' ? ']' : '}';
-        const closeIdx = str.indexOf(close, i + 1);
-        const newlineIdx = str.indexOf('\n', i + 1);
-        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-          block = str.slice(i, closeIdx + 1);
-          j = closeIdx + 1;
-        } else {
-          matched = false;
-        }
-      }
-
-      if (matched) {
-        const ph = createPlaceholder(counter++);
-        map[ph] = block;
-        out += ph;
-        i = j;
-        continue;
-      }
-      // Unclosed/unmatched bracket: fall through and emit the
-      // character itself as normal translatable text.
-    }
-
-    out += ch;
-    i++;
+  if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+    return RpgmCodec.protectRPGMCodes(str);
   }
-
-  return { text: out, map };
+  return { text: str, map: {} };
 }
 
 function restoreRPGMCodes(str, map) {
-  if (!str || !map) return str;
-  let out = str;
-
-  for (const ph of Object.keys(map)) {
-    if (!out.includes(ph)) {
-      console.warn(`⚠️ Warning: placeholder missing after translation: ${ph}`);
-    }
-    
-    out = out.split(ph).join(map[ph]);
+  if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+    return RpgmCodec.restoreRPGMCodes(str, map);
   }
-
-  return out;
+  return str;
 }
 
 /* ------------------------------------------------------------
    Extract dialogs
 ------------------------------------------------------------ */
-const COMMAND_SAY      = [101];
-const COMMAND_LINE     = [401,405,408];
-const COMMAND_CHOICE   = [102];
-const COMMAND_BRANCH   = [402,403];
-const COMMAND_COMMENT  = [108];
+const COMMAND_SAY             = [101]; // Show Text (header) - carries speaker name in p[4] (MZ)
+const COMMAND_MESSAGE_LINE    = [401, 405]; // Show Text line / Scrolling Text line - always author dialogue
+const COMMAND_COMMENT         = [108, 408]; // Comment (start) + Comment (continuation) - dev notes, NOT dialogue
+const COMMAND_CHOICE          = [102];
+const COMMAND_BRANCH          = [402, 403];
+const COMMAND_NAME_CHANGE     = [320]; // Change Name
+const COMMAND_NICKNAME_CHANGE = [324]; // Change Nickname (MZ)
+const COMMAND_PROFILE_CHANGE  = [325]; // Change Profile (MZ) - multi-line bio text
 
-function isValidDialogText(s) {
+// Backed by RpgmTextFilters (rpgm/shared/rpgm-text-filters.js) when available -
+// falls back to the old, more permissive check so this file still works
+// standalone (e.g. if the shared script tag is missing).
+function isValidDialogText(s, kind) {
+  if (typeof RpgmTextFilters !== "undefined" && RpgmTextFilters) {
+    return RpgmTextFilters.isValidDialogText(s, kind);
+  }
   if (typeof s !== "string") return false;
   const t = s.trim();
   if (t.length < 2) return false;
-
   if (!/[A-Za-zÀ-ỹ一-龯ぁ-んァ-ン]/.test(t)) return false;
-
   const tagRatio = (t.match(/<[^>]+>/g) || []).join("").length / t.length;
   if (tagRatio > 0.40) return false;
-
   return true;
 }
 
@@ -334,7 +246,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
     
       if (COMMAND_SAY.includes(code)) {
         const speaker = node.parameters?.[4];
-        if (isValidDialogText(speaker)) {
+        if (isValidDialogText(speaker, "speakerName")) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -346,9 +258,9 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
         }
       }
     
-      else if (COMMAND_LINE.includes(code)) {
+      else if (COMMAND_MESSAGE_LINE.includes(code)) {
         const t = node.parameters?.[0];
-        if (isValidDialogText(t)) {
+        if (isValidDialogText(t, "dialogueText")) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -361,8 +273,12 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
       }
     
       else if (COMMAND_COMMENT.includes(code)) {
+        // Comments are developer notes (often plugin snippets, TODOs,
+        // switch/variable names) rather than in-game dialogue, so they
+        // go through the stricter filter instead of being treated the
+        // same as an actual message line.
         const t = node.parameters?.[0];
-        if (isValidDialogText(t)) {
+        if (isValidDialogText(t, "commentText")) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -378,7 +294,7 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
         const arr = node.parameters?.[0];
         if (Array.isArray(arr)) {
           arr.forEach((t, i) => {
-            if (isValidDialogText(t)) {
+            if (isValidDialogText(t, "choice")) {
               dialogs.push({
                 fileIndex,
                 fileName,
@@ -393,8 +309,13 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
       }
     
       else if (COMMAND_BRANCH.includes(code)) {
+        // NOTE: this text mirrors one of the strings from the matching
+        // COMMAND_CHOICE (102) array above - RPG Maker matches branches
+        // by comparing this text, so it must be translated identically
+        // to its counterpart in the choice list or the branch will no
+        // longer line up in-game. Both are intentionally extracted.
         const t = node.parameters?.[1];
-        if (isValidDialogText(t)) {
+        if (isValidDialogText(t, "branch")) {
           dialogs.push({
             fileIndex,
             fileName,
@@ -402,6 +323,48 @@ function extractDialogsFromJson(jsonObj, fileIndex = 0, fileName = "") {
             index: 1,
             text: t,
             code
+          });
+        }
+      }
+    
+      else if (COMMAND_NAME_CHANGE.includes(code)) {
+        const t = node.parameters?.[1];
+        if (isValidDialogText(t, "speakerName")) {
+          dialogs.push({
+            fileIndex,
+            fileName,
+            ref: node.parameters,
+            index: 1,
+            text: t,
+            code: "ACTOR_NAME"
+          });
+        }
+      }
+    
+      else if (COMMAND_NICKNAME_CHANGE.includes(code)) {
+        const t = node.parameters?.[1];
+        if (isValidDialogText(t, "speakerName")) {
+          dialogs.push({
+            fileIndex,
+            fileName,
+            ref: node.parameters,
+            index: 1,
+            text: t,
+            code: "ACTOR_NICKNAME"
+          });
+        }
+      }
+    
+      else if (COMMAND_PROFILE_CHANGE.includes(code)) {
+        const t = node.parameters?.[1];
+        if (isValidDialogText(t, "dialogueText")) {
+          dialogs.push({
+            fileIndex,
+            fileName,
+            ref: node.parameters,
+            index: 1,
+            text: t,
+            code: "ACTOR_PROFILE"
           });
         }
       }

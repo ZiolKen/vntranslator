@@ -3,8 +3,6 @@
 
   const Common = globalThis.VNTranslationCommon;
 
-  const RPGPLH_TEST_RE = /__RPGPLH_\d+__/g;
-
   const el = {
     metaChips: document.getElementById('metaChips'),
     sessionsBtn: document.getElementById('sessionsBtn'),
@@ -205,101 +203,22 @@
       .reduce((acc, seg) => acc + '/' + seg, '');
   }
 
+  // Backed by RpgmCodec (rpgm/shared/rpgm-codec.js) - one shared
+  // implementation instead of a copy-pasted, previously-buggy inline
+  // version (see CHANGES.md for the "swallows rest of string on a bare
+  // '<'/'['/'{'" fix history).
   function extractRpgmTokens(str) {
-    const s = String(str || '');
-    const tokens = [];
-    let i = 0;
-    while (i < s.length) {
-      const ch = s[i];
-      if (ch !== '\\' && ch !== '<' && ch !== '[' && ch !== '{') {
-        i++;
-        continue;
-      }
-
-      let j = i;
-      let block = '';
-      let matched = true;
-
-      if (ch === '\\') {
-        block = '\\';
-        j++;
-        while (j < s.length && /[A-Za-z\$\._!\|<>\^{}\[\]\(\)\d]/.test(s[j])) {
-          block += s[j++];
-          if (s[j - 1] === '[') {
-            // Only fold a trailing [...] into the escape code if it
-            // actually closes on the same line - otherwise stop here
-            // instead of consuming the rest of the string.
-            const closeIdx = s.indexOf(']', j);
-            const newlineIdx = s.indexOf('\n', j);
-            if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-              block += s.slice(j, closeIdx + 1);
-              j = closeIdx + 1;
-            }
-            break;
-          }
-        }
-      } else if (ch === '<') {
-        // A bare '<' without a closing '>' on the same line is normal
-        // dialogue text (e.g. "HP < 50", "<3"), not an RPG Maker tag.
-        const closeIdx = s.indexOf('>', i + 1);
-        const newlineIdx = s.indexOf('\n', i + 1);
-        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-          block = s.slice(i, closeIdx + 1);
-          j = closeIdx + 1;
-        } else {
-          matched = false;
-        }
-      } else if (ch === '[' || ch === '{') {
-        const close = ch === '[' ? ']' : '}';
-        const closeIdx = s.indexOf(close, i + 1);
-        const newlineIdx = s.indexOf('\n', i + 1);
-        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-          block = s.slice(i, closeIdx + 1);
-          j = closeIdx + 1;
-        } else {
-          matched = false;
-        }
-      }
-
-      if (matched && block.length) tokens.push(block);
-      i = matched ? Math.max(j, i + 1) : i + 1;
+    if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+      return RpgmCodec.extractRpgmTokens(str);
     }
-    return tokens;
+    return [];
   }
 
   function validateRpgmTokens(originalText, translatedText) {
-    const issues = [];
-    const o = String(originalText || '');
-    const t = String(translatedText || '');
-
-    const src = extractRpgmTokens(o);
-    const tgt = extractRpgmTokens(t);
-
-    if (RPGPLH_TEST_RE.test(t)) issues.push({ kind: 'bad', text: 'Placeholder token __RPGPLH_*__ is still present in translation.' });
-
-    if (!src.length && !tgt.length) return issues;
-
-    let cursor = 0;
-    for (const token of src) {
-      const idx = t.indexOf(token, cursor);
-      if (idx === -1) {
-        issues.push({ kind: 'warn', text: 'Missing control token: ' + token });
-      } else {
-        cursor = idx + token.length;
-      }
+    if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+      return RpgmCodec.validateRpgmTokens(originalText, translatedText);
     }
-
-    if (tgt.length > src.length + 1) {
-      issues.push({ kind: 'warn', text: 'Translation contains more control codes than original.' });
-    }
-
-    const oNl = (o.match(/\r?\n/g) || []).length;
-    const tNl = (t.match(/\r?\n/g) || []).length;
-    if (oNl !== tNl) {
-      issues.push({ kind: 'warn', text: 'Line breaks changed: ' + oNl + ' → ' + tNl });
-    }
-
-    return issues;
+    return [];
   }
 
   function computeWarnings(dialog) {
@@ -805,90 +724,27 @@
     return '';
   }
 
+  // Backed by RpgmCodec (rpgm/shared/rpgm-codec.js) - see notes above.
   function createPlaceholder(counter) {
+    if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+      return RpgmCodec.createPlaceholder(counter);
+    }
     const rand = Math.floor(Math.random() * 100);
     return `__RPGPLH_${counter}${rand}__`;
   }
 
   function protectRPGMCodes(str) {
-    const map = Object.create(null);
-    let out = '';
-    let counter = 0;
-    let i = 0;
-
-    while (i < str.length) {
-      const ch = str[i];
-      if (ch !== '\\' && ch !== '<' && ch !== '[' && ch !== '{') {
-        out += ch;
-        i++;
-        continue;
-      }
-
-      let j = i;
-      let block = '';
-      let matched = true;
-
-      if (ch === '\\') {
-        block = '\\';
-        j++;
-        while (j < str.length && /[A-Za-z\$\._!\|<>\^{}\[\]\(\)\d]/.test(str[j])) {
-          block += str[j++];
-          if (str[j - 1] === '[') {
-            const closeIdx = str.indexOf(']', j);
-            const newlineIdx = str.indexOf('\n', j);
-            if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-              block += str.slice(j, closeIdx + 1);
-              j = closeIdx + 1;
-            }
-            break;
-          }
-        }
-      } else if (ch === '<') {
-        // A bare '<' without a closing '>' on the same line is normal
-        // dialogue text (e.g. "HP < 50", "<3"), not an RPG Maker tag -
-        // don't swallow the rest of the string into a placeholder.
-        const closeIdx = str.indexOf('>', i + 1);
-        const newlineIdx = str.indexOf('\n', i + 1);
-        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-          block = str.slice(i, closeIdx + 1);
-          j = closeIdx + 1;
-        } else {
-          matched = false;
-        }
-      } else if (ch === '[' || ch === '{') {
-        const close = ch === '[' ? ']' : '}';
-        const closeIdx = str.indexOf(close, i + 1);
-        const newlineIdx = str.indexOf('\n', i + 1);
-        if (closeIdx !== -1 && (newlineIdx === -1 || closeIdx < newlineIdx)) {
-          block = str.slice(i, closeIdx + 1);
-          j = closeIdx + 1;
-        } else {
-          matched = false;
-        }
-      }
-
-      if (matched) {
-        const ph = createPlaceholder(counter++);
-        map[ph] = block;
-        out += ph;
-        i = j;
-        continue;
-      }
-
-      out += ch;
-      i++;
+    if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+      return RpgmCodec.protectRPGMCodes(str);
     }
-
-    return { text: out, map };
+    return { text: str, map: {} };
   }
 
   function restoreRPGMCodes(str, map) {
-    if (!str || !map) return str;
-    let out = str;
-    for (const ph of Object.keys(map)) {
-      out = out.split(ph).join(map[ph]);
+    if (typeof RpgmCodec !== "undefined" && RpgmCodec) {
+      return RpgmCodec.restoreRPGMCodes(str, map);
     }
-    return out;
+    return str;
   }
 
   function buildTranslatePrompt(lines, targetLang) {
@@ -1121,13 +977,23 @@ ${JSON.stringify(lines)}`;
     }
   }
 
-  const COMMAND_SAY = [101];
-  const COMMAND_LINE = [401, 405, 408];
-  const COMMAND_CHOICE = [102];
-  const COMMAND_BRANCH = [402, 403];
-  const COMMAND_COMMENT = [108];
+  const COMMAND_SAY             = [101];
+  const COMMAND_MESSAGE_LINE    = [401, 405];
+  const COMMAND_COMMENT         = [108, 408];
+  const COMMAND_CHOICE          = [102];
+  const COMMAND_BRANCH          = [402, 403];
+  const COMMAND_NAME_CHANGE     = [320];
+  const COMMAND_NICKNAME_CHANGE = [324];
+  const COMMAND_PROFILE_CHANGE  = [325];
 
-  function isValidDialogText(s) {
+  // Backed by RpgmTextFilters (rpgm/shared/rpgm-text-filters.js) - keeps
+  // the preview page's re-scan in sync with rpgm.js's own extraction so
+  // edited/re-imported files use the exact same "is this dialogue?"
+  // rules instead of a separate, weaker copy.
+  function isValidDialogText(s, kind) {
+    if (typeof RpgmTextFilters !== 'undefined' && RpgmTextFilters) {
+      return RpgmTextFilters.isValidDialogText(s, kind);
+    }
     if (typeof s !== 'string') return false;
     const t = s.trim();
     if (t.length < 2) return false;
@@ -1242,17 +1108,17 @@ ${JSON.stringify(lines)}`;
 
         if (COMMAND_SAY.includes(code)) {
           const speaker = node.parameters?.[4];
-          if (isValidDialogText(speaker)) {
+          if (isValidDialogText(speaker, 'speakerName')) {
             paths.push(path.concat(['parameters', 4]));
           }
-        } else if (COMMAND_LINE.includes(code)) {
+        } else if (COMMAND_MESSAGE_LINE.includes(code)) {
           const t = node.parameters?.[0];
-          if (isValidDialogText(t)) {
+          if (isValidDialogText(t, 'dialogueText')) {
             paths.push(path.concat(['parameters', 0]));
           }
         } else if (COMMAND_COMMENT.includes(code)) {
           const t = node.parameters?.[0];
-          if (isValidDialogText(t)) {
+          if (isValidDialogText(t, 'commentText')) {
             paths.push(path.concat(['parameters', 0]));
           }
         } else if (COMMAND_CHOICE.includes(code)) {
@@ -1260,14 +1126,29 @@ ${JSON.stringify(lines)}`;
           if (Array.isArray(arr)) {
             for (let i = 0; i < arr.length; i++) {
               const t = arr[i];
-              if (isValidDialogText(t)) {
+              if (isValidDialogText(t, 'choice')) {
                 paths.push(path.concat(['parameters', 0, i]));
               }
             }
           }
         } else if (COMMAND_BRANCH.includes(code)) {
           const t = node.parameters?.[1];
-          if (isValidDialogText(t)) {
+          if (isValidDialogText(t, 'branch')) {
+            paths.push(path.concat(['parameters', 1]));
+          }
+        } else if (COMMAND_NAME_CHANGE.includes(code)) {
+          const t = node.parameters?.[1];
+          if (isValidDialogText(t, 'speakerName')) {
+            paths.push(path.concat(['parameters', 1]));
+          }
+        } else if (COMMAND_NICKNAME_CHANGE.includes(code)) {
+          const t = node.parameters?.[1];
+          if (isValidDialogText(t, 'speakerName')) {
+            paths.push(path.concat(['parameters', 1]));
+          }
+        } else if (COMMAND_PROFILE_CHANGE.includes(code)) {
+          const t = node.parameters?.[1];
+          if (isValidDialogText(t, 'dialogueText')) {
             paths.push(path.concat(['parameters', 1]));
           }
         }
