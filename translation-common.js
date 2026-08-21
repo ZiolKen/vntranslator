@@ -18,6 +18,11 @@
     { id: 'gpt-5.4-mini', provider: 'openai', label: 'ChatGPT 5.4 Mini', uiLabel: '💡 ChatGPT 5.4 Mini — Balanced (Paid)' },
     { id: 'gpt-5.4-nano', provider: 'openai', label: 'ChatGPT 5.4 Nano', uiLabel: '📦 ChatGPT 5.4 Nano — Cheapest (Paid)' },
     { id: 'gpt-3.5-turbo', provider: 'openai', label: 'ChatGPT 3.5 Turbo', uiLabel: '🧩 ChatGPT 3.5 Turbo — Legacy Budget (Paid)' },
+    { id: 'deepseek/deepseek-chat-v3-0324', provider: 'openrouter', label: 'DeepSeek V3 (OpenRouter)', uiLabel: '🐳 DeepSeek V3 — via OpenRouter (Paid)' },
+    { id: 'deepseek/deepseek-r1', provider: 'openrouter', label: 'DeepSeek R1 (OpenRouter)', uiLabel: '🐋 DeepSeek R1 — via OpenRouter (Paid)' },
+    { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', provider: 'openrouter', label: 'Venice Uncensored (OpenRouter)', uiLabel: '🔓 Venice Uncensored — Least Censored via OpenRouter' },
+    { id: 'nvidia/nemotron-3-super-120b-a12b:free', provider: 'openrouter', label: 'Nemotron 3 Super (OpenRouter)', uiLabel: '🌀 Nemotron 3 Super — Free via OpenRouter' },
+    { id: 'google/gemma-4-26b-a4b-it:free', provider: 'openrouter', label: 'Gemma 4 26B (OpenRouter)', uiLabel: '🔅 Gemma 4 26B — Free via OpenRouter' },
     { id: 'lingva', provider: 'free', label: 'Lingva', uiLabel: '🌐 Lingva — Free (Lower Quality)' },
     { id: 'google', provider: 'free', label: 'Google Translate', uiLabel: '💠 Google Translate — Free (Fast)' }
   ]);
@@ -45,7 +50,14 @@
     'gemini-3.7-flash': 'gemini-3.7-flash',
     'gemini 3.7 flash': 'gemini-3.7-flash',
     'gemini-3-flash': 'gemini-3-flash-preview',
-    'gemini 3 flash': 'gemini-3-flash-preview'
+    'gemini 3 flash': 'gemini-3-flash-preview',
+    'deepseek-v3-openrouter': 'deepseek/deepseek-chat-v3-0324',
+    'deepseek-r1-openrouter': 'deepseek/deepseek-r1',
+    'openrouter-deepseek-v3': 'deepseek/deepseek-chat-v3-0324',
+    'openrouter-deepseek-r1': 'deepseek/deepseek-r1',
+    'venice-uncensored': 'cognitivecomputations/dolphin-mistral-24b-venice-edition',
+    'nemotron-3-super': 'nvidia/nemotron-3-super-120b-a12b:free',
+    'gemma-4-26b': 'google/gemma-4-26b-a4b-it:free'
   });
 
   const TARGET_LANGUAGE_OPTIONS = Object.freeze([
@@ -86,6 +98,11 @@
       label: 'OpenAI API Key',
       placeholder: 'Enter your OpenAI API key',
       storageKey: 'openaiApiKey'
+    }),
+    openrouter: Object.freeze({
+      label: 'OpenRouter API Key',
+      placeholder: 'Enter your OpenRouter API key (sk-or-...)',
+      storageKey: 'openrouterApiKey'
     }),
     free: Object.freeze({
       label: 'No API key required',
@@ -195,16 +212,20 @@
 
   function isOpenAIEngine(value) {
     const provider = getEngineProvider(value);
-    return provider === 'openai' || provider === 'gemini';
+    return provider === 'openai' || provider === 'gemini' || provider === 'openrouter';
   }
 
   function isGeminiEngine(value) {
     return getEngineProvider(value) === 'gemini';
   }
 
+  function isOpenRouterEngine(value) {
+    return getEngineProvider(value) === 'openrouter';
+  }
+
   function requiresApiKey(value) {
     const provider = getEngineProvider(value);
-    return provider === 'deepseek' || provider === 'deepl' || provider === 'openai' || provider === 'gemini';
+    return provider === 'deepseek' || provider === 'deepl' || provider === 'openai' || provider === 'gemini' || provider === 'openrouter';
   }
 
   function getEngineLabel(value) {
@@ -454,31 +475,40 @@
     const resolvedModel = normalizeEngineId(model);
     const provider = getEngineProvider(resolvedModel);
     const isGemini = provider === 'gemini';
-    if (!key) throw new Error('Missing ' + (isGemini ? 'Gemini' : 'OpenAI') + ' API key');
+    const isOpenRouter = provider === 'openrouter';
+    const providerLabel = isGemini ? 'Gemini' : (isOpenRouter ? 'OpenRouter' : 'OpenAI');
+    if (!key) throw new Error('Missing ' + providerLabel + ' API key');
 
     const endpoint = isGemini
       ? 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
-      : 'https://api.openai.com/v1/chat/completions';
+      : (isOpenRouter
+        ? 'https://openrouter.ai/api/v1/chat/completions'
+        : 'https://api.openai.com/v1/chat/completions');
     let response;
 
     try {
       response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + key
-        },
+        headers: Object.assign(
+          {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + key
+          },
+          isOpenRouter && typeof location !== 'undefined'
+            ? { 'HTTP-Referer': location.origin, 'X-Title': 'VN Translator' }
+            : null
+        ),
         body: JSON.stringify({ model: resolvedModel, messages }),
         signal,
         credentials: 'omit'
       });
     } catch (error) {
-      throw new Error('Network error when calling ' + (isGemini ? 'Gemini' : 'OpenAI') + ': ' + (error?.message || error));
+      throw new Error('Network error when calling ' + providerLabel + ': ' + (error?.message || error));
     }
 
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      throw new Error((isGemini ? 'Gemini' : 'OpenAI') + ' HTTP ' + response.status + (text ? ': ' + text : ''));
+      throw new Error(providerLabel + ' HTTP ' + response.status + (text ? ': ' + text : ''));
     }
 
     return response.json();
@@ -826,6 +856,7 @@
     getProviderKeyConfig,
     isOpenAIEngine,
     isGeminiEngine,
+    isOpenRouterEngine,
     requiresApiKey,
     normalizeEngineId,
     sanitizeApiKey,
