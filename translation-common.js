@@ -12,6 +12,8 @@
     { id: 'gemini-3.5-flash-lite', provider: 'gemini', label: 'Gemini 3.5 Flash-Lite', uiLabel: '⚡ Gemini 3.5 Flash-Lite — Ultra Fast & Cheap (Paid)' },
     { id: 'gemini-3.1-flash-lite', provider: 'gemini', label: 'Gemini 3.1 Flash-Lite', uiLabel: '✨ Gemini 3.1 Flash-Lite — Ultra Fast & Cheap (Paid)' },
     { id: 'gemini-3-flash-preview', provider: 'gemini', label: 'Gemini 3 Flash', uiLabel: '🌟 Gemini 3 Flash — Strong Quality (Paid)' },
+    { id: 'gemma-4-31b-it', provider: 'gemini', label: 'Gemma 4 31B', uiLabel: '🔱 Gemma 4 31B - Minimal Censor' },
+    { id: 'gemma-4-26b-a4b-it', provider: 'gemini', label: 'Gemma 4 26B', uiLabel: '♦️ Gemma 4 26B – Minimal Censor' },
     { id: 'gpt-4o', provider: 'openai', label: 'ChatGPT 4o', uiLabel: '💎 ChatGPT 4o — Highest Quality (Paid)' },
     { id: 'gpt-4o-mini', provider: 'openai', label: 'ChatGPT 4o Mini', uiLabel: '⚡ ChatGPT 4o Mini — Fast & Cheap (Paid)' },
     { id: 'gpt-5.4', provider: 'openai', label: 'ChatGPT 5.4', uiLabel: '🚀 ChatGPT 5.4 — Best Quality (Paid)' },
@@ -23,6 +25,7 @@
     { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', provider: 'openrouter', label: 'Venice Uncensored (OpenRouter)', uiLabel: '🔓 Venice Uncensored — via OpenRouter (Paid)' },
     { id: 'nvidia/nemotron-3-super-120b-a12b:free', provider: 'openrouter', label: 'Nemotron 3 Super (OpenRouter)', uiLabel: '🌀 Nemotron 3 Super — Free via OpenRouter' },
     { id: 'google/gemma-4-31b-it:free', provider: 'openrouter', label: 'Gemma 4 31B (OpenRouter)', uiLabel: '🔅 Gemma 4 31B — Free via OpenRouter' },
+    { id: 'google/gemma-4-26b-a4b-it:free', provider: 'openrouter', label: 'Gemma 4 26B (OpenRouter)', uiLabel: '⚜️ Gemma 4 26B – Free via OpenRouter' },
     { id: 'lingva', provider: 'free', label: 'Lingva', uiLabel: '🌐 Lingva — Free (Lower Quality)' },
     { id: 'google', provider: 'free', label: 'Google Translate', uiLabel: '💠 Google Translate — Free (Fast)' }
   ]);
@@ -56,8 +59,7 @@
     'openrouter-deepseek-v3': 'deepseek/deepseek-chat-v3-0324',
     'openrouter-deepseek-r1': 'deepseek/deepseek-r1',
     'venice-uncensored': 'cognitivecomputations/dolphin-mistral-24b-venice-edition',
-    'nemotron-3-super': 'nvidia/nemotron-3-super-120b-a12b:free',
-    'gemma-4-26b': 'google/gemma-4-26b-a4b-it:free'
+    'nemotron-3-super': 'nvidia/nemotron-3-super-120b-a12b:free'
   });
 
   const TARGET_LANGUAGE_OPTIONS = Object.freeze([
