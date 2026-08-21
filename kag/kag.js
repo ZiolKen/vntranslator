@@ -59,13 +59,13 @@
     const provider = Common.getEngineProvider(engine);
     const keyConfig = Common.getProviderKeyConfig(engine);
     el.apiKeyGroup.style.display = (provider === 'deepseek' || provider === 'deepl') ? '' : 'none';
-    el.openaiKeyGroup.style.display = (provider === 'openai' || provider === 'gemini') ? '' : 'none';
+    el.openaiKeyGroup.style.display = (provider === 'openai' || provider === 'gemini' || provider === 'openrouter') ? '' : 'none';
     if ((provider === 'deepseek' || provider === 'deepl') && el.apiKeyGroup) {
       const label = el.apiKeyGroup.querySelector('label[for="apiKey"]');
       if (label) label.textContent = keyConfig.label;
       if (el.apiKey) el.apiKey.placeholder = keyConfig.placeholder;
     }
-    if ((provider === 'openai' || provider === 'gemini') && el.openaiKeyGroup) {
+    if ((provider === 'openai' || provider === 'gemini' || provider === 'openrouter') && el.openaiKeyGroup) {
       const label = el.openaiKeyGroup.querySelector('label[for="chatgptApiKey"]');
       if (label) label.textContent = keyConfig.label;
       if (el.openaiKey) el.openaiKey.placeholder = keyConfig.placeholder;
@@ -251,8 +251,8 @@
       log('Missing DeepL API key.', 'error');
       return;
     }
-    if ((provider === 'openai' || provider === 'gemini') && !Common.sanitizeApiKey(el.openaiKey.value)) {
-      log('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key.', 'error');
+    if ((provider === 'openai' || provider === 'gemini' || provider === 'openrouter') && !Common.sanitizeApiKey(el.openaiKey.value)) {
+      log('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key.', 'error');
       return;
     }
 
