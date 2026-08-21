@@ -22,7 +22,7 @@
     { id: 'deepseek/deepseek-r1', provider: 'openrouter', label: 'DeepSeek R1 (OpenRouter)', uiLabel: '🐋 DeepSeek R1 — via OpenRouter (Paid)' },
     { id: 'cognitivecomputations/dolphin-mistral-24b-venice-edition', provider: 'openrouter', label: 'Venice Uncensored (OpenRouter)', uiLabel: '🔓 Venice Uncensored — via OpenRouter (Paid)' },
     { id: 'nvidia/nemotron-3-super-120b-a12b:free', provider: 'openrouter', label: 'Nemotron 3 Super (OpenRouter)', uiLabel: '🌀 Nemotron 3 Super — Free via OpenRouter' },
-    { id: 'google/gemma-4-31b-it:free', provider: 'openrouter', label: 'Gemma 4 26B (OpenRouter)', uiLabel: '🔅 Gemma 4 31B — Free via OpenRouter' },
+    { id: 'google/gemma-4-31b-it:free', provider: 'openrouter', label: 'Gemma 4 31B (OpenRouter)', uiLabel: '🔅 Gemma 4 31B — Free via OpenRouter' },
     { id: 'lingva', provider: 'free', label: 'Lingva', uiLabel: '🌐 Lingva — Free (Lower Quality)' },
     { id: 'google', provider: 'free', label: 'Google Translate', uiLabel: '💠 Google Translate — Free (Fast)' }
   ]);
