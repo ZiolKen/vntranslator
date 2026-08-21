@@ -49,13 +49,13 @@ function syncModelUI(showWarnings = false) {
   }
 
   if (els.openaiKeyGroup) {
-    els.openaiKeyGroup.style.display = (provider === "openai" || provider === "gemini") ? "block" : "none";
+    els.openaiKeyGroup.style.display = (provider === "openai" || provider === "gemini" || provider === "openrouter") ? "block" : "none";
     const label = els.openaiKeyGroup.querySelector("label");
-    if (label) label.textContent = provider === "gemini" ? "Gemini API Key" : "OpenAI API Key";
+    if (label) label.textContent = provider === "gemini" ? "Gemini API Key" : (provider === "openrouter" ? "OpenRouter API Key" : "OpenAI API Key");
     if (els.openaiKey) {
       els.openaiKey.placeholder = provider === "gemini"
         ? "Enter your Gemini API key"
-        : "Enter your OpenAI API key";
+        : (provider === "openrouter" ? "Enter your OpenRouter API key (sk-or-...)" : "Enter your OpenAI API key");
     }
   }
 
@@ -540,8 +540,8 @@ els.start.addEventListener("click", async () => {
     return;
   }
 
-  if ((provider === "openai" || provider === "gemini") && !openaiApiKey) {
-    alert(provider === "gemini" ? "Gemini API key is required." : "OpenAI API key is required.");
+  if ((provider === "openai" || provider === "gemini" || provider === "openrouter") && !openaiApiKey) {
+    alert(provider === "gemini" ? "Gemini API key is required." : (provider === "openrouter" ? "OpenRouter API key is required." : "OpenAI API key is required."));
     return;
   }
 
