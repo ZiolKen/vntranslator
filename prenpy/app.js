@@ -1051,13 +1051,13 @@ function syncEngineUI() {
   const provider = Common.getEngineProvider(engine);
   const keyConfig = Common.getProviderKeyConfig(engine);
   if (ui.deepseekKeyRow) ui.deepseekKeyRow.style.display = (provider === 'deepseek' || provider === 'deepl') ? '' : 'none';
-  if (ui.openaiKeyRow) ui.openaiKeyRow.style.display = (provider === 'openai' || provider === 'gemini') ? '' : 'none';
+  if (ui.openaiKeyRow) ui.openaiKeyRow.style.display = (provider === 'openai' || provider === 'gemini' || provider === 'openrouter') ? '' : 'none';
   if ((provider === 'deepseek' || provider === 'deepl') && ui.apiKey) {
     ui.apiKey.placeholder = keyConfig.placeholder;
     const label = ui.deepseekKeyRow ? ui.deepseekKeyRow.querySelector('label') : null;
     if (label) label.textContent = keyConfig.label;
   }
-  if ((provider === 'openai' || provider === 'gemini') && ui.openaiApiKey) {
+  if ((provider === 'openai' || provider === 'gemini' || provider === 'openrouter') && ui.openaiApiKey) {
     ui.openaiApiKey.placeholder = keyConfig.placeholder;
     const label = ui.openaiKeyRow ? ui.openaiKeyRow.querySelector('label') : null;
     if (label) label.textContent = keyConfig.label;
@@ -1116,7 +1116,7 @@ async function translateDialogs(path, indices) {
 
   if (engine === 'deepseek' && !apiKey) throw new Error('Missing DeepSeek API key.');
   if (engine === 'deepl' && !apiKey) throw new Error('Missing DeepL API key.');
-  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key.');
+  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key.');
 
   const list = indices.map(i => ({ idx: i, d: f.dialogs[i] })).filter(x => x.d);
   if (!list.length) return;

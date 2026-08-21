@@ -72,7 +72,7 @@ export async function translateBatchDeepSeek(batchDialogs, targetLang, apiKey) {
 export async function translateBatchOpenAI(batchDialogs, targetLang, apiKey, model) {
   const normalizedModel = Common.normalizeEngineId(model);
   const { source, prompt } = getPrompt(batchDialogs, targetLang);
-  const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
+  const providerLabel = (Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : (Common.getEngineProvider(normalizedModel) === 'openrouter' ? 'OpenRouter' : 'OpenAI'));
   const data = await Common.requestOpenAIChat({
     apiKey,
     model: normalizedModel,
