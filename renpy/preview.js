@@ -1046,7 +1046,7 @@
       'Input JSON array:\n' +
       payload;
 
-    const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
+    const providerLabel = (Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : (Common.getEngineProvider(normalizedModel) === 'openrouter' ? 'OpenRouter' : 'OpenAI'));
     const data = await Common.requestOpenAIChat({
       apiKey,
       model: normalizedModel,
@@ -1162,7 +1162,7 @@
     } else if (Common && Common.isOpenAIEngine(model)) {
       const provider = Common.getEngineProvider(model);
       const apiKey = provider === 'gemini' ? (keys.geminiApiKey || keys.openaiApiKey) : keys.openaiApiKey;
-      if (!apiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key in this tab session.');
+      if (!apiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key in this tab session.');
       translatedMasked = await translateOpenAI(maskedLines, targetLang, apiKey, model);
     } else if (model === 'google') {
       translatedMasked = await translateGoogle(maskedLines, targetLang);

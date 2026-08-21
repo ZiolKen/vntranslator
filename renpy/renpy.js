@@ -1208,7 +1208,7 @@
       `Input JSON array:\n` +
       payload;
 
-    const providerLabel = Common && Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
+    const providerLabel = Common && (Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : (Common.getEngineProvider(normalizedModel) === 'openrouter' ? 'OpenRouter' : 'OpenAI'));
     const data = await Common.requestOpenAIChat({
       apiKey,
       model: normalizedModel,
@@ -1455,7 +1455,7 @@
 
     if (Common && Common.isOpenAIEngine(model) && !openaiApiKey) {
       const provider = Common.getEngineProvider(model);
-      log('*️⃣ Please provide your ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key.', 'error');
+      log('*️⃣ Please provide your ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key.', 'error');
       return;
     }
 
@@ -1647,7 +1647,7 @@
       const keyConfig = Common ? Common.getProviderKeyConfig(value) : null;
 
       if (el.apiKeyContainer) el.apiKeyContainer.style.display = (provider === 'deepseek' || provider === 'deepl') ? 'block' : 'none';
-      if (el.openaiKeyContainer) el.openaiKeyContainer.style.display = (provider === 'openai' || provider === 'gemini') ? 'block' : 'none';
+      if (el.openaiKeyContainer) el.openaiKeyContainer.style.display = (provider === 'openai' || provider === 'gemini' || provider === 'openrouter') ? 'block' : 'none';
 
       if (el.apiKey && keyConfig && (provider === 'deepseek' || provider === 'deepl')) {
         el.apiKey.placeholder = keyConfig.placeholder;
@@ -1655,7 +1655,7 @@
         if (label) label.textContent = keyConfig.label;
       }
 
-      if (el.openaiApiKey && keyConfig && (provider === 'openai' || provider === 'gemini')) {
+      if (el.openaiApiKey && keyConfig && (provider === 'openai' || provider === 'gemini' || provider === 'openrouter')) {
         el.openaiApiKey.placeholder = keyConfig.placeholder;
         const label = el.openaiKeyContainer ? el.openaiKeyContainer.querySelector('label[for="openaiApiKey"]') : null;
         if (label) label.textContent = keyConfig.label;
