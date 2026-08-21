@@ -839,7 +839,7 @@ ${JSON.stringify(lines)}`;
     const normalizedModel = Common ? Common.normalizeEngineId(model) : model;
     const prompt = buildTranslatePrompt(lines, targetLang);
 
-    const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'OpenAI';
+    const providerLabel = (Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : (Common.getEngineProvider(normalizedModel) === 'openrouter' ? 'OpenRouter' : 'OpenAI'));
     const data = await Common.requestOpenAIChat({
       apiKey,
       model: normalizedModel,
@@ -884,7 +884,7 @@ ${JSON.stringify(lines)}`;
       if (m === 'deepl') throw new Error('Missing DeepL API key');
       if (Common && Common.isOpenAIEngine(m)) {
         const provider = Common.getEngineProvider(m);
-        throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : 'OpenAI') + ' API key');
+        throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key');
       }
       throw new Error('Missing API key');
     }

@@ -791,7 +791,7 @@ async function translateBatchChatGPT(batch, targetLang, apiKey, model) {
   const lines = batch.map(d => d.protectedText);
   const prompt = buildTranslatePrompt(lines, targetLang);
 
-  const providerLabel = Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : 'ChatGPT';
+  const providerLabel = (Common.getEngineProvider(normalizedModel) === 'gemini' ? 'Gemini' : (Common.getEngineProvider(normalizedModel) === 'openrouter' ? 'OpenRouter' : 'ChatGPT'));
   const data = await Common.requestOpenAIChat({
     apiKey,
     model: normalizedModel,
@@ -1232,7 +1232,7 @@ el.translationModel.addEventListener("change", () => {
   const keyConfig = Common ? Common.getProviderKeyConfig(m) : null;
 
   document.getElementById("apiKeyGroup").style.display = (provider === "deepseek" || provider === "deepl") ? "block" : "none";
-  document.getElementById("chatgptApiKeyGroup").style.display = (provider === "openai" || provider === "gemini") ? "block" : "none";
+  document.getElementById("chatgptApiKeyGroup").style.display = (provider === "openai" || provider === "gemini" || provider === "openrouter") ? "block" : "none";
 
   if (provider === "deepseek" || provider === "deepl") {
     const label = document.querySelector('label[for="apiKey"]');
@@ -1240,7 +1240,7 @@ el.translationModel.addEventListener("change", () => {
     if (el.apiKey && keyConfig) el.apiKey.placeholder = keyConfig.placeholder;
   }
 
-  if (el.chatgptKey && keyConfig && (provider === "openai" || provider === "gemini")) {
+  if (el.chatgptKey && keyConfig && (provider === "openai" || provider === "gemini" || provider === "openrouter")) {
     const label = document.querySelector('label[for="chatgptApiKey"]');
     if (label) label.textContent = keyConfig.label;
     el.chatgptKey.placeholder = keyConfig.placeholder;
@@ -1256,8 +1256,6 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "Translation is still running.";
   }
 });
-
-document.addEventListener("contextmenu", e => e.preventDefault());
 
 document.addEventListener("keydown", e => {
   if (
