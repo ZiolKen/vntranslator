@@ -1,0 +1,1600 @@
+import { RPGM, unmaskTagsInText, RPGMPH_TEST_RE, OLD_RPGMPH_TEST_RE, TRANSLATOR_CREDIT } from './prpgm.js';
+import { normalizeLineEndings, restoreLineEndings, debounce, escapeHtml, clamp, yieldToMain } from './utils.js';
+import { Store } from './storage.js';
+import { LANG_TO_CODE } from './languages.js';
+import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchDeepL, translateBatchLingva, translateBatchGoogle } from './engines.js';
+import { downloadZip } from './zip.js';
+import { buildMatcher, findAllInText, replaceAll, nextIndex, sortMatches } from './findreplace.js';
+
+const PROJECT_ID = 'default';
+const Common = globalThis.VNTranslationCommon;
+const MOBILE_MQ = typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 1020px), (pointer: coarse)') : null;
+const IS_MOBILE_UI = !!(MOBILE_MQ && MOBILE_MQ.matches);
+const PERF = {
+  overscan: IS_MOBILE_UI ? 4 : 10,
+  importYieldEvery: IS_MOBILE_UI ? 1 : 3,
+  translatePaintEvery: IS_MOBILE_UI ? 2 : 1,
+  tmRenderLimit: IS_MOBILE_UI ? 160 : 400,
+  tmYieldEvery: IS_MOBILE_UI ? 40 : 120,
+  sidebarRefreshMs: IS_MOBILE_UI ? 180 : 80,
+  tableSearchMs: IS_MOBILE_UI ? 220 : 120,
+  saveDebounceMs: IS_MOBILE_UI ? 1600 : 800,
+};
+
+const el = (id) => document.getElementById(id);
+
+const ui = {
+  btnOpenFiles: el('btnOpenFiles'),
+  btnOpenFolder: el('btnOpenFolder'),
+  btnExportFile: el('btnExportFile'),
+  btnExportZip: el('btnExportZip'),
+  btnFind: el('btnFind'),
+  btnTM: el('btnTM'),
+  btnClear: el('btnClear'),
+  btnReload: el('btnReload'),
+
+  fileInput: el('fileInput'),
+  folderInput: el('folderInput'),
+  fileFilter: el('fileFilter'),
+  fileList: el('fileList'),
+  fileBadge: el('fileBadge'),
+
+  statFiles: el('statFiles'),
+  statStrings: el('statStrings'),
+  statTranslated: el('statTranslated'),
+
+  engineSelect: el('engineSelect'),
+  targetLangSelect: el('targetLangSelect'),
+  extractMode: el('extractMode'),
+  batchSize: el('batchSize'),
+  apiKey: el('apiKey'),
+  openaiApiKey: el('openaiApiKey'),
+  deepseekKeyRow: el('deepseekKeyRow'),
+  openaiKeyRow: el('openaiKeyRow'),
+  useTMFirst: el('useTMFirst'),
+  autoSave: el('autoSave'),
+
+  btnTranslateMissing: el('btnTranslateMissing'),
+  btnTranslateSelected: el('btnTranslateSelected'),
+
+  rowFilter: el('rowFilter'),
+  tableSearch: el('tableSearch'),
+  showWarnings: el('showWarnings'),
+
+  gridBody: el('gridBody'),
+  tableWrap: el('tableWrap'),
+  selAll: el('selAll'),
+
+  statusLeft: el('statusLeft'),
+  statusRight: el('statusRight'),
+  log: el('log'),
+
+  modalBackdrop: el('modalBackdrop'),
+  findModal: el('findModal'),
+  tmModal: el('tmModal'),
+
+  findQuery: el('findQuery'),
+  replaceQuery: el('replaceQuery'),
+  findCase: el('findCase'),
+  findRegex: el('findRegex'),
+  findScope: el('findScope'),
+  findRows: el('findRows'),
+  findStats: el('findStats'),
+  btnFindPrev: el('btnFindPrev'),
+  btnFindNext: el('btnFindNext'),
+  btnReplaceOne: el('btnReplaceOne'),
+  btnReplaceAll: el('btnReplaceAll'),
+
+  tmSearch: el('tmSearch'),
+  tmList: el('tmList'),
+  btnTmExport: el('btnTmExport'),
+  btnTmImport: el('btnTmImport'),
+  btnTmClear: el('btnTmClear'),
+  btnTmFillMissing: el('btnTmFillMissing'),
+  tmImportInput: el('tmImportInput'),
+  
+  btnUndo: el('btnUndo'),
+  btnRedo: el('btnRedo'),
+  btnCopyOriginal: el('btnCopyOriginal'),
+  btnCopyTranslate: el('btnCopyTranslate'),
+};
+
+const state = {
+  project: { id: PROJECT_ID, name: 'Untitled_Project', createdAt: new Date().toISOString() },
+  files: new Map(),
+  activePath: null,
+  activeView: [],
+  activeSelected: new Set(),
+  busy: false,
+  find: {
+    matches: [],
+    cursor: -1,
+  },
+  virtual: {
+    rowHeight: 80,
+    overscan: PERF.overscan,
+    lastStart: -1,
+    lastEnd: -1,
+    viewIndexByRow: new Map(),
+  },
+  editor: {
+    focusRow: -1,
+    focusPrev: '',
+    applying: false,
+  },
+  history: {
+    undo: [],
+    redo: [],
+    limit: 5000,
+  },
+};
+
+function log(msg, level = 'info') {
+  const div = document.createElement('div');
+  div.className = 'item ' + (level === 'warn' ? 'warn' : level === 'err' ? 'err' : '');
+  div.textContent = String(msg);
+  ui.log.prepend(div);
+}
+
+function setStatus(left, right = '') {
+  if (left != null) ui.statusLeft.textContent = String(left);
+  if (right != null) ui.statusRight.textContent = String(right);
+}
+
+function setBusy(v) {
+  state.busy = !!v;
+  const dis = state.busy || !state.activePath;
+  ui.btnTranslateMissing.disabled = dis;
+  ui.btnTranslateSelected.disabled = dis;
+  ui.btnExportFile.disabled = !state.activePath || state.busy;
+  ui.btnExportZip.disabled = state.files.size === 0 || state.busy;
+  ui.btnTmFillMissing.disabled = !state.activePath || state.busy;
+}
+
+function openModal(modalEl) {
+  ui.modalBackdrop.hidden = false;
+  modalEl.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalEl) {
+  modalEl.hidden = true;
+  ui.modalBackdrop.hidden = true;
+  document.body.style.overflow = '';
+}
+
+function isTextInputEl(x) {
+  return x && (x.tagName === 'TEXTAREA' || x.tagName === 'INPUT');
+}
+
+function updateUndoRedoButtons() {
+  if (ui.btnUndo) ui.btnUndo.disabled = state.history.undo.length === 0 || state.busy;
+  if (ui.btnRedo) ui.btnRedo.disabled = state.history.redo.length === 0 || state.busy;
+}
+
+function pushHistory(action) {
+  state.history.undo.push(action);
+  if (state.history.undo.length > state.history.limit) state.history.undo.shift();
+  state.history.redo.length = 0;
+  updateUndoRedoButtons();
+}
+
+function getActiveFile() {
+  const p = state.activePath;
+  if (!p) return null;
+  return state.files.get(p) || null;
+}
+
+function updateRowDOM(rowIndex) {
+  const r = ui.gridBody.querySelector(`tr[data-idx="${rowIndex}"]`);
+  if (!r) return;
+
+  const f = getActiveFile();
+  if (!f) return;
+  const d = f.dialogs[rowIndex];
+  if (!d) return;
+
+  const ta = r.querySelector('.trInput');
+  if (ta && ta.value !== String(d.translated ?? '')) ta.value = String(d.translated ?? '');
+
+  r.classList.toggle('flagged', !!d.flagged);
+  const flagBtn = r.querySelector('.flagBtn');
+  if (flagBtn) flagBtn.classList.toggle('on', !!d.flagged);
+
+  const status = r.querySelector('.metaStatus');
+  if (status) {
+    const warnOn = !!ui.showWarnings.checked;
+    const v = String(d.translated ?? '');
+    const hasTr = v.trim().length > 0;
+    const warn = warnOn && (RPGMPH_TEST_RE.test(v) || OLD_RPGMPH_TEST_RE.test(v));
+
+    status.className = 'metaStatus ' + (warn ? 'meta-warn' : hasTr ? 'meta-ok' : 'meta-none');
+    status.textContent = warn ? 'PLACEHOLDER' : (hasTr ? 'OK' : '—');
+  }
+}
+
+function applyAction(action, dir /* undo, redo */) {
+  const f = state.files.get(action.path);
+  if (!f) return;
+  const d = f.dialogs[action.row];
+  if (!d) return;
+
+  const value = (dir === 'undo') ? action.prev : action.next;
+
+  state.editor.applying = true;
+  try {
+    let countChanged = false;
+    if (action.field === 'translated') {
+      const prevValue = d.translated;
+      d.translated = value;
+      countChanged = adjustFileTranslatedCount(f, prevValue, value);
+      const t = String(value ?? '').trim();
+      if (t) Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), t, { source: dir }).catch(()=>{});
+    } else if (action.field === 'flagged') {
+      d.flagged = !!value;
+    }
+
+    if (action.path === state.activePath) {
+      updateRowDOM(action.row);
+      refreshActiveGridAfterMutation();
+    }
+
+    if (countChanged) scheduleRefreshSidebar();
+    else updateProjectStats();
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+  } finally {
+    state.editor.applying = false;
+  }
+}
+
+function undo() {
+  if (!state.history.undo.length || state.busy) return;
+  const a = state.history.undo.pop();
+  applyAction(a, 'undo');
+  state.history.redo.push(a);
+  updateUndoRedoButtons();
+}
+
+function redo() {
+  if (!state.history.redo.length || state.busy) return;
+  const a = state.history.redo.pop();
+  applyAction(a, 'redo');
+  state.history.undo.push(a);
+  updateUndoRedoButtons();
+}
+
+async function copyToClipboard(text, count = null) {
+  try {
+    await navigator.clipboard.writeText(String(text ?? ''));
+    const copiedCount = Number.isFinite(count) ? Math.max(0, count) : 1;
+    setStatus(`Copied ${copiedCount} string${copiedCount === 1 ? '' : 's'} to clipboard.`, '');
+  } catch {
+    log('Clipboard copy failed (browser blocked).', 'warn');
+  }
+}
+
+function getRowsForCopyActions() {
+  const f = getActiveFile();
+  if (!f) return [];
+
+  const selected = Array.from(state.activeSelected.values())
+    .filter((row) => Number.isInteger(row) && row >= 0 && row < f.dialogs.length)
+    .sort((a, b) => a - b);
+  if (selected.length) return selected;
+
+  if (Number.isInteger(state.editor.focusRow) && state.editor.focusRow >= 0 && state.editor.focusRow < f.dialogs.length) {
+    return [state.editor.focusRow];
+  }
+
+  return [];
+}
+
+function buildClipboardText(rows, picker) {
+  return rows.map((row) => String(picker(row) ?? '')).join('\n');
+}
+
+async function copyOriginal() {
+  const f = getActiveFile();
+  if (!f) return;
+  const rows = getRowsForCopyActions();
+  if (!rows.length) return;
+  await copyToClipboard(buildClipboardText(rows, (row) => f.dialogs[row]?.quote), rows.length);
+}
+
+async function copyTranslate() {
+  const f = getActiveFile();
+  if (!f) return;
+  const rows = getRowsForCopyActions();
+  if (!rows.length) return;
+  await copyToClipboard(buildClipboardText(rows, (row) => f.dialogs[row]?.translated), rows.length);
+}
+
+function getMetaKind(d) {
+  const tr = String(d.translated ?? '');
+  if (!tr.trim()) return 'empty';
+  if (RPGMPH_TEST_RE.test(tr) || OLD_RPGMPH_TEST_RE.test(tr)) return 'error';
+  return 'ok';
+}
+
+function toggleFlag(rowIndex) {
+  const f = getActiveFile();
+  if (!f) return;
+  const d = f.dialogs[rowIndex];
+  if (!d) return;
+
+  const prev = !!d.flagged;
+  const next = !prev;
+  d.flagged = next;
+
+  pushHistory({
+    path: state.activePath,
+    row: rowIndex,
+    field: 'flagged',
+    prev,
+    next,
+    ts: Date.now(),
+    source: 'flag',
+  });
+
+  updateRowDOM(rowIndex);
+  if (ui.autoSave.checked) scheduleSaveActiveFile();
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t && t.matches && t.matches('[data-close]')) {
+    const id = t.getAttribute('data-close');
+    const m = el(id);
+    if (m) closeModal(m);
+  }
+  if (t === ui.modalBackdrop) {
+    if (!ui.findModal.hidden) closeModal(ui.findModal);
+    if (!ui.tmModal.hidden) closeModal(ui.tmModal);
+  }
+});
+
+function hasTranslatedValue(value) {
+  return String(value ?? '').trim().length > 0;
+}
+
+function getFileTotalCount(f) {
+  return Number.isFinite(f?.totalCount) ? f.totalCount : Array.isArray(f?.dialogs) ? f.dialogs.length : 0;
+}
+
+function getFileTranslatedCount(f) {
+  if (Number.isFinite(f?.translatedCount)) return f.translatedCount;
+  if (!Array.isArray(f?.dialogs)) return 0;
+  let count = 0;
+  for (const d of f.dialogs) if (hasTranslatedValue(d?.translated)) count++;
+  return count;
+}
+
+function syncFileMeta(f) {
+  if (!f) return;
+  f.totalCount = Array.isArray(f.dialogs) ? f.dialogs.length : 0;
+  f.translatedCount = getFileTranslatedCount(f);
+}
+
+function adjustFileTranslatedCount(f, prevValue, nextValue) {
+  if (!f) return false;
+  const prevFilled = hasTranslatedValue(prevValue);
+  const nextFilled = hasTranslatedValue(nextValue);
+  if (prevFilled === nextFilled) return false;
+  const base = Number.isFinite(f.translatedCount) ? f.translatedCount : getFileTranslatedCount(f);
+  f.translatedCount = Math.max(0, base + (nextFilled ? 1 : -1));
+  return true;
+}
+
+function shouldRebuildActiveView() {
+  return ui.rowFilter.value !== 'all' || String(ui.tableSearch.value || '').trim().length > 0;
+}
+
+function refreshActiveGridAfterMutation() {
+  if (!state.activePath) return;
+  if (shouldRebuildActiveView()) {
+    renderTable({ resetSel: false, resetScroll: false });
+    return;
+  }
+  renderVirtual(true);
+  updateSelAllUI();
+  setStatus(`${state.activePath} — ${state.activeView.length} rows shown`, null);
+}
+
+const scheduleRefreshSidebar = debounce(() => {
+  updateProjectStats();
+  renderFileList();
+}, PERF.sidebarRefreshMs);
+
+function updateProjectStats() {
+  let strings = 0;
+  let translated = 0;
+  for (const f of state.files.values()) {
+    strings += getFileTotalCount(f);
+    translated += getFileTranslatedCount(f);
+  }
+  ui.statFiles.textContent = String(state.files.size);
+  ui.statStrings.textContent = String(strings);
+  ui.statTranslated.textContent = String(translated);
+  ui.fileBadge.textContent = String(state.files.size);
+}
+
+function renderFileList() {
+  const filter = String(ui.fileFilter.value || '').toLowerCase().trim();
+  ui.fileList.replaceChildren();
+  const paths = Array.from(state.files.keys()).sort((a, b) => a.localeCompare(b));
+  let shown = 0;
+
+  for (const p of paths) {
+    if (filter && !p.toLowerCase().includes(filter)) continue;
+    const f = state.files.get(p);
+    if (!f) continue;
+
+    const item = document.createElement('div');
+    item.className = 'file-item' + (p === state.activePath ? ' active' : '');
+    item.tabIndex = 0;
+    item.setAttribute('role', 'option');
+
+    const pathEl = document.createElement('div');
+    pathEl.className = 'file-path';
+    pathEl.title = p;
+    pathEl.textContent = p;
+
+    const meta = document.createElement('div');
+    meta.className = 'file-meta';
+
+    const translated = getFileTranslatedCount(f);
+
+    const pill1 = document.createElement('span');
+    pill1.className = 'pill';
+    pill1.textContent = `${f.dialogs.length} strings`;
+
+    const pill2 = document.createElement('span');
+    pill2.className = 'pill';
+    pill2.textContent = `${translated} translated`;
+
+    const actions = document.createElement('div');
+    actions.className = 'file-actions';
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'file-delete';
+    btnDelete.textContent = 'Delete';
+    btnDelete.setAttribute('aria-label', `Delete ${p}`);
+    btnDelete.title = `Delete ${p}`;
+    btnDelete.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await deleteFile(p);
+    });
+
+    actions.appendChild(btnDelete);
+    meta.append(pill1, pill2, actions);
+    item.append(pathEl, meta);
+
+    item.addEventListener('click', () => openFile(p));
+    item.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openFile(p);
+        return;
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        await deleteFile(p);
+      }
+    });
+
+    ui.fileList.appendChild(item);
+    shown++;
+  }
+
+  ui.fileBadge.textContent = String(shown);
+}
+
+function computeActiveView() {
+  const path = state.activePath;
+  if (!path) { state.activeView = []; return; }
+  const f = state.files.get(path);
+  if (!f) { state.activeView = []; return; }
+
+  const filterMode = ui.rowFilter.value;
+  const q = String(ui.tableSearch.value || '').trim().toLowerCase();
+  
+  const out = [];
+  for (let i = 0; i < f.dialogs.length; i++) {
+    const d = f.dialogs[i];
+    const hasTr = d.translated && String(d.translated).trim();
+  
+    if (filterMode === 'translated' && !hasTr) continue;
+    if (filterMode === 'untranslated' && hasTr) continue;
+    if (filterMode === 'flag' && !d.flagged) continue;
+    if (filterMode === 'error' && getMetaKind(d) !== 'error') continue;
+  
+    if (q) {
+      const src = String(d.quote || '').toLowerCase();
+      const tr = String(d.translated || '').toLowerCase();
+      if (!src.includes(q) && !tr.includes(q)) continue;
+    }
+  
+    out.push(i);
+  }
+
+  state.activeView = out;
+  state.virtual.viewIndexByRow = new Map();
+  for (let pos = 0; pos < out.length; pos++) state.virtual.viewIndexByRow.set(out[pos], pos);
+}
+
+function resetSelection() {
+  state.activeSelected.clear();
+  ui.selAll.checked = false;
+  ui.selAll.indeterminate = false;
+}
+
+function makeSpacer(heightPx) {
+  const tr = document.createElement('tr');
+  tr.className = 'spacer';
+  const td = document.createElement('td');
+  td.colSpan = 5;
+  td.style.height = `${Math.max(0, Math.floor(heightPx))}px`;
+  tr.appendChild(td);
+  return tr;
+}
+
+function renderRow(f, idx, warnOn) {
+  const d = f.dialogs[idx];
+  const trText = d.translated ?? '';
+  const hasTr = String(trText).trim().length > 0;
+  const warn = warnOn && (RPGMPH_TEST_RE.test(String(trText)) || OLD_RPGMPH_TEST_RE.test(String(trText)));
+
+  const row = document.createElement('tr');
+  row.className = 'tr-row' + (state.activeSelected.has(idx) ? ' selected' : '');
+  row.classList.toggle('flagged', !!d.flagged);
+  row.dataset.idx = String(idx);
+
+  const tdSel = document.createElement('td');
+  tdSel.className = 'col-sel';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'rowSel';
+  cb.checked = state.activeSelected.has(idx);
+  tdSel.appendChild(cb);
+
+  const tdNo = document.createElement('td');
+  tdNo.className = 'col-no';
+  tdNo.textContent = String(idx + 1);
+
+  const tdSrc = document.createElement('td');
+  tdSrc.className = 'cell-src col-src';
+  tdSrc.title = String(d.quote ?? '');
+  const srcBox = document.createElement('div');
+  srcBox.className = 'srcText';
+  srcBox.textContent = String(d.quote ?? '');
+  tdSrc.appendChild(srcBox);
+
+  const tdTr = document.createElement('td');
+  tdTr.className = 'cell-tr col-tr';
+  const ta = document.createElement('textarea');
+  ta.spellcheck = false;
+  ta.className = 'trInput';
+  ta.value = String(trText ?? '');
+  tdTr.appendChild(ta);
+
+  const tdMeta = document.createElement('td');
+  tdMeta.className = 'col-meta';
+
+  const flagBtn = document.createElement('button');
+  flagBtn.type = 'button';
+  flagBtn.className = 'flagBtn' + (d.flagged ? ' on' : '');
+  flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
+  flagBtn.textContent = 'Flag';
+  flagBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    toggleFlag(idx);
+
+    if (ui.rowFilter.value === 'flag') {
+      renderTable({ resetSel: false, resetScroll: false });
+    } else {
+      updateRowDOM(idx);
+    }
+  });
+
+  const status = document.createElement('span');
+  status.className = 'metaStatus';
+
+  function refreshMeta() {
+    const v = String(d.translated ?? '');
+    const hasTr = v.trim().length > 0;
+    const warnOn2 = !!ui.showWarnings.checked || ui.rowFilter.value === 'error';
+    const err = warnOn2 && (RPGMPH_TEST_RE.test(v) || OLD_RPGMPH_TEST_RE.test(v));
+
+    row.classList.toggle('flagged', !!d.flagged);
+    row.classList.toggle('is-error', !!err);
+
+    flagBtn.classList.toggle('on', !!d.flagged);
+    flagBtn.title = d.flagged ? 'Unflag' : 'Flag';
+
+    status.className = 'metaStatus ' + (err ? 'meta-warn' : hasTr ? 'meta-ok' : 'meta-none');
+    status.textContent = err ? 'ERROR' : (hasTr ? 'OK' : '—');
+  }
+
+  tdMeta.append(flagBtn, status);
+  refreshMeta();
+  
+  {
+    const v = String(trText ?? '');
+    const hasTr2 = v.trim().length > 0;
+    const warn2 = warnOn && (RPGMPH_TEST_RE.test(v) || OLD_RPGMPH_TEST_RE.test(v));
+    status.className = 'metaStatus ' + (warn2 ? 'meta-warn' : hasTr2 ? 'meta-ok' : 'meta-none');
+    status.textContent = warn2 ? 'PLACEHOLDER' : (hasTr2 ? 'OK' : '—');
+  }
+
+  row.append(tdSel, tdNo, tdSrc, tdTr, tdMeta);
+
+  cb.addEventListener('change', () => {
+    if (cb.checked) state.activeSelected.add(idx);
+    else state.activeSelected.delete(idx);
+    row.classList.toggle('selected', cb.checked);
+    updateSelAllUI();
+  });
+
+  row.addEventListener('click', (ev) => {
+    if (ev.target?.closest?.('textarea,input,button')) return;
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  });
+
+  ta.addEventListener('focus', () => {
+    row.classList.add('selected');
+    state.editor.focusRow = idx;
+    state.editor.focusPrev = ta.value; 
+  });
+  
+  ta.addEventListener('blur', () => {
+    row.classList.toggle('selected', cb.checked);
+  
+    if (state.editor.applying) return;
+  
+    const prev = String(state.editor.focusPrev ?? '');
+    const next = String(ta.value ?? '');
+    if (prev !== next) {
+      pushHistory({
+        path: state.activePath,
+        row: idx,
+        field: 'translated',
+        prev,
+        next,
+        ts: Date.now(),
+        source: 'manual',
+      });
+      state.editor.focusPrev = next;
+      updateUndoRedoButtons();
+    }
+  });
+  
+  ta.addEventListener('input', () => {
+    const v = ta.value;
+    const prevValue = d.translated;
+    d.translated = v;
+    const countChanged = adjustFileTranslatedCount(f, prevValue, v);
+  
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+    scheduleUpdateTM(idx, v);
+  
+    const warnNow = !!ui.showWarnings.checked && (RPGMPH_TEST_RE.test(v) || OLD_RPGMPH_TEST_RE.test(v));
+    const hasNow = String(v).trim().length > 0;
+    status.className = 'metaStatus ' + (warnNow ? 'meta-warn' : hasNow ? 'meta-ok' : 'meta-none');
+    status.textContent = warnNow ? 'PLACEHOLDER' : (hasNow ? 'OK' : '—');
+  
+    if (countChanged) scheduleRefreshSidebar();
+    else updateProjectStats();
+    refreshMeta();
+    updateSelAllUI();
+  });
+
+  return row;
+}
+
+function renderVirtual(force = false) {
+  const path = state.activePath;
+  if (!path) return;
+  const f = state.files.get(path);
+  if (!f) return;
+  const total = state.activeView.length;
+
+  const wrap = ui.tableWrap;
+  const rowH = state.virtual.rowHeight;
+  const overscan = state.virtual.overscan;
+  const top = wrap.scrollTop;
+  const vh = wrap.clientHeight || 1;
+  const start = Math.max(0, Math.floor(top / rowH) - overscan);
+  const end = Math.min(total, Math.ceil((top + vh) / rowH) + overscan);
+
+  if (!force && start === state.virtual.lastStart && end === state.virtual.lastEnd) return;
+  state.virtual.lastStart = start;
+  state.virtual.lastEnd = end;
+
+  const warnOn = !!ui.showWarnings.checked;
+  const frag = document.createDocumentFragment();
+
+  if (start > 0) frag.appendChild(makeSpacer(start * rowH));
+
+  for (let pos = start; pos < end; pos++) {
+    const idx = state.activeView[pos];
+    frag.appendChild(renderRow(f, idx, warnOn));
+  }
+
+  if (end < total) frag.appendChild(makeSpacer((total - end) * rowH));
+
+  ui.gridBody.replaceChildren(frag);
+}
+
+function renderTable({ resetSel = true, resetScroll = true } = {}) {
+  if (resetSel) resetSelection();
+  computeActiveView();
+  state.virtual.lastStart = -1;
+  state.virtual.lastEnd = -1;
+
+  if (resetScroll && ui.tableWrap) ui.tableWrap.scrollTop = 0;
+  renderVirtual(true);
+  
+  updateSelAllUI();
+
+  const path = state.activePath;
+  if (!path) return;
+  const count = state.activeView.length;
+  setStatus(`${path} — ${count} rows shown`, '');
+}
+
+{
+  let raf = 0;
+  ui.tableWrap.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      renderVirtual(false);
+    });
+  }, { passive: true });
+
+  window.addEventListener('resize', debounce(() => {
+    state.virtual.lastStart = -1;
+    state.virtual.lastEnd = -1;
+    renderVirtual(true);
+    updateSelAllUI();
+  }, 100));
+}
+
+function updateSelAllUI() {
+  const total = state.activeView.length;
+  if (!total) {
+    ui.selAll.checked = false;
+    ui.selAll.indeterminate = false;
+    return;
+  }
+
+  let inView = 0;
+  for (const idx of state.activeView) if (state.activeSelected.has(idx)) inView++;
+
+  ui.selAll.checked = inView === total;
+  ui.selAll.indeterminate = inView > 0 && inView < total;
+}
+
+ui.selAll.addEventListener('change', () => {
+  const v = ui.selAll.checked;
+
+  if (!state.activePath) return;
+
+  if (v) {
+    for (const idx of state.activeView) state.activeSelected.add(idx);
+  } else {
+    for (const idx of state.activeView) state.activeSelected.delete(idx);
+  }
+
+  updateSelAllUI();
+  renderVirtual(true);
+});
+
+const scheduleSaveActiveFile = debounce(async () => {
+  const p = state.activePath;
+  if (!p) return;
+  const f = state.files.get(p);
+  if (!f) return;
+
+  const payload = {
+    path: f.path,
+    source: f.source,
+    eol: f.eol,
+    dialogs: f.dialogs.map(d => ({
+      lineIndex: d.lineIndex,
+      contentStart: d.contentStart,
+      contentEnd: d.contentEnd,
+      quoteChar: d.quoteChar,
+      isTriple: d.isTriple,
+      prefix: d.prefix,
+      quote: d.quote,
+      maskedQuote: d.maskedQuote,
+      placeholderMap: d.placeholderMap,
+      translated: d.translated ?? null,
+      flagged: !!d.flagged,
+    })),
+  };
+
+  try {
+    await Store.saveFile(PROJECT_ID, f.path, payload);
+    setStatus(`${f.path} — saved`, '');
+  } catch (e) {
+    log('Save failed: ' + (e?.message || e), 'err');
+  }
+}, PERF.saveDebounceMs);
+
+const scheduleUpdateTM = debounce(async (idx, value) => {
+  const p = state.activePath;
+  if (!p) return;
+  const f = state.files.get(p);
+  if (!f) return;
+  const d = f.dialogs[idx];
+  const target = ui.targetLangSelect.value;
+  const t = String(value ?? '').trim();
+  if (!t) return;
+
+  try {
+    await Store.tmPut(target, String(d.maskedQuote ?? ''), t, { source: 'manual' });
+  } catch (e) {
+  }
+}, 600);
+
+async function hydrateFromStorage() {
+  try {
+    const { project, files } = await Store.loadProject(PROJECT_ID);
+    if (project) state.project = project;
+    for (const f of files) {
+      const dialogs = Array.isArray(f.dialogs) ? f.dialogs : [];
+      state.files.set(f.path, {
+        path: f.path,
+        source: String(f.source ?? ''),
+        eol: f.eol || '\n',
+        dialogs: dialogs.map(x => ({ ...x })),
+      });
+    }
+    updateProjectStats();
+    renderFileList();
+
+    if (state.files.size > 0 && !state.activePath) {
+      openFile(Array.from(state.files.keys()).sort()[0]);
+    }
+
+    enableActions();
+    updateUndoRedoButtons();
+    setStatus(state.files.size ? 'Project loaded from local storage.' : 'No project loaded.', '');
+  } catch (e) {
+    setStatus('Storage unavailable.', '');
+  }
+}
+
+function applyExtractMode() {
+  RPGM.setMode(ui.extractMode.value);
+}
+
+function splitNameExt(name) {
+  const i = name.lastIndexOf('.');
+  if (i <= 0) return { base: name, ext: '' };
+  return { base: name.slice(0, i), ext: name.slice(i) };
+}
+
+function uniquePath(rawPath) {
+  const norm = String(rawPath || '').replaceAll('\\', '/');
+  if (!state.files.has(norm)) return norm;
+
+  const parts = norm.split('/');
+  const filename = parts.pop() || 'file.json';
+  const { base, ext } = splitNameExt(filename);
+
+  let k = 2;
+  while (state.files.has([...parts, `${base} (${k})${ext}`].join('/'))) k++;
+  return [...parts, `${base} (${k})${ext}`].join('/');
+}
+
+async function importFiles(fileList) {
+  applyExtractMode();
+
+  const items = Array.from(fileList || []).filter(f => f && (f.name || '').toLowerCase().endsWith('.json'));
+  if (!items.length) return;
+
+  setBusy(true);
+  setStatus('Importing files…', '');
+  let imported = 0;
+
+  for (const file of items) {
+    const text = await file.text();
+    const { text: normalized, eol } = normalizeLineEndings(text);
+    const rawPath = file.webkitRelativePath || file.name;
+    const path = uniquePath(rawPath);
+    const dialogs = RPGM.extractDialogs(normalized, path);
+    const fileState = { path, source: normalized, eol, dialogs };
+    syncFileMeta(fileState);
+    state.files.set(path, fileState);
+
+    if (ui.autoSave.checked) {
+      await Store.saveFile(PROJECT_ID, path, {
+        path,
+        source: normalized,
+        eol,
+        dialogs: dialogs.map(d => ({
+          lineIndex: d.lineIndex,
+          contentStart: d.contentStart,
+          contentEnd: d.contentEnd,
+          quoteChar: d.quoteChar,
+          isTriple: d.isTriple,
+          prefix: d.prefix,
+          quote: d.quote,
+          maskedQuote: d.maskedQuote,
+          placeholderMap: d.placeholderMap,
+          translated: d.translated ?? null,
+          flagged: !!d.flagged,
+        })),
+      });
+    }
+
+    imported++;
+
+    if (imported % PERF.importYieldEvery === 0) await yieldToMain();
+  }
+
+  await Store.saveProject(state.project);
+
+  updateProjectStats();
+  renderFileList();
+
+  if (!state.activePath && state.files.size) openFile(Array.from(state.files.keys()).sort()[0]);
+
+  setStatus(`Imported ${imported} file(s).`, '');
+  setBusy(false);
+}
+
+async function deleteFile(path, { askConfirm = true } = {}) {
+  const normalizedPath = String(path || '');
+  if (!normalizedPath || !state.files.has(normalizedPath)) return;
+  if (askConfirm && !confirm(`Delete ${normalizedPath}?`)) return;
+
+  const wasActive = normalizedPath === state.activePath;
+  const remainingPaths = Array.from(state.files.keys())
+    .filter((p) => p !== normalizedPath)
+    .sort((a, b) => a.localeCompare(b));
+
+  setBusy(true);
+  try {
+    state.activeSelected.clear();
+    state.files.delete(normalizedPath);
+    try {
+      await Store.deleteFile(PROJECT_ID, normalizedPath);
+      await Store.saveProject(state.project);
+    } catch {}
+
+    if (wasActive) {
+      state.activePath = remainingPaths[0] || null;
+    }
+
+    updateProjectStats();
+    renderFileList();
+
+    if (state.activePath) {
+      renderTable();
+    } else {
+      ui.gridBody.innerHTML = '';
+      setStatus('No file open.', '');
+    }
+
+    enableActions();
+    updateUndoRedoButtons();
+    setStatus(`Deleted ${normalizedPath}.`, '');
+  } finally {
+    setBusy(false);
+  }
+}
+
+function openFile(path) {
+  state.activePath = path;
+  renderFileList();
+  renderTable();
+  setBusy(false);
+}
+
+ui.btnOpenFiles.addEventListener('click', () => ui.fileInput.click());
+ui.btnOpenFolder.addEventListener('click', () => ui.folderInput.click());
+ui.fileInput.addEventListener('change', async () => { await importFiles(ui.fileInput.files); ui.fileInput.value = ''; });
+ui.folderInput.addEventListener('change', async () => { await importFiles(ui.folderInput.files); ui.folderInput.value=''; });
+
+ui.fileFilter.addEventListener('input', renderFileList);
+ui.btnReload.addEventListener('click', async () => { await hydrateFromStorage(); });
+
+ui.rowFilter.addEventListener('change', renderTable);
+ui.tableSearch.addEventListener('input', debounce(renderTable, PERF.tableSearchMs));
+ui.showWarnings.addEventListener('change', () => renderTable({ resetSel: false, resetScroll: false }));
+
+ui.extractMode.addEventListener('change', () => {
+  applyExtractMode();
+  const p = state.activePath;
+  if (p) {
+    const f = state.files.get(p);
+    if (f) {
+      f.dialogs = RPGM.extractDialogs(f.source, f.path);
+      syncFileMeta(f);
+      if (ui.autoSave.checked) scheduleSaveActiveFile();
+      renderTable();
+      scheduleRefreshSidebar();
+      log('Re-extracted current file using mode: ' + RPGM.getMode());
+    }
+  }
+});
+
+if (ui.btnUndo) ui.btnUndo.addEventListener('click', undo);
+if (ui.btnRedo) ui.btnRedo.addEventListener('click', redo);
+if (ui.btnCopyOriginal) ui.btnCopyOriginal.addEventListener('click', copyOriginal);
+if (ui.btnCopyTranslate) ui.btnCopyTranslate.addEventListener('click', copyTranslate);
+
+document.addEventListener('keydown', (e) => {
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  if (!mod) return;
+
+  if (document.activeElement && document.activeElement.classList?.contains('trInput')) return;
+
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+});
+
+function syncEngineUI() {
+  if (!Common || !ui.engineSelect) return;
+  const engine = Common.normalizeEngineId(ui.engineSelect.value);
+  const provider = Common.getEngineProvider(engine);
+  const keyConfig = Common.getProviderKeyConfig(engine);
+  if (ui.deepseekKeyRow) ui.deepseekKeyRow.style.display = (provider === 'deepseek' || provider === 'deepl') ? '' : 'none';
+  if (ui.openaiKeyRow) ui.openaiKeyRow.style.display = (provider === 'openai' || provider === 'gemini' || provider === 'openrouter') ? '' : 'none';
+  if ((provider === 'deepseek' || provider === 'deepl') && ui.apiKey) {
+    ui.apiKey.placeholder = keyConfig.placeholder;
+    const label = ui.deepseekKeyRow ? ui.deepseekKeyRow.querySelector('label') : null;
+    if (label) label.textContent = keyConfig.label;
+  }
+  if ((provider === 'openai' || provider === 'gemini' || provider === 'openrouter') && ui.openaiApiKey) {
+    ui.openaiApiKey.placeholder = keyConfig.placeholder;
+    const label = ui.openaiKeyRow ? ui.openaiKeyRow.querySelector('label') : null;
+    if (label) label.textContent = keyConfig.label;
+  }
+}
+
+if (Common && ui.engineSelect) {
+  Common.fillEngineSelect(ui.engineSelect, ui.engineSelect.value);
+  ui.engineSelect.value = Common.normalizeEngineId(ui.engineSelect.value);
+  ui.engineSelect.addEventListener('change', syncEngineUI);
+  syncEngineUI();
+}
+if (Common && ui.targetLangSelect) {
+  Common.fillTargetSelect(ui.targetLangSelect, ui.targetLangSelect.value || 'Vietnamese', 'label');
+}
+
+async function fillMissingFromTM(path) {
+  const f = state.files.get(path);
+  if (!f) return 0;
+  const target = ui.targetLangSelect.value;
+  const pending = [];
+  for (let i = 0; i < f.dialogs.length; i++) {
+    const d = f.dialogs[i];
+    if (hasTranslatedValue(d.translated)) continue;
+    pending.push([i, String(d.maskedQuote ?? '')]);
+  }
+  if (!pending.length) return 0;
+
+  const hits = await Store.tmGetMany(target, pending.map(([, key]) => key));
+  let filled = 0;
+  for (let i = 0; i < pending.length; i++) {
+    const [rowIndex, key] = pending[i];
+    const hit = hits.get(key);
+    if (hit && hasTranslatedValue(hit.translation)) {
+      const d = f.dialogs[rowIndex];
+      const prevValue = d.translated;
+      d.translated = String(hit.translation);
+      adjustFileTranslatedCount(f, prevValue, d.translated);
+      filled++;
+    }
+    if ((i + 1) % PERF.tmYieldEvery === 0) await yieldToMain();
+  }
+  return filled;
+}
+
+async function translateDialogs(path, indices) {
+  const f = state.files.get(path);
+  if (!f) return;
+
+  const targetLang = ui.targetLangSelect.value;
+  const engine = Common ? Common.normalizeEngineId(ui.engineSelect.value) : ui.engineSelect.value;
+  const apiKey = String(ui.apiKey.value || '').trim();
+  const openaiApiKey = String(ui.openaiApiKey?.value || '').trim();
+  const provider = Common ? Common.getEngineProvider(engine) : null;
+  const batch = clamp(Number(ui.batchSize.value || 20), 1, 80);
+
+  if (engine === 'deepseek' && !apiKey) throw new Error('Missing DeepSeek API key.');
+  if (engine === 'deepl' && !apiKey) throw new Error('Missing DeepL API key.');
+  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key.');
+
+  const list = indices.map(i => ({ idx: i, d: f.dialogs[i] })).filter(x => x.d);
+  if (!list.length) return;
+
+  setBusy(true);
+  setStatus(`Translating ${list.length} line(s)…`, `${engine} → ${targetLang}`);
+  log(`Translate: ${engine} → ${targetLang} (${list.length} items)`);
+
+  let done = 0;
+  let batchCount = 0;
+  let sidebarDirty = false;
+
+  for (let start = 0; start < list.length; start += batch) {
+    const slice = list.slice(start, start + batch);
+    let translated;
+    const dialogsOnly = slice.map(x => x.d);
+    
+    if (engine === 'deepseek') translated = await translateBatchDeepSeek(dialogsOnly, targetLang, apiKey);
+    else if (engine === 'deepl') translated = await translateBatchDeepL(dialogsOnly, targetLang, apiKey);
+    else if (Common && Common.isOpenAIEngine(engine)) translated = await translateBatchOpenAI(dialogsOnly, targetLang, openaiApiKey, engine);
+    else if (engine === 'google') translated = await translateBatchGoogle(dialogsOnly, targetLang);
+    else translated = await translateBatchLingva(dialogsOnly, targetLang);
+    
+    for (let i = 0; i < slice.length; i++) {
+      const { idx, d } = slice[i];
+      const prev = String(d.translated ?? '');
+    
+      const out = String(translated[i] ?? '');
+      const unmasked = unmaskTagsInText(out, d.placeholderMap);
+      d.translated = unmasked;
+      if (adjustFileTranslatedCount(f, prev, unmasked)) sidebarDirty = true;
+    
+      pushHistory({ path, row: idx, field: 'translated', prev, next: String(unmasked ?? ''), ts: Date.now(), source: engine });
+    
+      if (ui.autoSave.checked && hasTranslatedValue(unmasked)) {
+        Store.tmPut(targetLang, String(d.maskedQuote ?? ''), String(unmasked), { source: engine }).catch(()=>{});
+      }
+    }
+
+    done += slice.length;
+    batchCount++;
+    setStatus(`Translating… ${done}/${list.length}`, `${engine} → ${targetLang}`);
+
+    const shouldPaint = done === list.length || (batchCount % PERF.translatePaintEvery === 0);
+    if (shouldPaint) {
+      refreshActiveGridAfterMutation();
+      updateUndoRedoButtons();
+      if (sidebarDirty) {
+        scheduleRefreshSidebar();
+        sidebarDirty = false;
+      } else {
+        updateProjectStats();
+      }
+      await yieldToMain();
+    }
+
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+  }
+
+  if (sidebarDirty) scheduleRefreshSidebar();
+  setStatus(`Done. Translated ${done} line(s).`, '');
+  setBusy(false);
+}
+
+ui.btnTranslateMissing.addEventListener('click', async () => {
+  const p = state.activePath;
+  if (!p) return;
+  const f = state.files.get(p);
+  if (!f) return;
+
+  if (ui.useTMFirst.checked) {
+    setBusy(true);
+    setStatus('Applying TM…', '');
+    const filled = await fillMissingFromTM(p);
+    if (filled) {
+      log(`TM filled: ${filled} lines`);
+      scheduleRefreshSidebar();
+      refreshActiveGridAfterMutation();
+      if (ui.autoSave.checked) scheduleSaveActiveFile();
+    }
+    setBusy(false);
+  }
+
+  const missing = [];
+  for (let i = 0; i < f.dialogs.length; i++) {
+    const d = f.dialogs[i];
+    if (!d.translated || !String(d.translated).trim()) missing.push(i);
+  }
+  await translateDialogs(p, missing);
+});
+
+ui.btnTranslateSelected.addEventListener('click', async () => {
+  const p = state.activePath;
+  if (!p) return;
+  const indices = Array.from(state.activeSelected.values()).sort((a,b)=>a-b);
+  await translateDialogs(p, indices);
+});
+
+function makeDownload(name, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+
+ui.btnExportFile.addEventListener('click', () => {
+  const p = state.activePath;
+  if (!p) return;
+  const f = state.files.get(p);
+  if (!f) return;
+
+  const out = RPGM.applyTranslations(f.source, f.dialogs, '\n', TRANSLATOR_CREDIT);
+  const restored = restoreLineEndings(out, f.eol);
+  const base = p.split('/').pop();
+  makeDownload(base || 'translated.json', restored);
+});
+
+ui.btnExportZip.addEventListener('click', () => {
+  const files = [];
+  for (const f of state.files.values()) {
+    const out = RPGM.applyTranslations(f.source, f.dialogs, '\n', TRANSLATOR_CREDIT);
+    const restored = restoreLineEndings(out, f.eol);
+    files.push({ name: String(f.path).replaceAll('\\\\','/'), data: new TextEncoder().encode(restored) });
+  }
+  downloadZip('vntl-export.zip', files);
+});
+
+ui.btnClear.addEventListener('click', async () => {
+  if (!confirm('Clear local project and TM for current target language?')) return;
+  const target = ui.targetLangSelect.value;
+  try {
+    await Store.deleteProject(PROJECT_ID);
+    await Store.tmClear(target);
+  } catch {}
+  state.files.clear();
+  state.activePath = null;
+  ui.gridBody.innerHTML = '';
+  updateProjectStats();
+  renderFileList();
+  enableActions();
+  updateUndoRedoButtons();
+  setStatus('Cleared.', '');
+});
+
+function enableActions() {
+  const hasFile = !!state.activePath;
+  ui.btnTranslateMissing.disabled = !hasFile;
+  ui.btnTranslateSelected.disabled = !hasFile;
+  ui.btnExportFile.disabled = !hasFile;
+  ui.btnExportZip.disabled = state.files.size === 0;
+  ui.btnTmFillMissing.disabled = !hasFile;
+}
+
+ui.btnFind.addEventListener('click', () => {
+  if (!state.activePath) return;
+  state.find.matches = [];
+  state.find.cursor = -1;
+  ui.findStats.textContent = '0 matches.';
+  openModal(ui.findModal);
+  ui.findQuery.focus();
+});
+
+ui.btnTM.addEventListener('click', async () => {
+  openModal(ui.tmModal);
+  await renderTM();
+});
+
+ui.btnTmFillMissing.addEventListener('click', async () => {
+  const p = state.activePath;
+  if (!p) return;
+  setBusy(true);
+  setStatus('Applying TM…', '');
+  const filled = await fillMissingFromTM(p);
+  setBusy(false);
+  refreshActiveGridAfterMutation();
+  scheduleRefreshSidebar();
+  ui.findStats.textContent = '';
+  log(`TM filled: ${filled}`);
+  if (ui.autoSave.checked) scheduleSaveActiveFile();
+});
+
+async function renderTM() {
+  const target = ui.targetLangSelect.value;
+  const q = String(ui.tmSearch.value || '').toLowerCase().trim();
+  const list = await Store.tmList(target, 2000);
+  ui.tmList.replaceChildren();
+  const frag = document.createDocumentFragment();
+  let shown = 0;
+
+  for (const e of list) {
+    const src = String(e.sourceMasked ?? '');
+    const tr = String(e.translation ?? '');
+    if (q && !src.toLowerCase().includes(q) && !tr.toLowerCase().includes(q)) continue;
+
+    const item = document.createElement('div');
+    item.className = 'tm-item';
+
+    const top = document.createElement('div');
+    top.className = 'tm-top';
+
+    const k = document.createElement('div');
+    k.className = 'tm-k';
+
+    const key = String(e.key ?? '');
+    const updatedAt = String(e.updatedAt ?? '');
+    const count = String(e.count ?? 1);
+    k.textContent = `${key} · ${updatedAt} · x${count}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'tm-actions';
+
+    const del = document.createElement('button');
+    del.className = 'btn';
+    del.type = 'button';
+    del.textContent = 'Delete';
+    del.addEventListener('click', async () => {
+      await Store.tmDelete(key);
+      await renderTM();
+    });
+
+    actions.appendChild(del);
+    top.append(k, actions);
+
+    const srcEl = document.createElement('div');
+    srcEl.className = 'tm-src';
+    srcEl.textContent = src;
+
+    const trEl = document.createElement('div');
+    trEl.className = 'tm-tr';
+    trEl.textContent = tr;
+
+    item.append(top, srcEl, trEl);
+    frag.appendChild(item);
+
+    shown++;
+    if (shown % PERF.tmYieldEvery === 0) {
+      ui.tmList.appendChild(frag);
+      await yieldToMain();
+    }
+    if (shown >= PERF.tmRenderLimit) break;
+  }
+
+  ui.tmList.appendChild(frag);
+}
+
+ui.tmSearch.addEventListener('input', debounce(renderTM, PERF.tableSearchMs));
+
+ui.btnTmExport.addEventListener('click', async () => {
+  const target = ui.targetLangSelect.value;
+  const json = await Store.tmExport(target);
+  makeDownload(`tm-${(LANG_TO_CODE[target] || target).toLowerCase()}.json`, json);
+});
+
+ui.btnTmImport.addEventListener('click', () => ui.tmImportInput.click());
+ui.tmImportInput.addEventListener('change', async () => {
+  const f = ui.tmImportInput.files?.[0];
+  if (!f) return;
+  const txt = await f.text();
+  try {
+    const n = await Store.tmImport(txt);
+    log(`Imported TM entries: ${n}`);
+  } catch (e) {
+    log('TM import failed: ' + (e?.message || e), 'err');
+  }
+  ui.tmImportInput.value = '';
+  await renderTM();
+});
+
+ui.btnTmClear.addEventListener('click', async () => {
+  const target = ui.targetLangSelect.value;
+  if (!confirm(`Clear TM for target: ${target}?`)) return;
+  await Store.tmClear(target);
+  await renderTM();
+});
+
+function computeFindMatches() {
+  const p = state.activePath;
+  if (!p) return [];
+  const f = state.files.get(p);
+  if (!f) return [];
+
+  const q = ui.findQuery.value;
+  const re = buildMatcher(q, ui.findRegex.checked, ui.findCase.checked);
+  if (!re) return [];
+
+  const scope = ui.findScope.value;
+  const rowsMode = ui.findRows.value;
+
+  if (scope === 'source') {
+    log('Replace does not modify Source. Switch scope to Translation/Both.', 'warn');
+    return;
+  }
+
+  let candidates = [];
+  if (rowsMode === 'selected') candidates = Array.from(state.activeSelected.values());
+  else if (rowsMode === 'filtered') candidates = state.activeView.slice();
+  else candidates = f.dialogs.map((_, i) => i);
+
+  const matches = [];
+  for (const i of candidates) {
+    const d = f.dialogs[i];
+    if (!d) continue;
+    if (scope === 'source' || scope === 'both') {
+      for (const m of findAllInText(d.quote || '', re)) matches.push({ row: i, field: 'source', index: m.index, len: m.len });
+    }
+    if (scope === 'translation' || scope === 'both') {
+      for (const m of findAllInText(d.translated || '', re)) matches.push({ row: i, field: 'translation', index: m.index, len: m.len });
+    }
+  }
+  return sortMatches(matches);
+}
+
+function focusMatch(m) {
+  const p = state.activePath;
+  if (!p) return;
+
+  let pos = state.virtual.viewIndexByRow.get(m.row);
+  if (pos == null) {
+    ui.rowFilter.value = 'all';
+    ui.tableSearch.value = '';
+    renderTable({ resetSel: false, resetScroll: false });
+    pos = state.virtual.viewIndexByRow.get(m.row);
+  }
+  if (pos == null) return;
+
+  const wrap = ui.tableWrap;
+  const rowH = state.virtual.rowHeight;
+  const targetTop = Math.max(0, pos * rowH - (wrap.clientHeight / 2) + (rowH / 2));
+  wrap.scrollTo({ top: targetTop, behavior: 'smooth' });
+
+  let tries = 0;
+  const tryFocus = () => {
+    tries++;
+    renderVirtual(true);
+    const r2 = ui.gridBody.querySelector(`tr[data-idx="${m.row}"]`);
+    if (!r2) {
+      if (tries < 30) requestAnimationFrame(tryFocus);
+      return;
+    }
+    if (m.field === 'translation') {
+      const ta = r2.querySelector('.trInput');
+      ta.focus();
+      const start = m.index;
+      const end = m.index + m.len;
+      ta.setSelectionRange(start, end);
+    }
+  };
+  requestAnimationFrame(tryFocus);
+}
+
+function updateFindUI() {
+  const total = state.find.matches.length;
+  ui.findStats.textContent = total ? `${total} matches. (${state.find.cursor + 1}/${total})` : '0 matches.';
+}
+
+function ensureMatches() {
+  state.find.matches = computeFindMatches();
+  state.find.cursor = state.find.matches.length ? 0 : -1;
+  updateFindUI();
+  if (state.find.cursor >= 0) focusMatch(state.find.matches[state.find.cursor]);
+}
+
+ui.findQuery.addEventListener('input', debounce(ensureMatches, 180));
+ui.findCase.addEventListener('change', ensureMatches);
+ui.findRegex.addEventListener('change', ensureMatches);
+ui.findScope.addEventListener('change', ensureMatches);
+ui.findRows.addEventListener('change', ensureMatches);
+
+ui.btnFindNext.addEventListener('click', () => {
+  const total = state.find.matches.length;
+  if (!total) return;
+  state.find.cursor = nextIndex(total, state.find.cursor, +1);
+  updateFindUI();
+  focusMatch(state.find.matches[state.find.cursor]);
+});
+
+ui.btnFindPrev.addEventListener('click', () => {
+  const total = state.find.matches.length;
+  if (!total) return;
+  state.find.cursor = nextIndex(total, state.find.cursor, -1);
+  updateFindUI();
+  focusMatch(state.find.matches[state.find.cursor]);
+});
+
+ui.btnReplaceAll.addEventListener('click', async () => {
+  const p = state.activePath;
+  if (!p) return;
+  const f = state.files.get(p);
+  if (!f) return;
+
+  const re = buildMatcher(ui.findQuery.value, ui.findRegex.checked, ui.findCase.checked);
+  if (!re) return;
+
+  const scope = ui.findScope.value;
+  const rowsMode = ui.findRows.value;
+
+  if (scope === 'source') {
+    log('Replace does not modify Source. Switch scope to Translation/Both.', 'warn');
+    return;
+  }
+
+  let candidates = [];
+  if (rowsMode === 'selected') candidates = Array.from(state.activeSelected.values());
+  else if (rowsMode === 'filtered') candidates = state.activeView.slice();
+  else candidates = f.dialogs.map((_, i) => i);
+
+  let replaced = 0;
+  const rep = ui.replaceQuery.value;
+
+  for (const i of candidates) {
+    const d = f.dialogs[i];
+    if (!d) continue;
+
+    if (scope === 'translation' || scope === 'both') {
+      const before = d.translated || '';
+      const after = replaceAll(before, re, rep);
+      if (after !== before) replaced++;
+      d.translated = after;
+      adjustFileTranslatedCount(f, before, after);
+      if (String(after).trim()) Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), String(after), { source: 'findreplace' }).catch(()=>{});
+    }
+  }
+
+  refreshActiveGridAfterMutation();
+  scheduleRefreshSidebar();
+  ensureMatches();
+
+  if (ui.autoSave.checked) scheduleSaveActiveFile();
+  log(`Replace all: ${replaced} replacements`);
+});
+
+ui.btnReplaceOne.addEventListener('click', async () => {
+  if (state.find.cursor < 0) return;
+  const m = state.find.matches[state.find.cursor];
+  if (m.field !== 'translation') {
+    log('Replace works on Translation field. Change "In" to Translation/Both.', 'warn');
+    return;
+  }
+  const p = state.activePath;
+  const f = state.files.get(p);
+  const d = f.dialogs[m.row];
+  const re = buildMatcher(ui.findQuery.value, ui.findRegex.checked, ui.findCase.checked);
+  if (!re) return;
+  const rep = ui.replaceQuery.value;
+
+  const text = String(d.translated || '');
+  re.lastIndex = 0;
+  let mm;
+  let found = null;
+  while ((mm = re.exec(text)) !== null) {
+    if (mm.index === m.index) { found = mm; break; }
+    if (mm[0].length === 0) re.lastIndex++;
+  }
+  if (!found) { ensureMatches(); return; }
+  const before = text.slice(0, found.index);
+  const after = text.slice(found.index + found[0].length);
+  const out = before + String(rep ?? '') + after;
+  const prevValue = d.translated;
+  d.translated = out;
+  adjustFileTranslatedCount(f, prevValue, out);
+
+  Store.tmPut(ui.targetLangSelect.value, String(d.maskedQuote ?? ''), String(out), { source: 'findreplace' }).catch(()=>{});
+  if (ui.autoSave.checked) scheduleSaveActiveFile();
+  refreshActiveGridAfterMutation();
+  scheduleRefreshSidebar();
+  ensureMatches();
+});
+
+ui.btnExportFile.disabled = true;
+ui.btnExportZip.disabled = true;
+ui.btnTranslateMissing.disabled = true;
+ui.btnTranslateSelected.disabled = true;
+
+ui.targetLangSelect.addEventListener('change', async () => {
+  if (!ui.tmModal.hidden) await renderTM();
+});
+
+await hydrateFromStorage();
+enableActions();
