@@ -133,7 +133,13 @@
   function isValidDialogText(text, kind) {
     if (typeof text !== 'string') return false;
     const t = text.trim();
-    if (t.length < 2) return false;
+    if (!t) return false;
+    // A single CJK/Kana/Hangul character is often a complete, meaningful
+    // word on its own (choice text like "山", exclamations, etc.) - only
+    // reject single-character strings when that lone character is NOT
+    // an ideograph/kana/hangul (e.g. a stray "A", "1", "!").
+    const isSingleWideChar = t.length === 1 && /[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7A3]/.test(t);
+    if (t.length < 2 && !isSingleWideChar) return false;
     if (!/[A-Za-zÀ-ỹ\u00C0-\u1EF9\u3040-\u30FF\u4E00-\u9FFF]/.test(t)) return false;
     if (isControlOnlyLine(t)) return false;
 
