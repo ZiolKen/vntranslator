@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  
+<head>
+  <meta charset="UTF-8" />
+  <link rel="manifest" href="/assets/manifest.json" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+  <meta name="theme-color" content="#0b0b10" />
+  <link rel="canonical" href="https://vntranslator.pages.dev/aio/" />
+  <meta name="keywords" content="translator renpy, translator rpg maker, translator kag, translator artemis engine, translate visual novel, translate game, translator online, renpy, rpgm, kirikiri, tyranoscript, artemis engine, vn translator, aio translator, rpy, ks, ast, json, txt" />
+
+  <meta property="og:title" content="AIO Translator — Ren'Py, RPGM, KAG, Artemis & TXT | VN Translator" />
+  <meta property="og:description" content="One tool to translate Ren'Py, RPG Maker MV/MZ, KAG/TyranoScript, Artemis Engine, and plain .txt dialogue dumps — without installing anything." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://vntranslator.pages.dev/aio/" />
+  <meta property="og:image" content="https://vntranslator.pages.dev/assets/thumbnail.png" />
+  <meta property="og:image:secure_url" content="https://vntranslator.pages.dev/assets/thumbnail.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:site_name" content="VN Translator" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AIO Translator | VN Translator" />
+  <meta name="twitter:description" content="One tool to translate Ren'Py, RPG Maker MV/MZ, KAG/TyranoScript, Artemis Engine, and plain .txt dialogue dumps." />
+  <meta name="twitter:image" content="https://vntranslator.pages.dev/assets/thumbnail.png" />
+
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
+  <meta name="apple-mobile-web-app-title" content="VN Translator" />
+  <meta name="mobile-web-app-title" content="VN Translator" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  
+  <title>AIO Translator (Ren'Py / RPGM / KAG / Artemis / TXT) | VN Translator</title>
+  
+  <meta name="color-scheme" content="dark light" />
+  <link rel="stylesheet" href="./aio.css" />
+</head>
+
+<body>
+  
+  <header class="topbar">
+    <a href="/">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><img src="../assets/logo.jpeg" alt="VN Translator" /></div>
+      <div class="brand-text">
+        <div class="brand-title" style="color:#fff;text-decoration:none">VN Translator</div>
+        <div class="brand-subtitle">AIO Translator — Ren'Py / RPGM / KAG / Artemis / TXT</div>
+      </div>
+    </div>
+    </a>
+
+    <div class="top-actions">
+      <button class="btn" id="btnOpenFiles">Open Files</button>
+      <button class="btn" id="btnOpenFolder">Open Folder</button>
+      <button class="btn" id="btnExportFile" disabled>Export File</button>
+      <button class="btn" id="btnExportZip" disabled>Export ZIP</button>
+      <div class="sep"></div>
+      <button id="btnUndo" class="btn">Undo</button>
+      <button id="btnRedo" class="btn">Redo</button>
+      <button id="btnCopyOriginal" class="btn">Copy Src</button>
+      <button id="btnCopyTranslate" class="btn">Copy Tl</button>
+      <button class="btn" id="btnFind">Find/Replace</button>
+      <button class="btn" id="btnTM">Trans Mem</button>
+      <div class="sep"></div>
+      <button class="btn btn-danger" id="btnClear">Clear</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="panel-title">Project</div>
+        <div class="kv">
+          <div class="k">Files</div><div class="v" id="statFiles">0</div>
+          <div class="k">Strings</div><div class="v" id="statStrings">0</div>
+          <div class="k">Translated</div><div class="v" id="statTranslated">0</div>
+        </div>
+        <div class="row gap">
+          <input class="input" id="fileFilter" placeholder="Filter files…" />
+          <button class="btn btn-ghost" id="btnReload">Reload</button>
+        </div>
+      </div>
+
+      <div class="panel files">
+        <div class="panel-title">
+          <span>Files</span>
+          <span class="badge" id="fileBadge">0</span>
+        </div>
+        <div class="file-list" id="fileList" role="listbox" aria-label="Files"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Import</div>
+        <div class="row gap">
+          <label class="label">Game engine</label>
+          <select class="select" id="scriptEngineSelect"></select>
+        </div>
+        <div class="hint" style="margin:-4px 0 8px;opacity:.75;">
+          Auto-detect picks the parser by file extension (.rpy / .json / .ks / .ast / .asb) and, for .txt, by sniffing the content. Pick a specific engine to force it — useful for disambiguating the two TXT formats.
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Translate</div>
+
+        <div class="row gap">
+          <label class="label">AI Engine</label>
+<select class="select" id="engineSelect"></select>
+        </div>
+
+        <div class="row gap">
+          <label class="label">Target</label>
+          <select class="select" id="targetLangSelect">
+            <option value="English">English</option>
+            <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="Arabic">Arabic</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Russian">Russian</option>
+            <option value="German">German</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Bahasa Indonesia">Indonesian</option>
+            <option value="Malay">Malay</option>
+            <option value="Vietnamese">Vietnamese</option>
+            <option value="Filipino">Filipino</option>
+            <option value="Korean">Korean</option>
+          </select>
+        </div>
+
+        <div class="row gap" id="extractModeRow">
+          <label class="label">Extract mode</label>
+          <select class="select" id="extractMode">
+            <option value="safe">Safe</option>
+            <option value="balanced">Balanced</option>
+            <option value="aggressive">Aggressive</option>
+          </select>
+        </div>
+
+        <div class="row gap">
+          <label class="label">Batch</label>
+          <input class="input" id="batchSize" type="number" min="1" max="100" value="50" />
+        </div>
+
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="useTMFirst" checked />
+            <span>Fill missing from TM before MT</span>
+          </label>
+        </div>
+
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="autoSave" checked />
+            <span>Auto-save</span>
+          </label>
+        </div>
+
+        <div class="row gap">
+          <button class="btn btn-primary" id="btnTranslateMissing" disabled>Translate Untranslated</button>
+          <button class="btn" id="btnTranslateSelected" disabled>Translate Selected</button>
+        </div>
+
+        <div class="row gap" id="deepseekKeyRow">
+          <label class="label">DeepSeek API key</label>
+          <input class="input" id="apiKey" placeholder="DeepSeek API key (kept local)" />
+        </div>
+
+        <div class="row gap" id="openaiKeyRow" style="display:none;">
+          <label class="label">OpenAI API key</label>
+          <input class="input" id="openaiApiKey" placeholder="OpenAI API key (kept local)" />
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">View</div>
+        <div class="row gap">
+          <label class="label">Filter</label>
+          <select class="select" id="rowFilter">
+            <option value="all">All</option>
+            <option value="untranslated">Untranslated</option>
+            <option value="translated">Translated</option>
+            <option value="flag">Flag</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+        
+        <div class="row gap">
+          <input class="input" id="tableSearch" placeholder="Search in source/translation…" />
+        </div>
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="showWarnings" checked />
+            <span>Show placeholder warnings</span>
+          </label>
+        </div>
+      </div>
+      <a href="../" class="btn" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;margin-bottom:12px">⬅️ Back to Main Menu</a>
+      <div class="panel">
+        <div class="panel-title">Support</div>
+        <div class="row gap">
+          <a class="btn" href="https://www.buymeacoffee.com/_zkn" target="_blank" rel="noopener noreferrer">☕ Buy me a coffee</a>
+          <a class="btn" style="border-color:#ac4d49" href="https://www.patreon.com/ZiolKen" target="_blank" rel="noopener noreferrer">❤️ Patreon</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="table-wrap" id="tableWrap">
+        <table class="grid" id="grid">
+          <thead>
+            <tr>
+              <th class="col-sel"><input type="checkbox" id="selAll" /></th>
+              <th class="col-no">#</th>
+              <th class="col-src">Source</th>
+              <th class="col-tr">Translation</th>
+              <th class="col-meta">Meta</th>
+            </tr>
+          </thead>
+          <tbody id="gridBody" style="overflow-y:auto"></tbody>
+        </table>
+      </div>
+
+      <div class="statusbar">
+        <div class="status-left" id="statusLeft">No project loaded.</div>
+        <div class="status-right" id="statusRight"></div>
+      </div>
+
+      <div class="log" id="log" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <input id="fileInput" type="file" accept=".rpy,.json,.ks,.ast,.asb,.txt" multiple hidden />
+  <input id="folderInput" type="file" accept=".rpy,.json,.ks,.ast,.asb,.txt" webkitdirectory directory multiple hidden />
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+
+  <div class="modal" id="findModal" hidden role="dialog" aria-modal="true" aria-labelledby="findTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="findTitle">Find & Replace</div>
+      <button class="icon-btn" data-close="findModal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div>
+          <div class="field">
+            <div class="field-label">Find</div>
+            <input class="input" id="findQuery" />
+          </div>
+          <div class="field">
+            <div class="field-label">Replace</div>
+            <input class="input" id="replaceQuery" />
+          </div>
+          <div class="row gap">
+            <label class="check"><input type="checkbox" id="findCase" /> <span>Case sensitive</span></label>
+            <label class="check"><input type="checkbox" id="findRegex" /> <span>Regex</span></label>
+          </div>
+          <div class="row gap">
+            <label class="label">In</label>
+            <select class="select" id="findScope">
+              <option value="translation">Translation</option>
+              <option value="source">Source</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div class="row gap">
+            <label class="label">Rows</label>
+            <select class="select" id="findRows">
+              <option value="filtered">Filtered rows</option>
+              <option value="selected">Selected rows</option>
+              <option value="all">All rows</option>
+            </select>
+          </div>
+        </div>
+        <div class="find-right">
+          <div class="find-stats" id="findStats">0 matches.</div>
+          <div class="row gap">
+            <button class="btn" id="btnFindPrev">Prev</button>
+            <button class="btn" id="btnFindNext">Next</button>
+            <button class="btn" id="btnReplaceOne">Replace</button>
+            <button class="btn btn-primary" id="btnReplaceAll">Replace All</button>
+          </div>
+          <div class="hint">
+            Tip: Click a row to focus. Find/Replace works on current file.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="tmModal" hidden role="dialog" aria-modal="true" aria-labelledby="tmTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="tmTitle">Translation Memory</div>
+      <button class="icon-btn" data-close="tmModal" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row gap">
+        <input class="input" id="tmSearch" placeholder="Search TM…" />
+        <button class="btn" id="btnTmExport">Export</button>
+        <button class="btn" id="btnTmImport">Import</button>
+        <button class="btn btn-danger" id="btnTmClear">Clear</button>
+      </div>
+      <div class="row gap">
+        <button class="btn btn-primary" id="btnTmFillMissing" disabled>Fill missing in current file</button>
+      </div>
+      <div class="tm-list" id="tmList"></div>
+      <input id="tmImportInput" type="file" accept=".json" hidden />
+    </div>
+  </div>
+  
+  <script src="../translation-common.js"></script>
+  <script src="../api/deepl-client.js"></script>
+  <script src="../api/deepl-integration.js"></script>
+  <script src="../rpgm/shared/rpgm-text-filters.js"></script>
+  <script src="./parsers/kag-artemis-core.js"></script>
+
+  <script type="module" src="./app.js"></script>
+  
+</body>
+
+</html>
