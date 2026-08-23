@@ -1,0 +1,874 @@
+export const TRANSLATOR_CREDIT =
+  '# Translated by VN Translator: https://vntranslator.vercel.app/ or https://vntranslator.pages.dev/';
+
+export const RENPH_RE = /⟦\s*RENPH\s*(?:\{\s*(\d+)\s*\}|(\d+))\s*⟧/g;
+export const RENPH_TEST_RE = /⟦\s*RENPH\s*(?:\{\s*\d+\s*\}|\d+)\s*⟧/;
+export const OLD_RENPH_TEST_RE = /__RENPLH_\d+__/;
+
+export function maskTagsInText(text) {
+  const s = String(text ?? '');
+  if (!s) return { masked: s, map: Object.create(null) };
+
+  const used = new Set();
+  s.replace(RENPH_RE, (_, a, b) => {
+    const n = Number(a ?? b);
+    if (Number.isFinite(n)) used.add(n);
+    return '';
+  });
+
+  let next = 0;
+  const alloc = () => {
+    while (used.has(next)) next++;
+    const id = next;
+    used.add(id);
+    next++;
+    return id;
+  };
+
+  const map = Object.create(null);
+  let result = '';
+  let lastIndex = 0;
+
+  const tagRe = /\[[^\[\]]*\]|\{[^{}]*\}/g;
+  let m;
+
+  while ((m = tagRe.exec(s)) !== null) {
+    const originalTag = m[0];
+    const id = alloc();
+    map[String(id)] = originalTag;
+
+    result += s.slice(lastIndex, m.index) + `⟦RENPH{${id}}⟧`;
+    lastIndex = m.index + originalTag.length;
+  }
+
+  result += s.slice(lastIndex);
+  return { masked: result, map };
+}
+
+export function unmaskTagsInText(text, map) {
+  const s = String(text ?? '');
+  if (!s || !map) return s;
+
+  const replaced = s.replace(RENPH_RE, (full, a, b) => {
+    const id = String(Number(a ?? b));
+    return Object.prototype.hasOwnProperty.call(map, id) ? map[id] : full;
+  });
+
+  if (!OLD_RENPH_TEST_RE.test(replaced)) return replaced;
+
+  return replaced.replace(/__RENPLH_(\d+)__/g, (full, n) => {
+    const id = String(Number(n));
+    return Object.prototype.hasOwnProperty.call(map, id) ? map[id] : full;
+  });
+}
+
+export const RENPY = (() => {
+  const PREFIX_CHARS = new Set(['r','R','u','U','b','B','f','F']);
+  const SCRIPT_SKIP_HEADS = new Set([
+    'label','init','python','transform','style','screen','key','base_bar','left_bar','style_prefix',
+    'define','default','translate','old','properties','thumb','right_bar','use','allow','auto','image',
+    'return','jump','call','if','elif','else','for','while','try','except','finally','idle','on','hover_color',
+    'pass','break','continue','import','from','$','renpy','action','top_bar','bottom_bar','action',
+    'outlines','outline_scaling','text_font','font','text_color','text_size','color','keysym','side',
+    'xpos','ypos','xalign','yalign','align','anchor','pos','xysize','size','zorder','tag','background'
+  ]);
+
+  const ASSET_HEADS = new Set(['play','queue','stop','voice','sound','sound2','ambience','music']);
+
+  const SCREEN_ALLOWED_HEADS = new Set(['text','textbutton','label','vtext','htext']);
+
+  const NON_TRANSLATABLE_ATTRS = new Set([
+    'style','font','text_font','background','hover_sound','activate_sound','selected_sound','insensitive_sound',
+    'channel','play','start_image','image','add','xysize','xpos','ypos','align','anchor','zorder','tag'
+  ]);
+
+  const NON_TRANSLATABLE_CALLS = new Set([
+    'jump','call','showmenu','openurl','fileaction','setvariable','setscreenvariable',
+    'renpy.call','renpy.jump','renpy.call_in_new_context','renpy.invoke_in_new_context'
+  ]);
+
+  const TRANSLATOR_CALLS = new Set([
+    '_','__','_p','_np','p_','pgettext','npgettext','ngettext','gettext','ugettext',
+    'translate','t','tt','translate_string'
+  ]);
+
+  const BALANCED_MAX_MISC_LEN = 2500;
+
+  let HAS_UNICODE_PROPS = true;
+  try { new RegExp('\\p{L}', 'u'); } catch { HAS_UNICODE_PROPS = false; }
+
+  let MODE = 'safe';
+
+  function setMode(mode) {
+    const v = String(mode || '').toLowerCase().trim();
+    MODE = (v === 'balanced' || v === 'aggressive') ? v : 'safe';
+  }
+
+  function getMode() {
+    return MODE;
+  }
+
+  function isWordChar(ch) {
+    return /[A-Za-z0-9_]/.test(ch);
+  }
+
+  function buildLineStarts(source) {
+    const starts = [0];
+    for (let i = 0; i < source.length; i++) if (source[i] === '\n') starts.push(i + 1);
+    return starts;
+  }
+
+  function offsetToLine(lineStarts, offset) {
+    let lo = 0;
+    let hi = lineStarts.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const v = lineStarts[mid];
+      if (v <= offset) lo = mid + 1;
+      else hi = mid - 1;
+    }
+    return Math.max(0, Math.min(hi, lineStarts.length - 1));
+  }
+
+  function computeBlockMasks(lines) {
+    const n = lines.length;
+    const inPython    = new Array(n).fill(false);
+    const inScreen    = new Array(n).fill(false);
+    const inMenu      = new Array(n).fill(false);
+    const inStyle     = new Array(n).fill(false);
+    const inTransform = new Array(n).fill(false);
+    const inImageATL  = new Array(n).fill(false);
+    const inImageExpr = new Array(n).fill(false);
+  
+    const stack = [];
+  
+    const IMAGE_ASSIGN_RE = /^\s*image\s+[A-Za-z_]\w[\w\s]*\s*=/;
+    let imageExprDepth = 0;
+  
+    function popTo(indent) {
+      while (stack.length && indent <= stack[stack.length - 1].indent) stack.pop();
+    }
+  
+    const PY_BLOCK_RE   = /^\s*(?:init(?:\s+[-+]?\d+)?\s+python(?:\s+hide)?|python(?:\s+hide)?)\s*:\s*$/;
+    const SCREEN_RE     = /^\s*screen\s+[A-Za-z_]\w*\s*(\([^)]*\))?\s*:\s*$/;
+    const MENU_RE       = /^\s*menu\s*:\s*$/;
+    const STYLE_RE      = /^\s*style\s+[A-Za-z_]\w*\s*:\s*$/;
+    const TRANSFORM_RE  = /^\s*transform\s+[A-Za-z_]\w*\s*:\s*$/;
+    const IMAGE_ATL_RE  = /^\s*image\s+[A-Za-z_][\w ]*:\s*$/;
+  
+    for (let i = 0; i < n; i++) {
+      const raw     = lines[i];
+      const stripped = raw.trim();
+      const indent  = (raw.match(/^\s*/)?.[0]?.length) || 0;
+  
+      if (imageExprDepth > 0) {
+        inImageExpr[i] = true;
+        for (const c of raw) {
+          if (c === '(') imageExprDepth++;
+          else if (c === ')') { imageExprDepth--; if (imageExprDepth <= 0) { imageExprDepth = 0; break; } }
+        }
+      } else if (IMAGE_ASSIGN_RE.test(raw)) {
+        for (const c of raw) {
+          if (c === '(') imageExprDepth++;
+          else if (c === ')') imageExprDepth = Math.max(0, imageExprDepth - 1);
+        }
+      }
+  
+      if (stripped && !raw.trimStart().startsWith('#')) {
+        popTo(indent);
+        if      (PY_BLOCK_RE.test(raw))  stack.push({ type: 'python',    indent });
+        else if (SCREEN_RE.test(raw))    stack.push({ type: 'screen',    indent });
+        else if (MENU_RE.test(raw))      stack.push({ type: 'menu',      indent });
+        else if (STYLE_RE.test(raw))     stack.push({ type: 'style',     indent });
+        else if (TRANSFORM_RE.test(raw)) stack.push({ type: 'transform', indent });
+        else if (IMAGE_ATL_RE.test(raw)) stack.push({ type: 'image_atl', indent });
+      }
+  
+      const types   = new Set(stack.map(x => x.type));
+      inPython[i]   = types.has('python');
+      inScreen[i]   = types.has('screen');
+      inMenu[i]     = types.has('menu');
+      inStyle[i]    = types.has('style');
+      inTransform[i]= types.has('transform');
+      inImageATL[i] = types.has('image_atl');
+    }
+  
+    return { inPython, inScreen, inMenu, inStyle, inTransform, inImageATL, inImageExpr };
+  }
+
+  function scanStringLiterals(source, lineStarts) {
+    const out = [];
+    let i = 0;
+
+    while (i < source.length) {
+      const ch = source[i];
+
+      if (ch === '#') {
+        const nl = source.indexOf('\n', i);
+        if (nl === -1) break;
+        i = nl + 1;
+        continue;
+      }
+
+      const prev = i > 0 ? source[i - 1] : '';
+      let prefix = '';
+      let quoteChar = '';
+      let openStart = i;
+      let openQuoteStart = -1;
+
+      if (ch === '"' || ch === "'") {
+        quoteChar = ch;
+        openQuoteStart = i;
+      } else if (PREFIX_CHARS.has(ch) && !isWordChar(prev)) {
+        let j = i;
+        while (j < source.length && PREFIX_CHARS.has(source[j]) && (j - i) < 3) j++;
+        if (j < source.length && (source[j] === '"' || source[j] === "'")) {
+          prefix = source.slice(i, j);
+          quoteChar = source[j];
+          openQuoteStart = j;
+        } else {
+          i++;
+          continue;
+        }
+      } else {
+        i++;
+        continue;
+      }
+
+      const triple = quoteChar + quoteChar + quoteChar;
+      const isTriple = source.startsWith(triple, openQuoteStart);
+      const delim = isTriple ? triple : quoteChar;
+      const contentStart = openQuoteStart + delim.length;
+
+      let contentEnd = -1;
+      let endOffset = -1;
+
+      if (isTriple) {
+        let j = contentStart;
+        let bs = 0;
+        while (j < source.length) {
+          if (source.startsWith(delim, j) && (bs % 2 === 0)) {
+            contentEnd = j;
+            endOffset = j + delim.length;
+            break;
+          }
+          const c = source[j];
+          if (c === '\\') bs++;
+          else bs = 0;
+          j++;
+        }
+        if (endOffset === -1) {
+          i = contentStart;
+          continue;
+        }
+      } else {
+        let j = contentStart;
+        let esc = false;
+        while (j < source.length) {
+          const c = source[j];
+          if (c === '\n') break;
+          if (!esc && c === quoteChar) {
+            contentEnd = j;
+            endOffset = j + 1;
+            break;
+          }
+          if (c === '\\' && !esc) esc = true;
+          else esc = false;
+          j++;
+        }
+        if (endOffset === -1) {
+          i = contentStart;
+          continue;
+        }
+      }
+
+      out.push({
+        openStart,
+        openQuoteStart,
+        contentStart,
+        contentEnd,
+        endOffset,
+        prefix,
+        quoteChar,
+        isTriple,
+        startLine: offsetToLine(lineStarts, openStart),
+        endLine: offsetToLine(lineStarts, Math.max(openStart, endOffset - 1)),
+        value: source.slice(contentStart, contentEnd),
+      });
+
+      i = endOffset;
+    }
+
+    return out;
+  }
+
+  function stripMarkupForCheck(text) {
+    return String(text || '')
+      .replace(/\{[^{}]*\}/gs, '')
+      .replace(/\[[^\[\]]*\]/gs, '')
+      .trim();
+  }
+  
+  function hasBraceOutsideQuote(prefix) {
+    if (!prefix) return false;
+  
+    let inSingle = false;
+    let inDouble = false;
+    let esc = false;
+  
+    for (let i = 0; i < prefix.length; i++) {
+      const c = prefix[i];
+  
+      if (esc) {
+        esc = false;
+        continue;
+      }
+  
+      if (c === '\\') {
+        esc = true;
+        continue;
+      }
+  
+      if (c === '"' && !inSingle) {
+        inDouble = !inDouble;
+        continue;
+      }
+  
+      if (c === "'" && !inDouble) {
+        inSingle = !inSingle;
+        continue;
+      }
+  
+      if (!inSingle && !inDouble) {
+        if (c === '{' || c === '}') return true;
+      }
+    }
+  
+    return false;
+  }
+  
+  function isLowercaseIdentifierLike(text) {
+    const t = stripMarkupForCheck(text);
+  
+    if (!t) return false;
+  
+    if (!/[-_]/.test(t)) return false;
+  
+    if (/[A-Z]/.test(t)) return false;
+  
+    if (!/[a-z]/.test(t)) return false;
+    
+    if (!/[0-9]/.test(t)) return false;
+  
+    return true;
+  }
+
+  function isMeaningfulText(text) {
+    const t = stripMarkupForCheck(text);
+    if (!t) return false;
+    if (HAS_UNICODE_PROPS) return /[\p{L}\p{N}]/u.test(t);
+    return /[A-Za-z0-9]/.test(t);
+  }
+
+  function isLikelyAssetString(text) {
+    const t = String(text || '').trim();
+    if (/\.(png|jpg|jpeg|webp|gif|ogg|mp3|wav|mp4|webm|m4a|avi|mov|ttf|otf|woff|woff2|eot|svg)(\?.*)?$/i.test(t)) return true;
+    if ((t.includes('/') || t.includes('\\')) && /\.\w{2,4}(\?.*)?$/.test(t)) return true;
+    return false;
+  }
+
+  function isUrlString(text) {
+    const t = String(text || '').trim().toLowerCase();
+    return t.startsWith('http://') || t.startsWith('https://') || t.startsWith('mailto:') || t.startsWith('www.');
+  }
+
+  function getHeadToken(textBeforeFirstLiteral) {
+    const m = String(textBeforeFirstLiteral || '').trimStart().match(/^([A-Za-z_][\w\.]*)/);
+    return (m ? m[1].toLowerCase() : '');
+  }
+
+  function prevIdentifierAt(line, quotePosInLine) {
+    let j = quotePosInLine - 1;
+    while (j >= 0 && /\s/.test(line[j])) j--;
+    if (j >= 0 && line[j] === '(') {
+      j--;
+      while (j >= 0 && /\s/.test(line[j])) j--;
+    }
+    let k = j;
+    while (k >= 0 && /[A-Za-z0-9_\.]/.test(line[k])) k--;
+    return line.slice(k + 1, j + 1);
+  }
+
+  function isTranslateWrapped(source, openQuoteStart) {
+    let j = openQuoteStart - 1;
+    while (j >= 0 && /\s/.test(source[j])) j--;
+    if (j < 0 || source[j] !== '(') return false;
+    j--;
+    while (j >= 0 && /\s/.test(source[j])) j--;
+    let end = j;
+    while (j >= 0 && /[A-Za-z0-9_\.]/.test(source[j])) j--;
+    const ident = source.slice(j + 1, end + 1);
+    if (!ident) return false;
+    const last = ident.split('.').pop().toLowerCase();
+    return TRANSLATOR_CALLS.has(last);
+  }
+
+  function isSayStatement(prefixTrimmed, fullLineTrimmed) {
+    if (!prefixTrimmed) return true;
+
+    const head = getHeadToken(prefixTrimmed);
+    if (!head) return false;
+
+    if (ASSET_HEADS.has(head)) return false;
+
+    if (SCRIPT_SKIP_HEADS.has(head)) {
+      if (head === 'show' && /^\s*show\s+text\b/i.test(fullLineTrimmed)) return true;
+      return false;
+    }
+
+    if (/\b(action|Jump|Call|ShowMenu|OpenURL|SetVariable|FileAction)\b/.test(prefixTrimmed)) return false;
+
+    if (/(^|[^=!<>])=([^=]|$)/.test(prefixTrimmed)) return false;
+
+    if (prefixTrimmed.includes(':')) return false;
+
+    if (prefixTrimmed.includes('(')) return false;
+
+    return true;
+  }
+
+  function menuOptionColonPos(line, afterIndex) {
+    const cut = line.includes('#') ? line.slice(0, line.indexOf('#')) : line;
+    const pos = cut.indexOf(':', afterIndex);
+    if (pos === -1) return null;
+    if (cut.slice(pos + 1).trim() !== '') return null;
+    return pos;
+  }
+
+  
+  function isHexDigit(ch) {
+    return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+  }
+
+  function isRawPrefix(prefix) {
+    return /r/i.test(String(prefix || ''));
+  }
+
+  function normalizeRenpyNewlines(text) {
+    return String(text ?? '').replace(/\r\n|\r|\n|\u2028|\u2029/g, '\\n');
+  }
+
+  function ensureEvenTrailingBackslashes(text) {
+    const s = String(text ?? '');
+    let n = 0;
+    for (let i = s.length - 1; i >= 0 && s[i] === '\\'; i--) n++;
+    return (n % 2 === 0) ? s : (s + '\\');
+  }
+
+  function sanitizeBackslashEscapes(text, original, isRaw) {
+    if (isRaw) return String(text ?? '');
+    const s = String(text ?? '');
+    const orig = String(original ?? '');
+    let out = '';
+
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c !== '\\') {
+        out += c;
+        continue;
+      }
+
+      const next = s[i + 1];
+      if (next === undefined) {
+        out += '\\';
+        continue;
+      }
+
+      if (next === 'x') {
+        const a = s[i + 2];
+        const b = s[i + 3];
+        out += (isHexDigit(a) && isHexDigit(b)) ? '\\' : '\\\\';
+        continue;
+      }
+
+      if (next === 'u') {
+        const a = s[i + 2];
+        const b = s[i + 3];
+        const c1 = s[i + 4];
+        const d = s[i + 5];
+        out += (isHexDigit(a) && isHexDigit(b) && isHexDigit(c1) && isHexDigit(d)) ? '\\' : '\\\\';
+        continue;
+      }
+
+      if (next === 'U') {
+        let ok = true;
+        for (let k = 2; k <= 9; k++) {
+          if (!isHexDigit(s[i + k])) {
+            ok = false;
+            break;
+          }
+        }
+        out += ok ? '\\' : '\\\\';
+        continue;
+      }
+
+      if (next === 'N') {
+        let keep = false;
+        if (s[i + 2] === '{') {
+          const end = s.indexOf('}', i + 3);
+          if (end !== -1) {
+            const seq = s.slice(i, end + 1);
+            keep = !!(orig && orig.includes(seq));
+          }
+        }
+        out += keep ? '\\' : '\\\\';
+        continue;
+      }
+
+      out += '\\';
+    }
+
+    return out;
+  }
+
+  function escapeDelimiterQuotes(text, quoteChar) {
+    const s = String(text ?? '');
+    const q = (quoteChar === "'") ? "'" : '"';
+    let out = '';
+    let bs = 0;
+
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+
+      if (c === '\\') {
+        out += '\\';
+        bs++;
+        continue;
+      }
+
+      if (c === q) {
+        if (bs % 2 === 0) out += '\\' + q;
+        else out += q;
+      } else {
+        out += c;
+      }
+
+      bs = 0;
+    }
+
+    return ensureEvenTrailingBackslashes(out);
+  }
+
+  function escapeTripleDelim(text, quoteChar) {
+    const s = String(text ?? '');
+    const q = (quoteChar === "'") ? "'" : '"';
+    let out = '';
+    let bs = 0;
+    let i = 0;
+
+    while (i < s.length) {
+      const c = s[i];
+
+      if (c === '\\') {
+        out += '\\';
+        bs++;
+        i++;
+        continue;
+      }
+
+      if (c !== q) {
+        out += c;
+        bs = 0;
+        i++;
+        continue;
+      }
+
+      let j = i;
+      while (j < s.length && s[j] === q) j++;
+      const runLen = j - i;
+
+      if (runLen < 3) {
+        out += q.repeat(runLen);
+      } else {
+        const firstEscaped = (bs % 2 === 1);
+        if (runLen === 3 && firstEscaped) {
+          out += q.repeat(3);
+        } else {
+          for (let k = 0; k < runLen; k++) {
+            if (k % 3 === 2) out += '\\';
+            out += q;
+          }
+        }
+      }
+
+      bs = 0;
+      i = j;
+    }
+
+    return ensureEvenTrailingBackslashes(out);
+  }
+
+  function validateEscapedRenpyContent(text, quoteChar, isTriple) {
+    const s = String(text ?? '');
+    const q = (quoteChar === "'") ? "'" : '"';
+
+    if (!isTriple && /[\r\n\u2028\u2029]/.test(s)) return false;
+
+    let trail = 0;
+    for (let i = s.length - 1; i >= 0 && s[i] === '\\'; i--) trail++;
+    if (trail % 2 === 1) return false;
+
+    if (!isTriple) {
+      let bs = 0;
+      for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c === '\\') {
+          bs++;
+          continue;
+        }
+        if (c === q && (bs % 2 === 0)) return false;
+        bs = 0;
+      }
+      return true;
+    }
+
+    const delim = q + q + q;
+    for (let i = 0; i <= s.length - 3; i++) {
+      if (!s.startsWith(delim, i)) continue;
+      let bs = 0;
+      for (let j = i - 1; j >= 0 && s[j] === '\\'; j--) bs++;
+      if (bs % 2 === 0) return false;
+    }
+
+    return true;
+  }
+
+  function escapeFallback(text, quoteChar, isTriple) {
+    const q = (quoteChar === "'") ? "'" : '"';
+    let s = String(text ?? '');
+    if (!isTriple) s = normalizeRenpyNewlines(s);
+    s = s.replace(/\\/g, '\\\\');
+    s = s.replaceAll(q, '\\' + q);
+    return ensureEvenTrailingBackslashes(s);
+  }
+
+  function escapeForRenpyString(text, quoteChar, isTriple, prefix, original) {
+    const q = (quoteChar === "'") ? "'" : '"';
+    const raw = isRawPrefix(prefix);
+    let out = String(text ?? '');
+
+    if (!isTriple) out = normalizeRenpyNewlines(out);
+
+    out = sanitizeBackslashEscapes(out, original, raw);
+    out = isTriple ? escapeTripleDelim(out, q) : escapeDelimiterQuotes(out, q);
+
+    if (validateEscapedRenpyContent(out, q, isTriple)) return out;
+
+    const fb = escapeFallback(text, q, isTriple);
+    if (validateEscapedRenpyContent(fb, q, isTriple)) return fb;
+
+    return fb;
+  }
+
+
+  function stmtHeadLower(line) {
+    const m = String(line || '').trimStart().match(/^([A-Za-z_][\w\.]*)/);
+    return (m ? m[1].toLowerCase() : '');
+  }
+
+  function isDirectScreenTextLiteral(line, headLower, quotePosInLine) {
+    if (!headLower || !SCREEN_ALLOWED_HEADS.has(headLower)) return false;
+    const stmtStart = (line.match(/^\s*/)?.[0]?.length) || 0;
+    const pre = line.slice(stmtStart, quotePosInLine).trim();
+    const preLower = pre.toLowerCase();
+    if (preLower === headLower) return true;
+    if (!preLower.startsWith(headLower)) return false;
+    const rest = pre.slice(headLower.length).trim();
+    if (!rest.endsWith('(')) return false;
+    const ident = rest.slice(0, -1).trim();
+    if (!ident) return false;
+    const last = ident.split('.').pop().toLowerCase();
+    return TRANSLATOR_CALLS.has(last);
+  }
+
+  function enclosingCallInfoAtLine(line, quotePosInLine) {
+    let i = quotePosInLine - 1;
+    let depth = 0;
+    while (i >= 0) {
+      const c = line[i];
+      if (c === ')') depth++;
+      else if (c === '(') {
+        if (depth === 0) {
+          let j = i - 1;
+          while (j >= 0 && /\s/.test(line[j])) j--;
+          let k = j;
+          while (k >= 0 && /[A-Za-z0-9_\.]/.test(line[k])) k--;
+          const name = line.slice(k + 1, j + 1);
+          return { name, parenPos: i };
+        }
+        depth--;
+      }
+      i--;
+    }
+    return null;
+  }
+
+  function isNotifyStringAt(line, quotePosInLine) {
+    const info = enclosingCallInfoAtLine(line, quotePosInLine);
+    if (!info || !info.name) return false;
+    const nameLower = info.name.toLowerCase();
+    if (nameLower === 'notify' || nameLower === 'renpy.notify' || nameLower.endsWith('.notify')) return true;
+    if (nameLower === 'function') {
+      const pre = line.slice(info.parenPos + 1, quotePosInLine);
+      if (/\brenpy\.notify\b\s*,\s*$/.test(pre) || /\bnotify\b\s*,\s*$/.test(pre)) return true;
+    }
+    return false;
+  }
+
+  function extractDialogs(source) {
+    const lines = source.split(/\r?\n/);
+    const lineStarts = buildLineStarts(source);
+    const masks = computeBlockMasks(lines);
+    const literals = scanStringLiterals(source, lineStarts);
+
+    const byLine = new Map();
+    for (const lit of literals) {
+      if (!byLine.has(lit.startLine)) byLine.set(lit.startLine, []);
+      byLine.get(lit.startLine).push(lit);
+    }
+
+    const dialogs = [];
+
+    for (const [lineIdx, list] of byLine.entries()) {
+      if (masks.inPython[lineIdx] || masks.inStyle[lineIdx] || masks.inTransform[lineIdx] || masks.inImageATL[lineIdx] || masks.inImageExpr[lineIdx]) continue;
+      if (MODE === 'safe' && masks.inScreen[lineIdx]) continue;
+
+      list.sort((a, b) => a.openStart - b.openStart);
+
+      const line = lines[lineIdx] ?? '';
+      const lineTrimmed = line.trim();
+      const lineStartOffset = lineStarts[lineIdx] ?? 0;
+
+      const first = list[0];
+      const prefixTrimmed = source.slice(lineStartOffset, first.openStart).trim();
+      const zone = masks.inScreen[lineIdx] ? 'screen' : 'script';
+
+      const head = getHeadToken(prefixTrimmed);
+      const stmtHead = stmtHeadLower(line);
+
+      let isMenuOption = false;
+      let colonPos = null;
+
+      const firstNonSpacePos = lineStartOffset + (line.length - line.trimStart().length);
+      if (masks.inMenu[lineIdx] && first.openStart === firstNonSpacePos && !first.isTriple) {
+        const after = first.endOffset - lineStartOffset;
+        const cp = menuOptionColonPos(line, after);
+        if (cp != null) {
+          isMenuOption = true;
+          colonPos = cp;
+        }
+      }
+
+      const isSay = zone === 'script' && isSayStatement(prefixTrimmed, lineTrimmed);
+
+      for (const lit of list) {
+        const raw = lit.value;
+        const prefixBefore = source.slice(lineStartOffset, lit.openQuoteStart);
+        if (hasBraceOutsideQuote(prefixBefore)) continue;
+
+        if (!isMeaningfulText(raw)) continue;
+        if (isLowercaseIdentifierLike(raw)) continue;
+        if (isLikelyAssetString(raw) || isUrlString(raw)) continue;
+
+        const quotePosInLine = lit.openQuoteStart - lineStartOffset;
+        const prevId = prevIdentifierAt(line, quotePosInLine).toLowerCase();
+        if (NON_TRANSLATABLE_ATTRS.has(prevId) || NON_TRANSLATABLE_CALLS.has(prevId)) continue;
+
+        const inWrap = isTranslateWrapped(source, lit.openQuoteStart);
+        const isAlt = (zone === 'screen' && prevId === 'alt');
+        const isDirectScreen = (zone === 'screen' && isDirectScreenTextLiteral(line, stmtHead, quotePosInLine));
+        const isNotify = (zone === 'screen' && isNotifyStringAt(line, quotePosInLine));
+
+        let allowed = false;
+
+        if (MODE === 'safe') {
+          if (zone !== 'script') allowed = false;
+          else if (isMenuOption && colonPos != null) {
+            allowed = (lit.openStart - lineStartOffset) < colonPos;
+          } else {
+            allowed = isSay;
+          }
+        } else if (MODE === 'balanced') {
+          if (zone === 'screen') {
+            allowed = isAlt || isDirectScreen || isNotify || inWrap;
+            if (allowed && inWrap && !(isAlt || isDirectScreen || isNotify) && raw.length > BALANCED_MAX_MISC_LEN) allowed = false;
+          } else {
+            if (isMenuOption && colonPos != null) {
+              allowed = (lit.openStart - lineStartOffset) < colonPos;
+            } else {
+              allowed = isSay || inWrap;
+              if (allowed && inWrap && !isSay && raw.length > BALANCED_MAX_MISC_LEN) allowed = false;
+            }
+          }
+        } else {
+          if (zone === 'screen') {
+            allowed = isAlt || isDirectScreen || isNotify || inWrap;
+          } else {
+            if (isMenuOption && colonPos != null) {
+              allowed = (lit.openStart - lineStartOffset) < colonPos;
+            } else {
+              allowed = isSay || inWrap;
+            }
+          }
+        }
+
+        if (!allowed) continue;
+
+        const maskedInfo = maskTagsInText(raw);
+
+        dialogs.push({
+          lineIndex: lineIdx,
+          contentStart: lit.contentStart,
+          contentEnd: lit.contentEnd,
+          quoteChar: lit.quoteChar,
+          isTriple: lit.isTriple,
+          prefix: lit.prefix,
+          quote: raw,
+          maskedQuote: maskedInfo.masked,
+          placeholderMap: maskedInfo.map,
+          cacheKey: maskedInfo.masked,
+          translated: null,
+        });
+      }
+    }
+
+    return dialogs;
+  }
+
+  function applyTranslations(source, dialogs, eol, creditLine) {
+    const reps = [];
+    for (const d of dialogs) {
+      if (d.translated == null) continue;
+      reps.push({
+        start: d.contentStart,
+        end: d.contentEnd,
+        value: escapeForRenpyString(d.translated, d.quoteChar, d.isTriple, d.prefix, d.quote),
+      });
+    }
+    reps.sort((a, b) => b.start - a.start);
+
+    let out = source;
+    for (const r of reps) out = out.slice(0, r.start) + r.value + out.slice(r.end);
+
+    const nl = eol || '\n';
+    const credit = String(creditLine || '').trim();
+    if (!credit) return out + nl;
+
+    const trimmed = out.trimEnd();
+    if (trimmed.endsWith(credit)) return out + nl;
+
+    return out + nl + nl + credit + nl;
+  }
+
+  return { extractDialogs, applyTranslations, setMode, getMode };
+})();
