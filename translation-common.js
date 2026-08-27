@@ -569,7 +569,7 @@
     if (googleCache.has(cacheKey)) return googleCache.get(cacheKey);
 
     const url =
-      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' + encodeURIComponent(sl) +
+      'https://translate.google.com/translate_a/single?client=gtx&sl=' + encodeURIComponent(sl) +
       '&tl=' + encodeURIComponent(tl) +
       '&dt=t&q=' + encodeURIComponent(safeText);
 
