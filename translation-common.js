@@ -184,11 +184,101 @@
     'https://translate.plausibility.cloud',
   ]);
 
+  const GOOGLE_TRANSLATE_BASE = 'https://translate.google.com';
+
+  const GOOGLE_TRANSLATE_HOSTS = Object.freeze([
+    'translate.google.ac', 'translate.google.ad', 'translate.google.ae', 'translate.google.al',
+    'translate.google.am', 'translate.google.as', 'translate.google.at', 'translate.google.az',
+    'translate.google.ba', 'translate.google.be', 'translate.google.bf', 'translate.google.bg',
+    'translate.google.bi', 'translate.google.bj', 'translate.google.bs', 'translate.google.bt',
+    'translate.google.by', 'translate.google.ca', 'translate.google.cat', 'translate.google.cc',
+    'translate.google.cd', 'translate.google.cf', 'translate.google.cg', 'translate.google.ch',
+    'translate.google.ci', 'translate.google.cl', 'translate.google.cm', 'translate.google.cn',
+    'translate.google.co.ao', 'translate.google.co.bw', 'translate.google.co.ck', 'translate.google.co.cr',
+    'translate.google.co.id', 'translate.google.co.il', 'translate.google.co.in', 'translate.google.co.jp',
+    'translate.google.co.ke', 'translate.google.co.kr', 'translate.google.co.ls', 'translate.google.co.ma',
+    'translate.google.co.mz', 'translate.google.co.nz', 'translate.google.co.th', 'translate.google.co.tz',
+    'translate.google.co.ug', 'translate.google.co.uk', 'translate.google.co.uz', 'translate.google.co.ve',
+    'translate.google.co.vi', 'translate.google.co.za', 'translate.google.co.zm', 'translate.google.co.zw',
+    'translate.google.com.af', 'translate.google.com.ag', 'translate.google.com.ai', 'translate.google.com.ar',
+    'translate.google.com.au', 'translate.google.com.bd', 'translate.google.com.bh', 'translate.google.com.bn',
+    'translate.google.com.bo', 'translate.google.com.br', 'translate.google.com.bz', 'translate.google.com.co',
+    'translate.google.com.cu', 'translate.google.com.cy', 'translate.google.com.do', 'translate.google.com.ec',
+    'translate.google.com.eg', 'translate.google.com.et', 'translate.google.com.fj', 'translate.google.com.gh',
+    'translate.google.com.gi', 'translate.google.com.gt', 'translate.google.com.hk', 'translate.google.com.jm',
+    'translate.google.com.kh', 'translate.google.com.kw', 'translate.google.com.lb', 'translate.google.com.ly',
+    'translate.google.com.mm', 'translate.google.com.mt', 'translate.google.com.mx', 'translate.google.com.my',
+    'translate.google.com.na', 'translate.google.com.ng', 'translate.google.com.ni', 'translate.google.com.np',
+    'translate.google.com.om', 'translate.google.com.pa', 'translate.google.com.pe', 'translate.google.com.pg',
+    'translate.google.com.ph', 'translate.google.com.pk', 'translate.google.com.pr', 'translate.google.com.py',
+    'translate.google.com.qa', 'translate.google.com.sa', 'translate.google.com.sb', 'translate.google.com.sg',
+    'translate.google.com.sl', 'translate.google.com.sv', 'translate.google.com.tj', 'translate.google.com.tr',
+    'translate.google.com.tw', 'translate.google.com.ua', 'translate.google.com.uy', 'translate.google.com.vc',
+    'translate.google.com.vn', 'translate.google.com', 'translate.google.cv', 'translate.google.cz',
+    'translate.google.de', 'translate.google.dj', 'translate.google.dk', 'translate.google.dm',
+    'translate.google.dz', 'translate.google.ee', 'translate.google.es', 'translate.google.eu',
+    'translate.google.fi', 'translate.google.fm', 'translate.google.fr', 'translate.google.ga',
+    'translate.google.ge', 'translate.google.gf', 'translate.google.gg', 'translate.google.gl',
+    'translate.google.gm', 'translate.google.gp', 'translate.google.gr', 'translate.google.gy',
+    'translate.google.hn', 'translate.google.hr', 'translate.google.ht', 'translate.google.hu',
+    'translate.google.ie', 'translate.google.im', 'translate.google.io', 'translate.google.iq',
+    'translate.google.is', 'translate.google.it', 'translate.google.je', 'translate.google.jo',
+    'translate.google.kg', 'translate.google.ki', 'translate.google.kz', 'translate.google.la',
+    'translate.google.li', 'translate.google.lk', 'translate.google.lt', 'translate.google.lu',
+    'translate.google.lv', 'translate.google.md', 'translate.google.me', 'translate.google.mg',
+    'translate.google.mk', 'translate.google.ml', 'translate.google.mn', 'translate.google.ms',
+    'translate.google.mu', 'translate.google.mv', 'translate.google.mw', 'translate.google.ne',
+    'translate.google.nf', 'translate.google.nl', 'translate.google.no', 'translate.google.nr',
+    'translate.google.nu', 'translate.google.pl', 'translate.google.pn', 'translate.google.ps',
+    'translate.google.pt', 'translate.google.ro', 'translate.google.rs', 'translate.google.ru',
+    'translate.google.rw', 'translate.google.sc', 'translate.google.se', 'translate.google.sh',
+    'translate.google.si', 'translate.google.sk', 'translate.google.sm', 'translate.google.sn',
+    'translate.google.so', 'translate.google.sr', 'translate.google.st', 'translate.google.td',
+    'translate.google.tg', 'translate.google.tk', 'translate.google.tl', 'translate.google.tm',
+    'translate.google.tn', 'translate.google.to', 'translate.google.tt', 'translate.google.us',
+    'translate.google.vg', 'translate.google.vu', 'translate.google.ws',
+  ]);
+
+  const GOOGLE_USER_AGENTS = Object.freeze([
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  ]);
+
   const DEEPL_PLACEHOLDER_RE = /⟦\s*[^⟧]+?\s*⟧|__[A-Z0-9_]*PLH_\d+__/g;
   const PLACEHOLDER_TOKEN_RE = /⟦\s*PH\s*(\d+)\s*⟧/g;
 
   let lingvaBestHost = null;
   const googleCache = new Map();
+
+  // Trạng thái xoay vòng cho Google Translate
+  let googleBestHost = null;     // host vừa dùng thành công gần nhất -> ưu tiên thử trước
+  let googleHostCursor = 0;      // con trỏ round-robin cho các lần gọi kế tiếp
+
+  function pickGoogleUserAgent() {
+    return GOOGLE_USER_AGENTS[Math.floor(Math.random() * GOOGLE_USER_AGENTS.length)];
+  }
+
+  // Trả về danh sách host theo thứ tự ưu tiên thử cho 1 lần dịch:
+  // ưu tiên host thành công gần nhất, sau đó xoay vòng (round-robin) qua toàn bộ danh sách.
+  function getGoogleHostOrder() {
+    const total = GOOGLE_TRANSLATE_HOSTS.length;
+    const start = googleHostCursor % total;
+    googleHostCursor = (googleHostCursor + 1) % total;
+
+    const rotated = [];
+    for (let i = 0; i < total; i++) {
+      rotated.push(GOOGLE_TRANSLATE_HOSTS[(start + i) % total]);
+    }
+
+    if (googleBestHost && rotated.includes(googleBestHost)) {
+      return [googleBestHost, ...rotated.filter((host) => host !== googleBestHost)];
+    }
+    return rotated;
+  }
 
   function normalizeEngineId(value) {
     const raw = String(value || '').trim();
@@ -558,7 +648,13 @@
     });
   }
 
-  async function translateGoogleText(text, source, target, signal) {
+  function buildGoogleTranslateUrl(host, sl, tl, text) {
+    return 'https://' + host + '/translate_a/single?client=gtx&sl=' + encodeURIComponent(sl) +
+      '&tl=' + encodeURIComponent(tl) +
+      '&dt=t&q=' + encodeURIComponent(text);
+  }
+
+  async function translateGoogleText(text, source, target, signal, options = {}) {
     const safeText = String(text ?? '');
     if (!safeText.trim()) return safeText;
 
@@ -568,18 +664,39 @@
 
     if (googleCache.has(cacheKey)) return googleCache.get(cacheKey);
 
-    const url =
-      'https://translate.google.com/translate_a/single?client=gtx&sl=' + encodeURIComponent(sl) +
-      '&tl=' + encodeURIComponent(tl) +
-      '&dt=t&q=' + encodeURIComponent(safeText);
+    const hostOrder = getGoogleHostOrder();
+    const maxAttempts = Math.max(1, Math.min(hostOrder.length, Number(options.maxRetries) || 5));
 
-    const response = await fetch(url, { signal, cache: 'no-store' });
-    if (!response.ok) throw new Error('Google Translate HTTP ' + response.status);
+    let lastError = null;
 
-    const data = await response.json();
-    const translated = (data?.[0] || []).map((entry) => entry?.[0] || '').join('');
-    googleCache.set(cacheKey, translated);
-    return translated;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const host = hostOrder[attempt];
+      const url = buildGoogleTranslateUrl(host, sl, tl, safeText);
+
+      try {
+        const response = await fetch(url, {
+          signal,
+          cache: 'no-store',
+          headers: { 'User-Agent': pickGoogleUserAgent() }
+        });
+
+        if (!response.ok) {
+          lastError = new Error('Google Translate HTTP ' + response.status + ' (' + host + ')');
+          continue;
+        }
+
+        const data = await response.json();
+        const translated = (data?.[0] || []).map((entry) => entry?.[0] || '').join('');
+        googleBestHost = host;
+        googleCache.set(cacheKey, translated);
+        return translated;
+      } catch (error) {
+        if (error?.name === 'AbortError') throw error;
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('Google Translate: all hosts failed');
   }
 
   async function translateGoogleLines(lines, target, options = {}) {
@@ -587,9 +704,10 @@
     const concurrency = options.concurrency ?? 24;
     const delayMs = options.delayMs ?? 0;
     const source = options.source || 'auto';
+    const maxRetries = options.maxRetries;
 
     return pMap(lines, concurrency, async (value) => {
-      const translated = await translateGoogleText(value, source, target, signal);
+      const translated = await translateGoogleText(value, source, target, signal, { maxRetries });
       if (delayMs) await sleep(delayMs, signal);
       return translated;
     });
@@ -874,6 +992,8 @@
     requestOpenAIChat,
     translateLingvaLines,
     translateGoogleLines,
+    googleTranslateHosts: GOOGLE_TRANSLATE_HOSTS,
+    googleTranslateBase: GOOGLE_TRANSLATE_BASE,
     translateDeepLLines,
     protectTextWithPatterns,
     restorePlaceholderText,
