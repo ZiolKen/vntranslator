@@ -77,7 +77,8 @@
     { code: 'ms', label: 'Malay', labelValue: 'Malay', deepl: 'MS' },
     { code: 'vi', label: 'Vietnamese', labelValue: 'Vietnamese', deepl: 'VI' },
     { code: 'tl', label: 'Filipino', labelValue: 'Filipino', deepl: 'TL' },
-    { code: 'ko', label: 'Korean', labelValue: 'Korean', deepl: 'KO' }
+    { code: 'ko', label: 'Korean', labelValue: 'Korean', deepl: 'KO' },
+    { code: 'th', label: 'Thai', labelValue: 'Thai', deepl: 'TH' }
   ]);
 
   const PROVIDER_KEY_CONFIG = Object.freeze({
