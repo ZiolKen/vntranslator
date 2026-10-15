@@ -2,7 +2,7 @@ import { RENPY, unmaskTagsInText, RENPH_TEST_RE, OLD_RENPH_TEST_RE, TRANSLATOR_C
 import { normalizeLineEndings, restoreLineEndings, debounce, escapeHtml, clamp, yieldToMain } from './utils.js';
 import { Store } from './storage.js';
 import { LANG_TO_CODE } from './languages.js';
-import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchDeepL, translateBatchLingva, translateBatchGoogle } from './engines.js';
+import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchDeepL, translateBatchLingva, translateBatchGoogle, translateBatchIndexTranslate } from './engines.js';
 import { downloadZip } from './zip.js';
 import { buildMatcher, findAllInText, replaceAll, nextIndex, sortMatches } from './findreplace.js';
 
@@ -1137,6 +1137,7 @@ async function translateDialogs(path, indices) {
     if (engine === 'deepseek') translated = await translateBatchDeepSeek(dialogsOnly, targetLang, apiKey);
     else if (engine === 'deepl') translated = await translateBatchDeepL(dialogsOnly, targetLang, apiKey);
     else if (Common && Common.isOpenAIEngine(engine)) translated = await translateBatchOpenAI(dialogsOnly, targetLang, openaiApiKey, engine);
+    else if (engine === 'index-translate') translated = await translateBatchIndexTranslate(dialogsOnly, targetLang);
     else if (engine === 'google') translated = await translateBatchGoogle(dialogsOnly, targetLang);
     else translated = await translateBatchLingva(dialogsOnly, targetLang);
     

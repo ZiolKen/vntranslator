@@ -824,6 +824,11 @@ async function translateBatchGoogle(batchDialogs, targetLang) {
   return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
 }
 
+async function translateBatchIndexTranslate(batchDialogs, targetLang) {
+  const lines = batchDialogs.map(dialog => dialog.protectedText ?? dialog.text ?? "");
+  return Common.translateIndexTranslateLines(lines, targetLang, { concurrency: 6 });
+}
+
 async function translateBatchDeepL(batchDialogs, targetLang, apiKey) {
   const lines = batchDialogs.map(dialog => dialog.protectedText ?? dialog.text ?? "");
   return Common.translateDeepLLines(lines, targetLang, {
@@ -851,6 +856,10 @@ async function translateBatch(batch, model, targetLang) {
     const provider = Common.getEngineProvider(model);
     if (!ck) throw new Error("Missing " + (provider === "gemini" ? "Gemini" : "OpenAI") + " API key");
     return await translateBatchChatGPT(batch, targetLang, ck, model);
+  }
+
+  if (model === "index-translate") {
+    return await translateBatchIndexTranslate(batch, targetLang);
   }
 
   if (model === "lingva") {

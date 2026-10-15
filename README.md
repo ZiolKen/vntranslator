@@ -76,6 +76,7 @@ It focuses on **accuracy**, **format preservation**, and **ease of use**, withou
 - **OpenAI (ChatGPT models)**
 - **Gemini API**
 - **DeepL API**
+- **Index-Translate** (free public API, dedicated MT model — no key needed)
 - **Lingva / Google Translate** (free, lower quality)
 
 ---

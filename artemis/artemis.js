@@ -254,6 +254,11 @@
     const engine = Common.normalizeEngineId(el.model.value);
     const concurrency = Math.max(1, Math.min(12, Math.min(lines.length || 1, Number(el.batchSize.value) || 1)));
 
+    if (engine === 'index-translate') {
+      const output = await Common.translateIndexTranslateLines(lines, el.target.value, { concurrency: Math.min(concurrency, 6) });
+      return lines.map((line, index) => sanitizeTranslation(line, output[index], role));
+    }
+
     if (engine === 'lingva') {
       const output = await Common.translateLingvaLines(lines, el.target.value, { concurrency });
       return lines.map((line, index) => sanitizeTranslation(line, output[index], role));

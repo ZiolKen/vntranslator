@@ -1330,6 +1330,11 @@
     return Common.translateLingvaLines(lines, targetLang, { concurrency: 48, delayMs: 60 });
   }
 
+  async function translateBatchIndexTranslate(batchDialogs, targetLang) {
+    const lines = batchDialogs.map(d => d.maskedQuote || d.quote || '');
+    return Common.translateIndexTranslateLines(lines, targetLang, { concurrency: 6 });
+  }
+
   async function waitWhilePaused() {
     while (state.isPaused && state.isTranslating) await delay(100);
   }
@@ -1383,6 +1388,8 @@
             translatedLines = await translateBatchDeepSeek(toTranslate, targetLang, apiKey);
           } else if (Common && Common.isOpenAIEngine(model)) {
             translatedLines = await translateBatchOpenAI(toTranslate, targetLang, openaiApiKey, model);
+          } else if (model === 'index-translate') {
+            translatedLines = await translateBatchIndexTranslate(toTranslate, targetLang);
           } else if (model === 'google') {
             translatedLines = await translateBatchGoogle(toTranslate, targetLang);
           } else if (model === 'deepl') {

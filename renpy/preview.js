@@ -1140,6 +1140,10 @@
     return Common.translateLingvaLines(lines, targetLang, { concurrency: 48, delayMs: 60 });
   }
 
+  async function translateIndexTranslate(lines, targetLang) {
+    return Common.translateIndexTranslateLines(lines, targetLang, { concurrency: 6 });
+  }
+
   function getKeys() {
     const deepseekApiKey = String(sessionStorage.getItem('deepseekApiKey') || '').trim();
     const openaiApiKey = String(sessionStorage.getItem('openaiApiKey') || '').trim();
@@ -1164,6 +1168,8 @@
       const apiKey = provider === 'gemini' ? (keys.geminiApiKey || keys.openaiApiKey) : keys.openaiApiKey;
       if (!apiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key in this tab session.');
       translatedMasked = await translateOpenAI(maskedLines, targetLang, apiKey, model);
+    } else if (model === 'index-translate') {
+      translatedMasked = await translateIndexTranslate(maskedLines, targetLang);
     } else if (model === 'google') {
       translatedMasked = await translateGoogle(maskedLines, targetLang);
     } else if (model === 'deepl') {

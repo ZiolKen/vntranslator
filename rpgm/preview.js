@@ -174,6 +174,7 @@
   function modelLabel(model) {
     const m = Common ? Common.normalizeEngineId(model) : String(model || '').toLowerCase().trim();
     if (m === 'deepseek') return 'DeepSeek';
+    if (m === 'index-translate') return 'Index-Translate';
     if (m === 'lingva') return 'Lingva';
     if (m === 'google') return 'Google Translate';
     if (Common && Common.isOpenAIEngine(m)) return Common.getEngineLabel(m);
@@ -871,6 +872,10 @@ ${JSON.stringify(lines)}`;
 
   async function translateSingle(text, model, targetLang) {
     const m = Common ? Common.normalizeEngineId(model) : String(model || '').toLowerCase().trim();
+    if (m === 'index-translate') {
+      return await Common.translateIndexTranslateLines([text], targetLang, { concurrency: 1 });
+    }
+
     if (m === 'lingva') {
       const out = await lingvaRequest(text, targetLang);
       return [out];

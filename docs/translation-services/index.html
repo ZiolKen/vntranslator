@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b0b10" />
     <meta name="color-scheme" content="dark" />
     <title>Translation services | VN Translator</title>
-    <meta name="description" content="Compare DeepSeek, OpenAI, DeepL, Lingva, and Google Translate options for VN Translator — with quality, cost, and stability tips." />
+    <meta name="description" content="Compare DeepSeek, OpenAI, DeepL, Index-Translate, Lingva, and Google Translate options for VN Translator — with quality, cost, and stability tips." />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.jpeg" />
@@ -106,6 +106,16 @@
 <li>JSON escaping when translating RPG Maker files</li>
 </ul>
 <p>Get a key: <a href="/docs/api-keys/">API keys</a></p>
+<h2>Index-Translate (free, dedicated MT model)</h2>
+<p><strong>Best for:</strong> free drafts and bulk text when you do not want to use an API key<br />
+<strong>Needs:</strong> no key</p>
+<p>Notes:</p>
+<ul>
+<li>uses the free public Index-Translate API (35B model); lines are translated one by one</li>
+<li>tags/control-code placeholders are sent with a “keep unchanged” constraint, but still verify them</li>
+<li>public service: it may be rate-limited, so the tool retries automatically — lower the batch size if it keeps failing</li>
+<li>if the browser blocks direct calls (CORS), the tool falls back to <code>/api/index-translate-proxy</code> (available on Vercel / Cloudflare Pages, not on plain static hosting)</li>
+</ul>
 <h2>Lingva / Google (free options)</h2>
 <p><strong>Best for:</strong> quick drafts, testing, non-critical content<br />
 <strong>Needs:</strong> no key</p>
@@ -186,6 +196,17 @@ Be careful with:
 - JSON escaping when translating RPG Maker files
 
 Get a key: [API keys](/docs/api-keys/)
+
+## Index-Translate (free, dedicated MT model)
+
+**Best for:** free drafts and bulk text when you do not want to use an API key  
+**Needs:** no key
+
+Notes:
+- uses the free public Index-Translate API (35B model); lines are translated one by one
+- tags/control-code placeholders are sent with a “keep unchanged” constraint, but still verify them
+- public service: it may be rate-limited, so the tool retries automatically — lower the batch size if it keeps failing
+- if the browser blocks direct calls (CORS), the tool falls back to `/api/index-translate-proxy` (available on Vercel / Cloudflare Pages, not on plain static hosting)
 
 ## Lingva / Google (free options)
 

@@ -455,6 +455,13 @@ async function lingvaRequest(text, target, signal) {
   return String(out[0] || text);
 }
 
+const indexPool = createPool(8);
+
+async function indexTranslateRequest(text, target, signal) {
+  const out = await Common.translateIndexTranslateLines([text], target, { concurrency: 1, signal });
+  return String(out[0] || text);
+}
+
 const googlePool = createPool(55);
 
 async function googleTranslate(text, sl, tl, signal) {
@@ -731,6 +738,31 @@ els.start.addEventListener("click", async () => {
 
         updateUI();
       }
+    }
+
+    else if (model === "index-translate") {
+      const jobs = tasks.map((t) =>
+        indexPool.run(() =>
+          withRetry(async () => {
+            const outSafe = await indexTranslateRequest(t.safe, targetLang, signal);
+
+            if (!isPlaceholderSafe(t.safe, outSafe)) {
+              state.blocks[t.bi].translated[t.li] = t.raw;
+              addLog("err", t.raw, "PLACEHOLDER LOST (fallback)");
+            } else {
+              const restored = restoreText(outSafe, t.placeholders);
+              state.blocks[t.bi].translated[t.li] = restored;
+              addLog(`tag-${targetLang}`, t.raw, restored);
+            }
+
+            state.doneLines++;
+            if (state.doneLines % 10 === 0) updateUI();
+          }, { retries: 2, baseDelay: 600, signal })
+        )
+      );
+
+      await Promise.all(jobs);
+      updateUI();
     }
 
     else if (model === "lingva") {

@@ -26,6 +26,7 @@
     { id: 'nvidia/nemotron-3-super-120b-a12b:free', provider: 'openrouter', label: 'Nemotron 3 Super (OpenRouter)', uiLabel: '🌀 Nemotron 3 Super — Free via OpenRouter' },
     { id: 'google/gemma-4-31b-it:free', provider: 'openrouter', label: 'Gemma 4 31B (OpenRouter)', uiLabel: '🔅 Gemma 4 31B — Free via OpenRouter' },
     { id: 'google/gemma-4-26b-a4b-it:free', provider: 'openrouter', label: 'Gemma 4 26B (OpenRouter)', uiLabel: '⚜️ Gemma 4 26B – Free via OpenRouter' },
+    { id: 'index-translate', provider: 'free', label: 'Index-Translate', uiLabel: '🎯 Index-Translate 35B — Free (Dedicated MT)' },
     { id: 'lingva', provider: 'free', label: 'Lingva', uiLabel: '🌐 Lingva — Free (Lower Quality)' },
     { id: 'google', provider: 'free', label: 'Google Translate', uiLabel: '💠 Google Translate — Free (Fast)' }
   ]);
@@ -34,6 +35,11 @@
 
   const ENGINE_ALIASES = Object.freeze({
     libre: 'lingva',
+    index: 'index-translate',
+    indextranslate: 'index-translate',
+    'index translate': 'index-translate',
+    'index-translate-35b': 'index-translate',
+    'index-translate-35b-a3b': 'index-translate',
     'google-translate': 'google',
     googletranslate: 'google',
     'gpt-5': 'gpt-5.4',
@@ -714,6 +720,176 @@
     });
   }
 
+  /* ------------------------------------------------------------
+     Index-Translate (free public API, OpenAI-compatible)
+     Endpoint: https://index-translate.bilibili.com/v1/chat/completions
+     It is a dedicated MT model, so we translate line by line with its
+     native Chinese prompt (same prompt as call_api.py) instead of JSON
+     batches. Thinking is switched off (enable_thinking: false).
+     Direct browser call first; if the browser blocks it (CORS) we fall
+     back to the same-origin proxy /api/index-translate-proxy.
+  ------------------------------------------------------------ */
+  const INDEX_TRANSLATE_API_URL = 'https://index-translate.bilibili.com/v1/chat/completions';
+  const INDEX_TRANSLATE_PROXY_URL = '/api/index-translate-proxy';
+  const INDEX_TRANSLATE_MODEL = 'Index-Translate-35B-A3B';
+
+  const INDEX_LANG_NAMES = Object.freeze({
+    en: '英语', zh: '中文', de: '德语', fr: '法语', es: '西班牙语',
+    ja: '日语', ko: '韩语', pt: '葡萄牙语', ru: '俄语', ar: '阿拉伯语',
+    it: '意大利语', nl: '荷兰语', pl: '波兰语', ro: '罗马尼亚语',
+    sv: '瑞典语', tr: '土耳其语', hi: '印地语', vi: '越南语',
+    th: '泰语', id: '印尼语', ms: '马来语', fil: '菲律宾语'
+  });
+
+  // Same placeholder shapes the tools produce: ⟦PH{0}⟧ / ⟦RENPH{0}⟧ / __RPGPLH_123__
+  const INDEX_PLACEHOLDER_TEST_RE = /⟦[^⟧]*⟧|__[A-Z0-9_]*PLH_\d+__/;
+
+  let indexRoute = null; // null = unknown yet, 'direct' or 'proxy'
+  const indexCache = new Map();
+
+  function normalizeIndexTargetCode(value) {
+    const code = String(normalizeTargetCode(value) || '').toLowerCase();
+    if (code === 'zh' || code === 'zh-cn' || code === 'zh_cn' || code === 'zh-hans') return 'zh';
+    if (code === 'tl' || code === 'fil') return 'fil';
+    const base = code.split(/[-_]/)[0];
+    return INDEX_LANG_NAMES[base] ? base : null;
+  }
+
+  function buildIndexTranslatePrompt(text, targetCode) {
+    const tgt = INDEX_LANG_NAMES[targetCode];
+    const body = String(text ?? '').trim();
+
+    if (INDEX_PLACEHOLDER_TEST_RE.test(body)) {
+      return '请将以下文本翻译成' + tgt + '，并且严格遵循所有约束要求。\n\n' +
+        '【源文】\n' + body + '\n\n' +
+        '【约束要求】\n' +
+        '1. 【硬性要求】原文中形如 ⟦PH{0}⟧、⟦RENPH{0}⟧ 或 __RPGPLH_123__ 的占位符必须原样保留（包括括号、编号和下划线），不得翻译、删除、增加或改变其相对顺序\n\n' +
+        '只输出译文，不要有任何额外说明。';
+    }
+
+    return '请将以下文本翻译为' + tgt + '，直接输出翻译结果，不要进行任何解释。\n\n' + body;
+  }
+
+  function stripIndexThink(text) {
+    let out = String(text ?? '');
+    if (out.includes('</think>')) out = out.split('</think>').slice(1).join('</think>');
+    return out.trim().replace(/^<think>/, '').trim();
+  }
+
+  async function postIndexTranslate(payload, signal) {
+    const body = JSON.stringify(payload);
+    const send = (url) => fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal,
+      cache: 'no-store',
+      credentials: 'omit'
+    });
+
+    if (indexRoute !== 'proxy') {
+      try {
+        const response = await send(INDEX_TRANSLATE_API_URL);
+        indexRoute = 'direct';
+        return response;
+      } catch (error) {
+        if (error?.name === 'AbortError') throw error;
+        // Direct call already worked earlier -> this is a genuine network error.
+        if (indexRoute === 'direct') throw error;
+        // Never worked directly: most likely blocked by CORS, try the proxy.
+      }
+    }
+
+    const response = await send(INDEX_TRANSLATE_PROXY_URL);
+    if (response.status === 404 || response.status === 405) {
+      throw new Error('Index-Translate: the browser cannot call the API directly (CORS) and this host has no /api/index-translate-proxy. Deploy on Vercel or Cloudflare Pages to use it.');
+    }
+    indexRoute = 'proxy';
+    return response;
+  }
+
+  async function requestIndexTranslate(payload, signal) {
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      let response;
+      try {
+        response = await postIndexTranslate(payload, signal);
+      } catch (error) {
+        if (error?.name === 'AbortError' || /no \/api\/index-translate-proxy/.test(String(error?.message))) throw error;
+        lastError = new Error('Network error when calling Index-Translate: ' + (error?.message || error));
+        if (attempt < maxRetries) await sleep(600 * Math.pow(2, attempt) * (0.7 + Math.random() * 0.6), signal);
+        continue;
+      }
+
+      if (response.ok) return response.json();
+
+      const text = await response.text().catch(() => '');
+      lastError = new Error('Index-Translate HTTP ' + response.status + (text ? ': ' + text.slice(0, 300) : ''));
+      const retryable = response.status === 429 || response.status >= 500;
+      if (!retryable || attempt >= maxRetries) throw lastError;
+
+      const retryAfter = Number(response.headers.get('retry-after'));
+      const wait = Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(retryAfter * 1000, 15000)
+        : 600 * Math.pow(2, attempt) * (0.7 + Math.random() * 0.6);
+      await sleep(wait, signal);
+    }
+
+    throw lastError || new Error('Index-Translate: request failed');
+  }
+
+  async function translateIndexTranslateText(text, targetCode, options = {}) {
+    const source = String(text ?? '');
+    if (!source.trim()) return source;
+
+    const model = options.model || INDEX_TRANSLATE_MODEL;
+    const leading = source.match(/^\s*/)[0];
+    const trailing = source.match(/\s*$/)[0];
+    const cacheKey = model + '|' + targetCode + '|' + source.trim();
+
+    // The cache stores promises, so identical lines running in parallel
+    // ("Yes", "No", ...) share a single request instead of hitting the API N times.
+    let pending = indexCache.get(cacheKey);
+    if (!pending) {
+      pending = (async () => {
+        const data = await requestIndexTranslate({
+          model,
+          messages: [{ role: 'user', content: buildIndexTranslatePrompt(source, targetCode) }],
+          temperature: 0,
+          max_tokens: Math.min(4096, Math.max(256, source.length * 4)),
+          stream: false,
+          // Keep reasoning OFF: with thinking enabled the CoT can replace the translation.
+          chat_template_kwargs: { enable_thinking: false }
+        }, options.signal);
+
+        const translated = stripIndexThink(getChatContent(data));
+        if (!translated) throw new Error('Index-Translate response did not contain a translation.');
+        return translated;
+      })();
+      indexCache.set(cacheKey, pending);
+      pending.catch(() => { if (indexCache.get(cacheKey) === pending) indexCache.delete(cacheKey); });
+    }
+
+    return leading + (await pending) + trailing;
+  }
+
+  async function translateIndexTranslateLines(lines, target, options = {}) {
+    const targetCode = normalizeIndexTargetCode(target);
+    if (!targetCode) throw new Error('Index-Translate does not support target language: ' + target);
+
+    const signal = options.signal;
+    const concurrency = options.concurrency ?? 6;
+    const delayMs = options.delayMs ?? 0;
+
+    return pMap(lines, concurrency, async (value) => {
+      const translated = await translateIndexTranslateText(value, targetCode, { signal, model: options.model });
+      if (delayMs) await sleep(delayMs, signal);
+      return translated;
+    });
+  }
+
   function escapeXmlText(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;')
@@ -993,6 +1169,10 @@
     requestOpenAIChat,
     translateLingvaLines,
     translateGoogleLines,
+    translateIndexTranslateLines,
+    normalizeIndexTargetCode,
+    buildIndexTranslatePrompt,
+    indexTranslateModel: INDEX_TRANSLATE_MODEL,
     googleTranslateHosts: GOOGLE_TRANSLATE_HOSTS,
     googleTranslateBase: GOOGLE_TRANSLATE_BASE,
     translateDeepLLines,

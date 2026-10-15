@@ -109,3 +109,8 @@ export async function translateBatchGoogle(batchDialogs, targetLang) {
   const lines = batchDialogs.map((dialog) => dialog.maskedQuote || dialog.quote || '');
   return Common.translateGoogleLines(lines, targetLang, { concurrency: 48 });
 }
+
+export async function translateBatchIndexTranslate(batchDialogs, targetLang) {
+  const lines = batchDialogs.map((dialog) => dialog.maskedQuote || dialog.quote || '');
+  return Common.translateIndexTranslateLines(lines, targetLang, { concurrency: 6 });
+}
