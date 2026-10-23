@@ -53,6 +53,7 @@ function save() {
 }
 
 function selectedModelIds() {
+  if (!els.models) return [];
   return Array.from(els.models.querySelectorAll('input[type=checkbox]:checked')).map((c) => c.value);
 }
 
@@ -102,11 +103,15 @@ export function getModels() {
 
 export function getKeysByProvider() {
   const out = {};
-  for (const p of KEY_PROVIDERS) out[p.id] = parseKeys(els.keys[p.id]?.value);
+  for (const p of KEY_PROVIDERS) out[p.id] = parseKeys(els.keys?.[p.id]?.value);
   return out;
 }
 
 export function getPoolConfig() {
+  // Called by app.js before initAiPanel() has run (or when the markup is missing).
+  if (!els.enabled || !els.models) {
+    return { enabled: false, models: [], keysByProvider: {}, slots: [], skipped: [], retries: 0 };
+  }
   const models = getModels();
   const keysByProvider = getKeysByProvider();
   const { slots, skipped } = buildSlots(models, keysByProvider);
@@ -121,6 +126,7 @@ export function getPoolConfig() {
 }
 
 export function getParallel() {
+  if (!els.parallel) return 1;
   return Math.min(32, Math.max(1, Number(els.parallel?.value) || 1));
 }
 
