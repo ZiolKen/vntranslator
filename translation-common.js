@@ -569,10 +569,11 @@
     return response.json();
   }
 
-  async function requestOpenAIChat({ apiKey, model, messages, signal }) {
+  async function requestOpenAIChat({ apiKey, model, messages, signal, provider: forcedProvider }) {
     const key = sanitizeApiKey(apiKey);
-    const resolvedModel = normalizeEngineId(model);
-    const provider = getEngineProvider(resolvedModel);
+    // `provider` lets callers use model ids that are not in ENGINE_CATALOG (custom models).
+    const resolvedModel = forcedProvider ? String(model || '').trim() : normalizeEngineId(model);
+    const provider = forcedProvider || getEngineProvider(resolvedModel);
     const isGemini = provider === 'gemini';
     const isOpenRouter = provider === 'openrouter';
     const providerLabel = isGemini ? 'Gemini' : (isOpenRouter ? 'OpenRouter' : 'OpenAI');
