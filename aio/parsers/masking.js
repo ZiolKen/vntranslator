@@ -11,7 +11,7 @@ export const OLD_PH_TEST_RE = /(?!)x^/; // no legacy marker for this engine fami
 
 const TAG_RE = /\[[^\[\]]*\]|\{[^{}]*\}|<[^<>\n]{1,160}>|\\[A-Za-z][\[{][^\]}]*[\]}]|\\\\|\\[.|!^<>${}nN]|%\d+\$?[sdfoxX]?/g;
 
-export function maskTagsInText(text) {
+export function maskTagsInText(text, tagRe = TAG_RE) {
   const s = String(text ?? '');
   if (!s) return { masked: s, map: Object.create(null) };
 
@@ -36,8 +36,9 @@ export function maskTagsInText(text) {
   let lastIndex = 0;
   let m;
 
-  TAG_RE.lastIndex = 0;
-  while ((m = TAG_RE.exec(s)) !== null) {
+  tagRe.lastIndex = 0;
+  while ((m = tagRe.exec(s)) !== null) {
+    if (!m[0]) { tagRe.lastIndex++; continue; }
     const originalTag = m[0];
     const id = alloc();
     map[String(id)] = originalTag;
