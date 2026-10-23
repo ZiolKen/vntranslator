@@ -2,6 +2,8 @@ import { normalizeLineEndings, restoreLineEndings, debounce, escapeHtml, clamp, 
 import { Store } from './storage.js';
 import { LANG_TO_CODE } from './languages.js';
 import { translateBatchDeepSeek, translateBatchOpenAI, translateBatchDeepL, translateBatchLingva, translateBatchGoogle, translateBatchIndexTranslate } from './engines.js';
+import { SlotPool, runBatches, buildSlots } from './pool.js';
+import { initAiPanel, getPoolConfig, getParallel } from './aipanel.js';
 import { downloadZip } from './zip.js';
 import { buildMatcher, findAllInText, replaceAll, nextIndex, sortMatches } from './findreplace.js';
 import { ENGINES, ENGINE_ORDER, getEngine, detectEngine, extractDialogs as extractDialogsFor, applyTranslations as applyTranslationsFor, hasPlaceholderWarning } from './registry.js';
@@ -65,6 +67,8 @@ const ui = {
   targetLangSelect: el('targetLangSelect'),
   extractMode: el('extractMode'),
   batchSize: el('batchSize'),
+  parallelBatches: el('parallelBatches'),
+  btnStopTranslate: el('btnStopTranslate'),
   apiKey: el('apiKey'),
   openaiApiKey: el('openaiApiKey'),
   deepseekKeyRow: el('deepseekKeyRow'),
@@ -124,6 +128,8 @@ const state = {
   activeView: [],
   activeSelected: new Set(),
   busy: false,
+  cancel: false,
+  translating: false,
   find: {
     matches: [],
     cursor: -1,
@@ -167,6 +173,7 @@ function setBusy(v) {
   ui.btnExportFile.disabled = !state.activePath || state.busy;
   ui.btnExportZip.disabled = state.files.size === 0 || state.busy;
   ui.btnTmFillMissing.disabled = !state.activePath || state.busy;
+  if (ui.btnStopTranslate) ui.btnStopTranslate.style.display = state.busy && state.translating ? '' : 'none';
 }
 
 function openModal(modalEl) {
@@ -1085,6 +1092,7 @@ document.addEventListener('keydown', (e) => {
 
 function syncEngineUI() {
   if (!Common || !ui.engineSelect) return;
+  if (getPoolConfig().enabled) return; // the pool panel owns engine/key selection
   const engine = Common.normalizeEngineId(ui.engineSelect.value);
   const provider = Common.getEngineProvider(engine);
   const keyConfig = Common.getProviderKeyConfig(engine);
@@ -1108,6 +1116,11 @@ if (Common && ui.engineSelect) {
   ui.engineSelect.addEventListener('change', syncEngineUI);
   syncEngineUI();
 }
+initAiPanel({
+  currentEngine: () => (Common && ui.engineSelect ? Common.normalizeEngineId(ui.engineSelect.value) : ''),
+  onChange: (e) => { if (e && e.poolOff) syncEngineUI(); },
+});
+syncEngineUI();
 if (Common && ui.targetLangSelect) {
   Common.fillTargetSelect(ui.targetLangSelect, ui.targetLangSelect.value || 'Vietnamese', 'label');
 }
@@ -1141,84 +1154,170 @@ async function fillMissingFromTM(path) {
   return filled;
 }
 
+// Builds the list of (model, key) slots for this run. Pool mode uses the AI Pool panel;
+// otherwise it is a single slot made from the classic engine dropdown + key box.
+function buildRunSlots() {
+  const pool = getPoolConfig();
+  if (pool.enabled) {
+    if (!pool.slots.length) {
+      throw new Error(pool.models.length
+        ? 'None of the selected models has an API key. Add key(s) in the AI Pool panel.'
+        : 'AI Pool is on but no model is selected.');
+    }
+    return { slots: pool.slots, retries: pool.retries, skipped: pool.skipped };
+  }
+
+  const engine = Common ? Common.normalizeEngineId(ui.engineSelect.value) : ui.engineSelect.value;
+  const provider = Common ? Common.getEngineProvider(engine) : null;
+  const meta = Common ? Common.getEngineMeta(engine) : null;
+  const apiKey = String(ui.apiKey.value || '').trim();
+  const openaiApiKey = String(ui.openaiApiKey?.value || '').trim();
+
+  if (engine === 'deepseek' && !apiKey) throw new Error('Missing DeepSeek API key.');
+  if (engine === 'deepl' && !apiKey) throw new Error('Missing DeepL API key.');
+  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) {
+    throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key.');
+  }
+
+  const keysByProvider = {};
+  if (provider === 'deepseek' || provider === 'deepl') keysByProvider[provider] = [apiKey];
+  else if (provider === 'openai' || provider === 'gemini' || provider === 'openrouter') keysByProvider[provider] = [openaiApiKey];
+
+  const { slots } = buildSlots([{ id: engine, provider: provider || 'free', model: engine, label: meta?.label || engine }], keysByProvider);
+  return { slots, retries: 2, skipped: [] };
+}
+
+function callSlot(slot, dialogs, targetLang) {
+  switch (slot.kind) {
+    case 'deepseek': return translateBatchDeepSeek(dialogs, targetLang, slot.key, { model: slot.model });
+    case 'deepl': return translateBatchDeepL(dialogs, targetLang, slot.key);
+    case 'chat': return translateBatchOpenAI(dialogs, targetLang, slot.key, slot.model, { provider: slot.provider });
+    default: {
+      if (slot.model === 'google') return translateBatchGoogle(dialogs, targetLang);
+      if (slot.model === 'index-translate') return translateBatchIndexTranslate(dialogs, targetLang);
+      return translateBatchLingva(dialogs, targetLang);
+    }
+  }
+}
+
 async function translateDialogs(path, indices) {
   const f = state.files.get(path);
   if (!f) return;
   const scriptEngine = getEngine(fileEngine(f));
 
   const targetLang = ui.targetLangSelect.value;
-  const engine = Common ? Common.normalizeEngineId(ui.engineSelect.value) : ui.engineSelect.value;
-  const apiKey = String(ui.apiKey.value || '').trim();
-  const openaiApiKey = String(ui.openaiApiKey?.value || '').trim();
-  const provider = Common ? Common.getEngineProvider(engine) : null;
   const batch = clamp(Number(ui.batchSize.value || 20), 1, 80);
-
-  if (engine === 'deepseek' && !apiKey) throw new Error('Missing DeepSeek API key.');
-  if (engine === 'deepl' && !apiKey) throw new Error('Missing DeepL API key.');
-  if (Common && Common.isOpenAIEngine(engine) && !openaiApiKey) throw new Error('Missing ' + (provider === 'gemini' ? 'Gemini' : (provider === 'openrouter' ? 'OpenRouter' : 'OpenAI')) + ' API key.');
 
   const list = indices.map(i => ({ idx: i, d: f.dialogs[i] })).filter(x => x.d);
   if (!list.length) return;
 
+  let plan;
+  try {
+    plan = buildRunSlots();
+  } catch (e) {
+    setStatus(String(e.message || e), '');
+    log(String(e.message || e), 'err');
+    return;
+  }
+
+  // Free web engines already fan out internally (up to 48 requests) — don't multiply that.
+  const allFree = plan.slots.every((s) => s.kind === 'free');
+  const parallel = allFree ? 1 : getParallel();
+
+  const pool = new SlotPool(plan.slots);
+  const jobs = [];
+  for (let start = 0; start < list.length; start += batch) jobs.push({ items: list.slice(start, start + batch) });
+
+  const modelCount = new Set(plan.slots.map((s) => s.modelId)).size;
+  const runLabel = plan.slots.length > 1
+    ? `${modelCount} model(s) · ${plan.slots.length} slot(s)`
+    : plan.slots[0].label;
+
   setBusy(true);
-  setStatus(`Translating ${list.length} line(s)…`, `${engine} → ${targetLang}`);
-  log(`Translate: ${engine} → ${targetLang} (${list.length} items)`);
+  state.translating = true;
+  state.cancel = false;
+  setBusy(true);
+  setStatus(`Translating ${list.length} line(s)…`, `${runLabel} → ${targetLang} · ${parallel}× parallel`);
+  log(`Translate: ${runLabel} → ${targetLang} (${list.length} items, ${jobs.length} batch(es), ${parallel} parallel)`);
+  if (plan.skipped.length) log(`Skipped (no API key): ${plan.skipped.map((m) => m.label).join(', ')}`, 'warn');
 
   let done = 0;
-  let batchCount = 0;
+  let paintCount = 0;
   let sidebarDirty = false;
+  const failedLines = [];
 
-  for (let start = 0; start < list.length; start += batch) {
-    const slice = list.slice(start, start + batch);
-    let translated;
-    const dialogsOnly = slice.map(x => x.d);
-    
-    if (engine === 'deepseek') translated = await translateBatchDeepSeek(dialogsOnly, targetLang, apiKey);
-    else if (engine === 'deepl') translated = await translateBatchDeepL(dialogsOnly, targetLang, apiKey);
-    else if (Common && Common.isOpenAIEngine(engine)) translated = await translateBatchOpenAI(dialogsOnly, targetLang, openaiApiKey, engine);
-    else if (engine === 'index-translate') translated = await translateBatchIndexTranslate(dialogsOnly, targetLang);
-    else if (engine === 'google') translated = await translateBatchGoogle(dialogsOnly, targetLang);
-    else translated = await translateBatchLingva(dialogsOnly, targetLang);
-    
-    for (let i = 0; i < slice.length; i++) {
-      const { idx, d } = slice[i];
+  const onResult = async (job, translated, slot) => {
+    for (let i = 0; i < job.items.length; i++) {
+      const { idx, d } = job.items[i];
       const prev = String(d.translated ?? '');
-    
       const out = String(translated[i] ?? '');
       const unmasked = scriptEngine.unmaskTagsInText(out, d.placeholderMap);
       d.translated = unmasked;
       if (adjustFileTranslatedCount(f, prev, unmasked)) sidebarDirty = true;
-    
-      pushHistory({ path, row: idx, field: 'translated', prev, next: String(unmasked ?? ''), ts: Date.now(), source: engine });
-    
+
+      pushHistory({ path, row: idx, field: 'translated', prev, next: String(unmasked ?? ''), ts: Date.now(), source: slot.label });
+
       if (ui.autoSave.checked && hasTranslatedValue(unmasked)) {
-        Store.tmPut(targetLang, String(d.maskedQuote ?? ''), String(unmasked), { source: engine }).catch(()=>{});
+        Store.tmPut(targetLang, String(d.maskedQuote ?? ''), String(unmasked), { source: slot.label }).catch(() => {});
       }
     }
 
-    done += slice.length;
-    batchCount++;
-    setStatus(`Translating… ${done}/${list.length}`, `${engine} → ${targetLang}`);
+    done += job.items.length;
+    paintCount++;
+    setStatus(`Translating… ${done}/${list.length}`, `${runLabel} → ${targetLang} · ${parallel}× parallel`);
 
-    const shouldPaint = done === list.length || (batchCount % PERF.translatePaintEvery === 0);
-    if (shouldPaint) {
+    if (done === list.length || (paintCount % PERF.translatePaintEvery === 0)) {
       refreshActiveGridAfterMutation();
       updateUndoRedoButtons();
-      if (sidebarDirty) {
-        scheduleRefreshSidebar();
-        sidebarDirty = false;
-      } else {
-        updateProjectStats();
-      }
+      if (sidebarDirty) { scheduleRefreshSidebar(); sidebarDirty = false; } else { updateProjectStats(); }
       await yieldToMain();
     }
-
     if (ui.autoSave.checked) scheduleSaveActiveFile();
+  };
+
+  let summary = null;
+  try {
+    summary = await runBatches({
+      jobs,
+      pool,
+      concurrency: parallel,
+      maxAttempts: plan.retries + 1,
+      call: (slot, items) => callSlot(slot, items.map((x) => x.d), targetLang),
+      onResult,
+      onError: (job, err) => {
+        failedLines.push(...job.items.map((x) => x.idx));
+        log(`Batch of ${job.items.length} line(s) failed: ${String(err?.message || err).slice(0, 200)}`, 'err');
+      },
+      onLog: (m, level) => log(m, level),
+      shouldStop: () => state.cancel,
+    });
+  } catch (e) {
+    log('Translate aborted: ' + String(e?.message || e), 'err');
+  } finally {
+    state.translating = false;
+    refreshActiveGridAfterMutation();
+    updateUndoRedoButtons();
+    scheduleRefreshSidebar();
+    if (ui.autoSave.checked) scheduleSaveActiveFile();
+    setBusy(false);
   }
 
-  if (sidebarDirty) scheduleRefreshSidebar();
-  setStatus(`Done. Translated ${done} line(s).`, '');
-  setBusy(false);
+  if (pool.size > 1) {
+    for (const st of pool.stats()) {
+      log(`${st.label} · ${st.keyLabel}: ${st.ok} ok, ${st.errors} err${st.dead ? ' — disabled (' + st.deadReason + ')' : ''}`);
+    }
+  }
+
+  if (summary?.cancelled) setStatus(`Stopped. Translated ${done}/${list.length} line(s).`, '');
+  else if (failedLines.length) setStatus(`Done with errors. Translated ${done}/${list.length}; ${failedLines.length} line(s) failed — run "Translate Untranslated" again.`, '');
+  else setStatus(`Done. Translated ${done} line(s).`, '');
+}
+
+if (ui.btnStopTranslate) {
+  ui.btnStopTranslate.addEventListener('click', () => {
+    state.cancel = true;
+    setStatus('Stopping after the current requests finish…', '');
+  });
 }
 
 ui.btnTranslateMissing.addEventListener('click', async () => {

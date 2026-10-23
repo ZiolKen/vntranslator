@@ -103,7 +103,7 @@
       <div class="panel">
         <div class="panel-title">Translate</div>
 
-        <div class="row gap">
+        <div class="row gap" id="engineRow">
           <label class="label">AI Engine</label>
 <select class="select" id="engineSelect"></select>
         </div>
@@ -144,6 +144,11 @@
         </div>
 
         <div class="row gap">
+          <label class="label" title="How many batches are sent at the same time">Parallel</label>
+          <input class="input" id="parallelBatches" type="number" min="1" max="32" value="3" />
+        </div>
+
+        <div class="row gap">
           <label class="check">
             <input type="checkbox" id="useTMFirst" checked />
             <span>Fill missing from TM before MT</span>
@@ -161,6 +166,9 @@
           <button class="btn btn-primary" id="btnTranslateMissing" disabled>Translate Untranslated</button>
           <button class="btn" id="btnTranslateSelected" disabled>Translate Selected</button>
         </div>
+        <div class="row gap">
+          <button class="btn btn-danger" id="btnStopTranslate" style="display:none;">⏹ Stop</button>
+        </div>
 
         <div class="row gap" id="deepseekKeyRow">
           <label class="label">DeepSeek API key</label>
@@ -171,6 +179,71 @@
           <label class="label">OpenAI API key</label>
           <input class="input" id="openaiApiKey" placeholder="OpenAI API key (kept local)" />
         </div>
+      </div>
+
+      <div class="panel" id="aiPoolPanel">
+        <div class="panel-title">AI Pool &amp; Prompt</div>
+
+        <div class="row gap">
+          <label class="check">
+            <input type="checkbox" id="poolEnabled" />
+            <span>Multi-key / multi-model pool (round-robin)</span>
+          </label>
+        </div>
+
+        <div id="poolBody" style="display:none;">
+          <div class="pool-hint">Every request goes to the next healthy (model, key) pair. Rate-limited keys cool down automatically, invalid keys are dropped, failed batches retry on another key.</div>
+
+          <div class="pool-label">Models</div>
+          <div class="pool-models" id="poolModels"></div>
+
+          <div class="pool-label">Custom models <span class="pool-sub">(one per line: <code>provider:model-id</code>)</span></div>
+          <textarea class="input pool-ta" id="poolCustomModels" rows="3" spellcheck="false" placeholder="gemini:gemini-2.5-flash&#10;openrouter:vendor/model:free&#10;openai:gpt-4.1"></textarea>
+
+          <div class="pool-label">API keys <span class="pool-sub">(one per line)</span></div>
+          <details class="pool-details" open>
+            <summary>Gemini</summary>
+            <textarea class="input pool-ta" id="poolKeys_gemini" rows="3" spellcheck="false" placeholder="AIza…&#10;AIza…"></textarea>
+          </details>
+          <details class="pool-details">
+            <summary>OpenAI</summary>
+            <textarea class="input pool-ta" id="poolKeys_openai" rows="3" spellcheck="false" placeholder="sk-…"></textarea>
+          </details>
+          <details class="pool-details">
+            <summary>OpenRouter</summary>
+            <textarea class="input pool-ta" id="poolKeys_openrouter" rows="3" spellcheck="false" placeholder="sk-or-…"></textarea>
+          </details>
+          <details class="pool-details">
+            <summary>DeepSeek</summary>
+            <textarea class="input pool-ta" id="poolKeys_deepseek" rows="3" spellcheck="false" placeholder="sk-…"></textarea>
+          </details>
+          <details class="pool-details">
+            <summary>DeepL</summary>
+            <textarea class="input pool-ta" id="poolKeys_deepl" rows="3" spellcheck="false" placeholder="xxxxxxxx-…:fx"></textarea>
+          </details>
+
+          <div class="row gap">
+            <label class="label" title="Extra attempts per batch (each on the next slot)">Retries</label>
+            <input class="input" id="poolRetries" type="number" min="0" max="10" value="4" />
+          </div>
+          <div class="row gap">
+            <label class="check">
+              <input type="checkbox" id="poolRememberKeys" />
+              <span>Remember keys on this device</span>
+            </label>
+          </div>
+          <div class="pool-summary" id="poolSummary"></div>
+        </div>
+
+        <details class="pool-details" id="promptDetails">
+          <summary>AI prompt (editable)</summary>
+          <div class="pool-hint">Variables: <code>{{target}}</code> language, <code>{{code}}</code> language code, <code>{{count}}</code> number of lines, <code>{{input}}</code> JSON array of lines (appended automatically if missing). A fixed output-format rule (JSON array only) is always added to the system message.</div>
+          <div class="pool-label">System prompt</div>
+          <textarea class="input pool-ta" id="promptSystem" rows="3" spellcheck="false"></textarea>
+          <div class="pool-label">User prompt template</div>
+          <textarea class="input pool-ta" id="promptTemplate" rows="12" spellcheck="false"></textarea>
+          <div class="row gap"><button class="btn" id="btnPromptReset" type="button">Reset to default</button></div>
+        </details>
       </div>
 
       <div class="panel">
