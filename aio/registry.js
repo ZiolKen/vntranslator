@@ -8,6 +8,7 @@
 
 import { RENPY, unmaskTagsInText as renpyUnmask, RENPH_TEST_RE, OLD_RENPH_TEST_RE, TRANSLATOR_CREDIT as RENPY_CREDIT } from './parsers/renpy-core.js';
 import { RPGM, unmaskTagsInText as rpgmUnmask, RPGMPH_TEST_RE, OLD_RPGMPH_TEST_RE, TRANSLATOR_CREDIT as RPGM_CREDIT } from './parsers/rpgm-core.js';
+import { RVDATA2, looksLikeRvtransSheet, unmaskTagsInText as rvdata2Unmask, TRANSLATOR_CREDIT as RVDATA2_CREDIT } from './parsers/rvdata2.js';
 import { KAG, unmaskTagsInText as kagUnmask, TRANSLATOR_CREDIT as KAG_CREDIT } from './parsers/kag.js';
 import { ARTEMIS, unmaskTagsInText as artemisUnmask, TRANSLATOR_CREDIT as ARTEMIS_CREDIT } from './parsers/artemis.js';
 import { TXT_LINE, TXT_NUMBERED, unmaskTagsInText as txtUnmask, looksLikeNumberedTxt, TRANSLATOR_CREDIT as TXT_CREDIT } from './parsers/txt.js';
@@ -37,6 +38,18 @@ export const ENGINES = {
     oldPhTestRe: OLD_RPGMPH_TEST_RE,
     creditLine: RPGM_CREDIT,
     supportsExtractMode: true,
+  },
+  rvdata2: {
+    id: 'rvdata2',
+    label: 'RPG Maker VX Ace (rvtrans.rb .json)',
+    exts: ['.json'],
+    needsFileName: false,
+    core: RVDATA2,
+    unmaskTagsInText: rvdata2Unmask,
+    phTestRe: PH_TEST_RE,
+    oldPhTestRe: OLD_PH_TEST_RE,
+    creditLine: RVDATA2_CREDIT,
+    supportsExtractMode: false,
   },
   kag: {
     id: 'kag',
@@ -88,7 +101,7 @@ export const ENGINES = {
   },
 };
 
-export const ENGINE_ORDER = ['renpy', 'rpgm', 'kag', 'artemis', 'txt-line', 'txt-numbered'];
+export const ENGINE_ORDER = ['renpy', 'rpgm', 'rvdata2', 'kag', 'artemis', 'txt-line', 'txt-numbered'];
 
 export function getEngine(id) {
   return ENGINES[id] || null;
@@ -106,7 +119,7 @@ export function detectEngine(fileName, text) {
   const t = String(text || '');
 
   if (ext === '.rpy') return 'renpy';
-  if (ext === '.json') return 'rpgm';
+  if (ext === '.json') return looksLikeRvtransSheet(t) ? 'rvdata2' : 'rpgm';
   if (ext === '.ks') return 'kag';
   if (ext === '.ast' || ext === '.asb') return 'artemis';
 

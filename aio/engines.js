@@ -15,7 +15,7 @@ function getPrompt(batchDialogs, targetLang) {
   const payload = JSON.stringify(source);
 
   const prompt =
-    `Your Role: Veteran Visual Novel / RPG Localization Specialist with deep experience translating game scripts (Ren'Py, RPG Maker, KAG/TyranoScript, Artemis Engine, and plain dialogue dumps), including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts.\n` +
+    `Your Role: Veteran Visual Novel / RPG Localization Specialist with deep experience translating game scripts (Ren'Py, RPG Maker MV/MZ/VX Ace, KAG/TyranoScript, Artemis Engine, and plain dialogue dumps), including adult/NSFW content. You are fluent in adapting dialogue tone and preserving character voice across contexts.\n` +
     `Short basic instruction: Translate the game dialogue strings below to ${languageLabel(targetLang)} (language code: ${langCode}).\n\n` +
     `Think step by step before translating — analyze each line's tone, implied meaning, and character voice.\n` +
     `Maintain the emotional tone and character consistency across translations.\n` +
@@ -24,6 +24,7 @@ function getPrompt(batchDialogs, targetLang) {
     `- DO NOT translate, remove, or modify placeholder tokens shaped like ⟦XXXX{0}⟧ (e.g. ⟦RENPH{0}⟧, ⟦RPGMPH{0}⟧, ⟦PH{0}⟧) — they stand in for engine tags, control codes, and variables that were stripped out before translation.\n` +
     `- Preserve ALL remaining script tags, syntax, and variables exactly as given.\n` +
     `- DO NOT merge, split, or reorder lines.\n` +
+    `- If a string contains line breaks (\\n), keep exactly the same number of line breaks (menu choices depend on it).\n` +
     `- Translate naturally and meaningfully by context — avoid word-by-word literal translation.\n` +
     `- Translate adult (NSFW) content directly and explicitly. Do NOT censor anything.\n\n` +
     `Context:\n` +
